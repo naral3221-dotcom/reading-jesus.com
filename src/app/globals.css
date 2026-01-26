@@ -1,0 +1,880 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    /* Minimal Monochrome Theme - White/Gray/Black + Blue Gray Accent */
+    --background: 0 0% 100%;
+    --foreground: 0 0% 9%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 9%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 9%;
+
+    /* Primary: Pure Black - 미니멀, 강조 */
+    --primary: 0 0% 9%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary: Light Gray */
+    --secondary: 0 0% 96%;
+    --secondary-foreground: 0 0% 9%;
+
+    /* Muted: Soft Gray */
+    --muted: 0 0% 94%;
+    --muted-foreground: 0 0% 45%;
+
+    /* Accent: Blue Gray - Notion 스타일 포인트 */
+    --accent: 215 20% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 90%;
+    --input: 0 0% 90%;
+    --ring: 215 20% 50%;
+
+    /* Neutral Gray 팔레트 - 순수 무채색 */
+    --slate-50: 0 0% 98%;
+    --slate-100: 0 0% 96%;
+    --slate-200: 0 0% 90%;
+    --slate-300: 0 0% 78%;
+    --slate-400: 0 0% 55%;
+    --slate-500: 0 0% 40%;
+    --slate-600: 0 0% 30%;
+    --slate-700: 0 0% 22%;
+    --slate-800: 0 0% 15%;
+    --slate-900: 0 0% 9%;
+
+    /* Blue Gray 팔레트 - 악센트용 */
+    --coral-50: 215 25% 97%;
+    --coral-100: 215 22% 93%;
+    --coral-200: 215 20% 85%;
+    --coral-300: 215 18% 72%;
+    --coral-400: 215 18% 58%;
+    --coral-500: 215 20% 50%;
+    --coral-600: 215 22% 42%;
+    --coral-700: 215 25% 34%;
+    --coral-800: 215 28% 26%;
+    --coral-900: 215 30% 18%;
+
+    /* Sage - 보조 (차분한 그린 그레이) */
+    --sage-50: 150 10% 96%;
+    --sage-100: 150 8% 90%;
+    --sage-200: 150 8% 82%;
+    --sage-300: 150 8% 68%;
+    --sage-400: 150 10% 52%;
+    --sage-500: 150 12% 42%;
+    --sage-600: 150 14% 34%;
+
+    /* QT 박스 컬러 - 미니멀 모노톤 */
+    --qt-amber: 0 0% 45%;
+    --qt-amber-bg: 0 0% 97%;
+    --qt-amber-border: 0 0% 88%;
+    --qt-amber-text: 0 0% 25%;
+
+    --qt-purple: 215 15% 55%;
+    --qt-purple-bg: 215 15% 97%;
+    --qt-purple-border: 215 12% 88%;
+    --qt-purple-text: 215 18% 30%;
+
+    --qt-emerald: 150 12% 48%;
+    --qt-emerald-bg: 150 10% 96%;
+    --qt-emerald-border: 150 8% 85%;
+    --qt-emerald-text: 150 15% 28%;
+
+    --qt-sky: 200 15% 52%;
+    --qt-sky-bg: 200 12% 97%;
+    --qt-sky-border: 200 10% 88%;
+    --qt-sky-text: 200 18% 30%;
+
+    --qt-indigo: 230 15% 55%;
+    --qt-indigo-bg: 230 12% 97%;
+    --qt-indigo-border: 230 10% 88%;
+    --qt-indigo-text: 230 18% 32%;
+
+    /* Chart Colors - 미니멀 그레이스케일 */
+    --chart-1: 0 0% 20%;
+    --chart-2: 0 0% 40%;
+    --chart-3: 0 0% 60%;
+    --chart-4: 215 20% 50%;
+    --chart-5: 150 12% 48%;
+
+    --radius: 0.5rem;
+  }
+
+  /* ==========================================
+     Beige Theme - 따뜻하고 부드러운 톤
+     ========================================== */
+  .beige {
+    --background: 35 30% 96%;
+    --foreground: 30 20% 15%;
+    --card: 35 40% 98%;
+    --card-foreground: 30 20% 15%;
+    --popover: 35 40% 98%;
+    --popover-foreground: 30 20% 15%;
+
+    --primary: 30 40% 30%;
+    --primary-foreground: 35 30% 96%;
+
+    --secondary: 35 25% 90%;
+    --secondary-foreground: 30 30% 25%;
+
+    --muted: 35 20% 88%;
+    --muted-foreground: 30 15% 45%;
+
+    --accent: 24 80% 50%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 35 20% 85%;
+    --input: 35 20% 85%;
+    --ring: 24 80% 50%;
+
+    /* Beige Slate (warm neutral) */
+    --slate-50: 35 30% 97%;
+    --slate-100: 35 25% 93%;
+    --slate-200: 35 20% 87%;
+    --slate-300: 32 18% 75%;
+    --slate-400: 30 15% 55%;
+    --slate-500: 28 18% 42%;
+    --slate-600: 26 20% 32%;
+    --slate-700: 24 22% 24%;
+    --slate-800: 22 25% 17%;
+    --slate-900: 20 28% 12%;
+
+    /* Beige Coral (terracotta tones) */
+    --coral-50: 20 100% 97%;
+    --coral-100: 18 95% 92%;
+    --coral-200: 16 90% 84%;
+    --coral-300: 14 85% 74%;
+    --coral-400: 14 80% 62%;
+    --coral-500: 14 75% 52%;
+    --coral-600: 12 70% 45%;
+    --coral-700: 10 68% 38%;
+    --coral-800: 8 65% 32%;
+    --coral-900: 6 60% 26%;
+
+    /* Beige Sage */
+    --sage-50: 145 25% 95%;
+    --sage-100: 148 22% 88%;
+    --sage-200: 150 20% 78%;
+    --sage-300: 152 20% 65%;
+    --sage-400: 154 22% 52%;
+    --sage-500: 156 25% 44%;
+    --sage-600: 158 28% 36%;
+
+    /* Beige QT Colors */
+    --qt-amber: 40 88% 55%;
+    --qt-amber-bg: 42 80% 94%;
+    --qt-amber-border: 40 70% 82%;
+    --qt-amber-text: 35 85% 28%;
+
+    --qt-purple: 265 60% 60%;
+    --qt-purple-bg: 268 70% 95%;
+    --qt-purple-border: 265 50% 85%;
+    --qt-purple-text: 265 55% 32%;
+
+    --qt-emerald: 155 55% 48%;
+    --qt-emerald-bg: 150 60% 94%;
+    --qt-emerald-border: 152 48% 80%;
+    --qt-emerald-text: 158 55% 26%;
+
+    --qt-sky: 195 80% 52%;
+    --qt-sky-bg: 198 85% 95%;
+    --qt-sky-border: 196 70% 85%;
+    --qt-sky-text: 200 75% 28%;
+
+    --qt-indigo: 235 60% 58%;
+    --qt-indigo-bg: 238 80% 95%;
+    --qt-indigo-border: 236 52% 85%;
+    --qt-indigo-text: 238 50% 32%;
+
+    /* Beige Chart */
+    --chart-1: 14 75% 52%;
+    --chart-2: 156 25% 44%;
+    --chart-3: 28 18% 42%;
+    --chart-4: 40 88% 50%;
+    --chart-5: 265 55% 58%;
+  }
+
+  /* ==========================================
+     Sepia Theme - 눈 보호용 따뜻한 톤
+     ========================================== */
+  .sepia {
+    --background: 40 30% 94%;
+    --foreground: 40 25% 15%;
+    --card: 40 35% 97%;
+    --card-foreground: 40 25% 15%;
+    --popover: 40 35% 97%;
+    --popover-foreground: 40 25% 15%;
+
+    --primary: 35 35% 32%;
+    --primary-foreground: 40 30% 94%;
+
+    --secondary: 40 22% 88%;
+    --secondary-foreground: 38 28% 28%;
+
+    --muted: 40 18% 85%;
+    --muted-foreground: 38 15% 48%;
+
+    --accent: 30 70% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 40 18% 82%;
+    --input: 40 18% 82%;
+    --ring: 30 70% 45%;
+
+    /* Sepia Slate (warm brown tones) */
+    --slate-50: 40 28% 96%;
+    --slate-100: 40 24% 91%;
+    --slate-200: 40 20% 84%;
+    --slate-300: 38 17% 72%;
+    --slate-400: 36 14% 54%;
+    --slate-500: 35 16% 42%;
+    --slate-600: 34 18% 33%;
+    --slate-700: 33 20% 25%;
+    --slate-800: 32 22% 18%;
+    --slate-900: 30 24% 13%;
+
+    /* Sepia Coral (muted warm) */
+    --coral-50: 25 90% 96%;
+    --coral-100: 23 85% 90%;
+    --coral-200: 21 80% 82%;
+    --coral-300: 19 75% 72%;
+    --coral-400: 18 70% 60%;
+    --coral-500: 17 65% 50%;
+    --coral-600: 15 60% 44%;
+    --coral-700: 13 58% 37%;
+    --coral-800: 11 55% 31%;
+    --coral-900: 9 50% 25%;
+
+    /* Sepia Sage (olive tones) */
+    --sage-50: 85 20% 94%;
+    --sage-100: 88 18% 86%;
+    --sage-200: 90 16% 76%;
+    --sage-300: 92 16% 62%;
+    --sage-400: 95 18% 50%;
+    --sage-500: 98 20% 42%;
+    --sage-600: 100 22% 35%;
+
+    /* Sepia QT Colors (muted, easy on eyes) */
+    --qt-amber: 42 80% 52%;
+    --qt-amber-bg: 44 70% 92%;
+    --qt-amber-border: 42 60% 80%;
+    --qt-amber-text: 38 75% 30%;
+
+    --qt-purple: 270 50% 55%;
+    --qt-purple-bg: 272 55% 93%;
+    --qt-purple-border: 270 42% 82%;
+    --qt-purple-text: 270 45% 35%;
+
+    --qt-emerald: 152 48% 45%;
+    --qt-emerald-bg: 150 50% 92%;
+    --qt-emerald-border: 150 40% 78%;
+    --qt-emerald-text: 155 50% 28%;
+
+    --qt-sky: 198 70% 48%;
+    --qt-sky-bg: 200 72% 93%;
+    --qt-sky-border: 198 58% 82%;
+    --qt-sky-text: 202 65% 30%;
+
+    --qt-indigo: 238 50% 55%;
+    --qt-indigo-bg: 240 60% 93%;
+    --qt-indigo-border: 238 45% 82%;
+    --qt-indigo-text: 240 45% 35%;
+
+    /* Sepia Chart */
+    --chart-1: 17 65% 50%;
+    --chart-2: 98 20% 42%;
+    --chart-3: 35 16% 42%;
+    --chart-4: 42 80% 48%;
+    --chart-5: 270 45% 55%;
+  }
+
+  .dark {
+    /* Dark Mode - 현대적이고 편안한 다크 */
+    --background: 220 20% 8%;
+    --foreground: 210 15% 92%;
+    --card: 220 18% 12%;
+    --card-foreground: 210 15% 92%;
+    --popover: 220 18% 12%;
+    --popover-foreground: 210 15% 92%;
+
+    --primary: 12 70% 65%;
+    --primary-foreground: 220 20% 8%;
+
+    --secondary: 220 15% 18%;
+    --secondary-foreground: 210 15% 88%;
+
+    --muted: 220 12% 18%;
+    --muted-foreground: 215 12% 60%;
+
+    --accent: 12 76% 61%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 22%;
+    --input: 220 15% 22%;
+    --ring: 12 70% 65%;
+
+    /* Dark Slate */
+    --slate-50: 220 20% 90%;
+    --slate-100: 220 18% 82%;
+    --slate-200: 220 15% 70%;
+    --slate-300: 218 12% 55%;
+    --slate-400: 220 10% 42%;
+    --slate-500: 220 12% 32%;
+    --slate-600: 220 15% 22%;
+    --slate-700: 220 18% 15%;
+    --slate-800: 220 20% 10%;
+    --slate-900: 220 22% 6%;
+
+    /* Dark Coral */
+    --coral-50: 12 40% 85%;
+    --coral-100: 12 50% 75%;
+    --coral-200: 12 60% 68%;
+    --coral-300: 12 70% 62%;
+    --coral-400: 12 76% 58%;
+    --coral-500: 12 76% 55%;
+    --coral-600: 10 70% 48%;
+    --coral-700: 8 65% 40%;
+    --coral-800: 7 60% 32%;
+    --coral-900: 5 55% 25%;
+
+    /* Dark Sage */
+    --sage-50: 150 20% 80%;
+    --sage-100: 150 22% 70%;
+    --sage-200: 152 25% 58%;
+    --sage-300: 154 28% 48%;
+    --sage-400: 156 30% 42%;
+    --sage-500: 158 32% 38%;
+    --sage-600: 160 35% 32%;
+
+    /* Dark QT Colors */
+    --qt-amber: 45 85% 55%;
+    --qt-amber-bg: 40 30% 15%;
+    --qt-amber-border: 42 40% 28%;
+    --qt-amber-text: 45 90% 75%;
+
+    --qt-purple: 270 60% 65%;
+    --qt-purple-bg: 270 30% 15%;
+    --qt-purple-border: 270 35% 30%;
+    --qt-purple-text: 270 70% 78%;
+
+    --qt-emerald: 158 50% 50%;
+    --qt-emerald-bg: 155 30% 12%;
+    --qt-emerald-border: 156 35% 25%;
+    --qt-emerald-text: 155 60% 72%;
+
+    --qt-sky: 199 75% 55%;
+    --qt-sky-bg: 200 35% 12%;
+    --qt-sky-border: 200 40% 28%;
+    --qt-sky-text: 200 80% 75%;
+
+    --qt-indigo: 239 60% 65%;
+    --qt-indigo-bg: 240 30% 14%;
+    --qt-indigo-border: 238 35% 30%;
+    --qt-indigo-text: 240 70% 78%;
+
+    /* Dark Chart */
+    --chart-1: 12 70% 62%;
+    --chart-2: 158 35% 50%;
+    --chart-3: 220 15% 55%;
+    --chart-4: 45 85% 55%;
+    --chart-5: 270 55% 62%;
+  }
+}
+
+@layer base {
+  :root {
+    /* 글꼴 크기 스케일 (기본값 1) */
+    --font-scale: 1;
+  }
+
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  /* 글꼴 크기 스케일 적용 - 주요 텍스트 요소에만 적용 */
+  [data-font-size] p,
+  [data-font-size] li,
+  [data-font-size] span:not(.lucide):not([class*="sr-only"]),
+  [data-font-size] .prose,
+  [data-font-size] .font-scalable {
+    font-size: calc(1em * var(--font-scale, 1));
+  }
+
+  /* 성경 본문, QT 묵상 등 주요 읽기 콘텐츠 */
+  [data-font-size] .reading-content,
+  [data-font-size] .qt-content,
+  [data-font-size] .meditation-content {
+    font-size: calc(1rem * var(--font-scale, 1));
+    line-height: calc(1.75 * var(--font-scale, 1));
+  }
+
+  /* 카드 내 텍스트 */
+  [data-font-size] .card-text {
+    font-size: calc(0.875rem * var(--font-scale, 1));
+  }
+
+  /* 버튼 및 인터랙티브 요소 기본 트랜지션 */
+  button,
+  [role="button"],
+  a {
+    @apply transition-all duration-200;
+  }
+
+  /* 포커스 스타일 통일 - 키보드 네비게이션 지원 */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* 입력 요소 포커스 */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-2 ring-ring;
+  }
+}
+
+@layer utilities {
+  /* 카드 hover 효과 - 더 부드럽게 */
+  .card-hover {
+    @apply transition-all duration-300 ease-out hover:shadow-lg hover:-translate-y-1;
+  }
+
+  /* 버튼 press 효과 */
+  .btn-press {
+    @apply active:scale-[0.98] transition-transform;
+  }
+
+  /* 진행바 애니메이션 */
+  .progress-animate {
+    @apply transition-all duration-500 ease-out;
+  }
+
+  /* 페이드 인 애니메이션 */
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  /* 슬라이드 업 애니메이션 */
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  /* 슬라이드 인 애니메이션 (좌측에서) */
+  .slide-in-left {
+    animation: slideInLeft 0.3s ease-out;
+  }
+
+  /* 스케일 인 애니메이션 */
+  .scale-in {
+    animation: scaleIn 0.2s ease-out;
+  }
+
+  /* Safe Area 패딩 */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* 스크롤바 숨기기 (모바일 친화적) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* 그라데이션 텍스트 */
+  .gradient-text {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-coral-500 to-coral-600;
+  }
+
+  /* 글래스모피즘 효과 */
+  .glass {
+    @apply bg-white/80 backdrop-blur-md border border-white/20;
+  }
+
+  .dark .glass {
+    @apply bg-slate-900/80 backdrop-blur-md border border-slate-700/30;
+  }
+
+  /* 소프트 섀도우 */
+  .shadow-soft {
+    box-shadow: 0 2px 20px -4px rgba(0, 0, 0, 0.08),
+                0 4px 12px -2px rgba(0, 0, 0, 0.04);
+  }
+
+  .dark .shadow-soft {
+    box-shadow: 0 2px 20px -4px rgba(0, 0, 0, 0.4),
+                0 4px 12px -2px rgba(0, 0, 0, 0.2);
+  }
+
+  /* Glow 효과 */
+  .glow-coral {
+    box-shadow: 0 0 20px rgba(224, 122, 95, 0.25);
+  }
+
+  .glow-sage {
+    box-shadow: 0 0 20px rgba(129, 178, 154, 0.25);
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes scaleIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* 카드 슬라이더 애니메이션 */
+@keyframes slideCard {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-card {
+  animation: slideCard 0.4s ease-out;
+}
+
+/* =========================
+   Story Feed 애니메이션
+   ========================= */
+
+/* 텍스트 reveal 효과 */
+@keyframes textReveal {
+  from {
+    clip-path: inset(0 100% 0 0);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+/* 그라데이션 흐름 애니메이션 */
+@keyframes gradientFlow {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+/* 부유 효과 */
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+/* 펄스 글로우 */
+@keyframes pulseGlow {
+  0%, 100% { box-shadow: 0 0 15px rgba(255,255,255,0.3); }
+  50% { box-shadow: 0 0 30px rgba(255,255,255,0.5); }
+}
+
+/* 하트 비트 */
+@keyframes heartBeat {
+  0% { transform: scale(1); }
+  15% { transform: scale(1.3); }
+  30% { transform: scale(0.9); }
+  45% { transform: scale(1.15); }
+  60% { transform: scale(0.95); }
+  100% { transform: scale(1); }
+}
+
+/* 하트 버스트 */
+@keyframes heartBurst {
+  0% {
+    opacity: 1;
+    transform: scale(0);
+  }
+  50% {
+    opacity: 0.8;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(2);
+  }
+}
+
+/* 슬라이드 인 (여러 방향) */
+@keyframes storySlideInUp {
+  from { opacity: 0; transform: translateY(40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes storySlideInDown {
+  from { opacity: 0; transform: translateY(-40px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes storySlideInLeft {
+  from { opacity: 0; transform: translateX(-40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes storySlideInRight {
+  from { opacity: 0; transform: translateX(40px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* 스케일 페이드 인 */
+@keyframes storyScaleIn {
+  from { opacity: 0; transform: scale(0.9); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+/* 스와이프 힌트 */
+@keyframes swipeHint {
+  0%, 100% { opacity: 0.4; transform: translateY(0); }
+  50% { opacity: 1; transform: translateY(-8px); }
+}
+
+/* 반짝임 효과 */
+@keyframes shimmer {
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+/* 스토리 유틸리티 클래스 */
+.animate-text-reveal {
+  animation: textReveal 0.8s cubic-bezier(0.65, 0, 0.35, 1) forwards;
+}
+
+.animate-gradient-flow {
+  background-size: 200% 200%;
+  animation: gradientFlow 8s ease infinite;
+}
+
+.animate-float {
+  animation: float 3s ease-in-out infinite;
+}
+
+.animate-pulse-glow {
+  animation: pulseGlow 2s ease-in-out infinite;
+}
+
+.animate-heart-beat {
+  animation: heartBeat 0.6s cubic-bezier(0.17, 0.89, 0.32, 1.28);
+}
+
+.animate-heart-burst {
+  animation: heartBurst 0.6s ease-out forwards;
+}
+
+.animate-story-slide-up {
+  animation: storySlideInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-story-slide-down {
+  animation: storySlideInDown 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-story-slide-left {
+  animation: storySlideInLeft 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-story-slide-right {
+  animation: storySlideInRight 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-story-scale-in {
+  animation: storyScaleIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-swipe-hint {
+  animation: swipeHint 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-size: 200% 100%;
+  animation: shimmer 2s infinite;
+}
+
+/* 애니메이션 딜레이 */
+.story-delay-100 { animation-delay: 100ms; }
+.story-delay-200 { animation-delay: 200ms; }
+.story-delay-300 { animation-delay: 300ms; }
+.story-delay-400 { animation-delay: 400ms; }
+.story-delay-500 { animation-delay: 500ms; }
+
+/* 배경 패턴 */
+.bg-pattern-dots {
+  background-image: radial-gradient(circle, rgba(255,255,255,0.15) 1px, transparent 1px);
+  background-size: 24px 24px;
+}
+
+.bg-pattern-lines {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 10px,
+    rgba(255,255,255,0.05) 10px,
+    rgba(255,255,255,0.05) 20px
+  );
+}
+
+.bg-pattern-cross {
+  background-image:
+    linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px);
+  background-size: 40px 40px;
+}
+
+.bg-pattern-waves {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 320'%3E%3Cpath fill='rgba(255,255,255,0.05)' d='M0,96L48,112C96,128,192,160,288,186.7C384,213,480,235,576,213.3C672,192,768,128,864,128C960,128,1056,192,1152,208C1248,224,1344,192,1392,176L1440,160L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z'%3E%3C/path%3E%3C/svg%3E");
+  background-repeat: repeat-x;
+  background-position: bottom;
+  background-size: 100% 100px;
+}
+
+/* =========================
+   Story 가독성 향상 스타일
+   ========================= */
+
+/* 스토리 내 텍스트 가독성 - 명암비 5:1 이상 보장 */
+.story-readable-text {
+  color: white !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5) !important;
+  letter-spacing: 0.02em;
+}
+
+/* 모든 하위 요소의 텍스트도 강제로 흰색 */
+.story-readable-text *,
+.story-readable-text p,
+.story-readable-text li,
+.story-readable-text span,
+.story-readable-text strong,
+.story-readable-text em,
+.story-readable-text a,
+.story-readable-text h1,
+.story-readable-text h2,
+.story-readable-text h3,
+.story-readable-text h4,
+.story-readable-text h5,
+.story-readable-text h6,
+.story-readable-text blockquote,
+.story-readable-text div {
+  color: white !important;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.5) !important;
+}
+
+/* 링크는 약간 밝은 흰색으로 구분 */
+.story-readable-text a {
+  color: rgba(255, 255, 255, 0.95) !important;
+  text-decoration: underline;
+  text-decoration-color: rgba(255, 255, 255, 0.5);
+}
+
+/* 인용문 스타일 */
+.story-readable-text blockquote {
+  border-left: 3px solid rgba(255, 255, 255, 0.5);
+  padding-left: 1rem;
+  margin-left: 0;
+}
+
+/* 스토리 스크롤바 스타일 */
+.story-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.story-scroll::-webkit-scrollbar-track {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 2px;
+}
+
+.story-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.3);
+  border-radius: 2px;
+}
+
+.story-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+/* 스토리 카드 유리 효과 */
+.story-glass-card {
+  background: rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow:
+    0 4px 30px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}

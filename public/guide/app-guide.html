@@ -1,0 +1,908 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>READING JESUS 앱 사용 가이드</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #fff;
+      color: #333;
+      line-height: 1.8;
+      padding: 40px 20px;
+      max-width: 900px;
+      margin: 0 auto;
+      font-size: 16px;
+    }
+
+    .header {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .header h1 {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a365d;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .header .subtitle {
+      font-size: 16px;
+      color: #666;
+    }
+
+    .divider {
+      height: 3px;
+      background: linear-gradient(90deg, #3182ce, #63b3ed);
+      margin: 20px 0 30px;
+    }
+
+    .section {
+      margin-bottom: 50px;
+    }
+
+    .section-header {
+      background: linear-gradient(135deg, #3182ce, #2c5282);
+      color: white;
+      padding: 14px 24px;
+      font-size: 20px;
+      font-weight: 600;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .section-header.orange {
+      background: linear-gradient(135deg, #ed8936, #c05621);
+    }
+
+    .section-header.green {
+      background: linear-gradient(135deg, #38a169, #276749);
+    }
+
+    .section-header.purple {
+      background: linear-gradient(135deg, #805ad5, #553c9a);
+    }
+
+    .section-header.coral {
+      background: linear-gradient(135deg, #f56565, #c53030);
+    }
+
+    .content-box {
+      background: #f7fafc;
+      border: 2px solid #e2e8f0;
+      border-top: none;
+      border-radius: 0 0 8px 8px;
+      padding: 30px 25px;
+    }
+
+    .step-detail {
+      background: white;
+      border: 2px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 25px;
+      margin-bottom: 25px;
+    }
+
+    .step-detail:last-child {
+      margin-bottom: 0;
+    }
+
+    .step-content {
+      font-size: 17px;
+      color: #4a5568;
+      line-height: 2;
+    }
+
+    .step-content ol {
+      margin-left: 25px;
+      margin-top: 10px;
+    }
+
+    .step-content li {
+      margin-bottom: 8px;
+    }
+
+    .highlight-box {
+      background: #ebf8ff;
+      border-left: 4px solid #3182ce;
+      padding: 15px 20px;
+      margin: 15px 0;
+      border-radius: 0 8px 8px 0;
+    }
+
+    .highlight-box.tip {
+      background: #fef3c7;
+      border-left-color: #f59e0b;
+    }
+
+    .highlight-box.example {
+      background: #f0fff4;
+      border-left-color: #38a169;
+    }
+
+    .example-item {
+      background: white;
+      border: 1px solid #c6f6d5;
+      border-radius: 8px;
+      padding: 15px;
+      margin: 10px 0;
+    }
+
+    .example-label {
+      font-size: 14px;
+      color: #38a169;
+      font-weight: 600;
+      margin-bottom: 5px;
+    }
+
+    .example-text {
+      font-size: 16px;
+      color: #2d3748;
+      font-style: italic;
+    }
+
+    .screen-mockup {
+      background: #fdf8f6;
+      border: 2px solid #fed7d7;
+      border-radius: 16px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+
+    .church-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 15px;
+      background: white;
+      border-radius: 12px;
+      margin-bottom: 15px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+
+    .church-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .church-icon {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(135deg, #2d3748, #4a5568);
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+    }
+
+    .church-name {
+      font-weight: 700;
+      font-size: 18px;
+      color: #2d3748;
+    }
+
+    .church-address {
+      font-size: 12px;
+      color: #718096;
+    }
+
+    .register-btn {
+      background: linear-gradient(135deg, #f56565, #e53e3e);
+      color: white;
+      padding: 8px 16px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .today-reading {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      margin-bottom: 15px;
+    }
+
+    .today-label {
+      font-size: 12px;
+      color: #718096;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+
+    .today-date {
+      display: inline-block;
+      background: #2d3748;
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .today-verse {
+      font-size: 24px;
+      font-weight: 700;
+      color: #2d3748;
+    }
+
+    .form-section {
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .form-title {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 16px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid #e2e8f0;
+    }
+
+    .form-title-icon {
+      width: 32px;
+      height: 32px;
+      background: linear-gradient(135deg, #f56565, #fc8181);
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+
+    .form-label {
+      font-size: 14px;
+      font-weight: 600;
+      color: #4a5568;
+      margin-bottom: 8px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 12px 16px;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      font-size: 15px;
+      color: #2d3748;
+      background: #f7fafc;
+      margin-bottom: 20px;
+    }
+
+    .form-input.name {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .member-badge {
+      background: #fff5f5;
+      color: #e53e3e;
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .editor-toolbar {
+      display: flex;
+      gap: 8px;
+      padding: 10px;
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-bottom: none;
+      border-radius: 8px 8px 0 0;
+      font-size: 14px;
+      color: #718096;
+    }
+
+    .editor-content {
+      min-height: 120px;
+      padding: 15px;
+      border: 1px solid #e2e8f0;
+      border-radius: 0 0 8px 8px;
+      background: white;
+      color: #a0aec0;
+      font-size: 14px;
+    }
+
+    .anonymous-check {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 15px 0;
+      font-size: 14px;
+      color: #4a5568;
+    }
+
+    .check-circle {
+      width: 20px;
+      height: 20px;
+      border: 2px solid #cbd5e0;
+      border-radius: 50%;
+    }
+
+    .submit-btn {
+      width: 100%;
+      background: linear-gradient(135deg, #f6ad55, #ed8936);
+      color: white;
+      padding: 16px;
+      border-radius: 12px;
+      font-size: 16px;
+      font-weight: 600;
+      text-align: center;
+      margin-top: 10px;
+    }
+
+    .bottom-buttons {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    .bottom-btn {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+    }
+
+    .bottom-btn.qt {
+      border-color: #fbd38d;
+      background: #fffaf0;
+    }
+
+    .bottom-btn.list {
+      border-color: #bee3f8;
+      background: #ebf8ff;
+    }
+
+    .bottom-btn-icon {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .bottom-btn-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #2d3748;
+    }
+
+    .bottom-btn-sub {
+      font-size: 12px;
+      color: #718096;
+    }
+
+    /* 전체 흐름도 */
+    .flow-summary {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 15px;
+      margin-top: 20px;
+    }
+
+    .flow-item {
+      background: white;
+      border: 2px solid #ed8936;
+      border-radius: 10px;
+      padding: 20px 15px;
+      text-align: center;
+    }
+
+    .flow-number {
+      display: inline-block;
+      background: #ed8936;
+      color: white;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      line-height: 32px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .flow-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #c05621;
+      margin-bottom: 8px;
+    }
+
+    .flow-desc {
+      font-size: 13px;
+      color: #4a5568;
+      line-height: 1.5;
+    }
+
+    /* FAQ */
+    .faq-item {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+
+    .faq-q {
+      font-size: 17px;
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 10px;
+    }
+
+    .faq-a {
+      font-size: 16px;
+      color: #4a5568;
+      line-height: 1.8;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      padding: 30px 20px;
+      background: #f7fafc;
+      border-radius: 12px;
+    }
+
+    .footer p {
+      font-size: 18px;
+      color: #4a5568;
+      margin-bottom: 10px;
+    }
+
+    .footer .main-message {
+      font-size: 22px;
+      font-weight: 700;
+      color: #2c5282;
+    }
+
+    .arrow-indicator {
+      color: #e53e3e;
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    /* 모바일 반응형 */
+    @media (max-width: 768px) {
+      body {
+        padding: 20px 15px;
+      }
+
+      .flow-summary {
+        grid-template-columns: 1fr;
+      }
+
+      .step-detail {
+        padding: 20px 15px;
+      }
+    }
+
+    @media print {
+      body {
+        font-size: 14px;
+      }
+      .section {
+        page-break-inside: avoid;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>READING JESUS 앱 사용 가이드</h1>
+    <p class="subtitle">"매일, 삶 속에서 예수님을 읽어갑니다."</p>
+  </div>
+
+  <div class="divider"></div>
+
+  <!-- 1단계: QR 코드 스캔 -->
+  <div class="section">
+    <div class="section-header">
+      📱 1단계: QR 코드 찍는 방법
+    </div>
+    <div class="content-box">
+      <div class="step-detail">
+        <div class="step-content">
+          <ol>
+            <li><strong>스마트폰의 [카메라] 앱</strong>을 실행합니다<br>
+              <span style="color: #718096;">(사진 찍을 때 쓰는 앱이에요)</span></li>
+            <li><strong>주보에 있는 네모난 QR 코드</strong>에 카메라를 갖다 대세요<br>
+              <span style="color: #718096;">(카메라가 QR 코드를 인식할 때까지 가만히 기다리세요)</span></li>
+            <li>화면 위에 <strong>노란색 글씨</strong>가 나타나면<br>
+              그 글씨를 손가락으로 <strong>톡!</strong> 누르세요</li>
+            <li>자동으로 인터넷 화면이 열리면서<br>
+              <strong>우리 교회 페이지</strong>가 나타납니다</li>
+          </ol>
+        </div>
+
+        <div class="highlight-box tip">
+          <strong>💡 잘 안 되시나요?</strong><br>
+          • QR 코드가 너무 멀면 인식이 안 돼요. <strong>가까이</strong> 대세요<br>
+          • 흔들리면 인식이 안 돼요. <strong>가만히</strong> 잡으세요<br>
+          • 어두우면 인식이 안 돼요. <strong>밝은 곳</strong>에서 찍으세요
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2단계: 교회 화면 확인 -->
+  <div class="section">
+    <div class="section-header orange">
+      🏠 2단계: 교회 화면 확인하기
+    </div>
+    <div class="content-box">
+      <div class="step-detail">
+        <div class="step-content">
+          <p>QR 코드를 찍으면 <strong>교회 페이지</strong>가 바로 나타납니다!</p>
+
+          <div class="screen-mockup">
+            <!-- 교회 헤더 -->
+            <div class="church-header">
+              <div class="church-info">
+                <div class="church-icon">🏛️</div>
+                <div>
+                  <div class="church-name">영동중앙교회</div>
+                  <div class="church-address">서울특별시 강남구 도산대로24...</div>
+                </div>
+              </div>
+              <div class="register-btn">👥 등록 교인</div>
+            </div>
+
+            <!-- 오늘의 말씀 -->
+            <div class="today-reading">
+              <div class="today-label">TODAY'S READING</div>
+              <div style="display: flex; align-items: center; justify-content: center; gap: 20px;">
+                <span style="color: #cbd5e0; font-size: 20px;">‹</span>
+                <div>
+                  <div class="today-date">📅 1월 20일 (화)</div>
+                  <div class="today-verse">창 29-32</div>
+                </div>
+                <span style="color: #cbd5e0; font-size: 20px;">›</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="highlight-box tip">
+            <strong>💡 화면 위쪽에서 오늘 읽을 성경 범위를 확인하세요</strong><br>
+            예: "창 29-32" = 창세기 29장부터 32장
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 3~5단계: 묵상 작성 -->
+  <div class="section">
+    <div class="section-header green">
+      ✍️ 3~5단계: 짧은 묵상 나눔 작성하기
+    </div>
+    <div class="content-box">
+      <div class="step-detail">
+        <div class="step-content">
+          <p>화면을 조금만 내리면 <strong>"짧은 묵상 나눔 작성"</strong> 칸이 보입니다.</p>
+
+          <div class="screen-mockup">
+            <div class="form-section">
+              <div class="form-title">
+                <div class="form-title-icon">📖</div>
+                짧은 묵상 나눔 작성
+              </div>
+
+              <!-- 이름 입력 -->
+              <div class="form-label">이름</div>
+              <div class="form-input name">
+                <span>이재훈</span>
+                <span class="member-badge">등록 교인</span>
+              </div>
+              <p class="arrow-indicator" style="margin-top: -15px; margin-bottom: 15px;">
+                ↑ 3단계: 이름이 있으면 그대로, 없으면 톡! 눌러서 쓰기
+              </p>
+
+              <!-- 묵상 내용 -->
+              <div class="form-label">묵상 내용</div>
+              <div class="editor-toolbar">
+                <span>B</span> <span>I</span> <span>U</span> <span>S</span> <span>&</span>
+                <span>|</span>
+                <span>H₂</span> <span>≡</span> <span>≡</span> <span>"</span>
+                <span>|</span>
+                <span>↩</span> <span>↪</span>
+              </div>
+              <div class="editor-content">
+                (여기에 오늘 말씀 읽고 느낀 점을 쓰세요)
+              </div>
+              <p class="arrow-indicator" style="margin-top: 10px;">
+                ↑ 4단계: 하얀 칸을 톡! 누르고 느낀 점 쓰기
+              </p>
+
+              <!-- 익명 체크 -->
+              <div class="anonymous-check">
+                <div class="check-circle"></div>
+                익명으로 작성
+              </div>
+
+              <!-- 제출 버튼 -->
+              <div class="submit-btn">
+                ✈️ 나눔 등록
+              </div>
+              <p class="arrow-indicator" style="text-align: center; margin-top: 10px;">
+                ↑ 5단계: 이 주황색 버튼을 꾹~ 누르세요!
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 예시 -->
+      <div class="step-detail">
+        <div class="highlight-box example">
+          <strong>📝 뭘 써야 할지 모르겠다고요? 이렇게 써보세요!</strong>
+        </div>
+
+        <div class="example-item">
+          <div class="example-label">✨ 예시 1 (아주 짧게)</div>
+          <div class="example-text">"오늘 말씀 감사합니다"</div>
+        </div>
+
+        <div class="example-item">
+          <div class="example-label">✨ 예시 2 (조금 더 쓰기)</div>
+          <div class="example-text">"오늘 말씀을 읽으며 하나님이 저를 사랑하신다는 것을<br>다시 한번 느꼈습니다. 감사합니다."</div>
+        </div>
+
+        <div class="example-item">
+          <div class="example-label">✨ 예시 3 (기도로 쓰기)</div>
+          <div class="example-text">"주님, 오늘도 말씀으로 힘 주셔서 감사합니다.<br>이 말씀대로 살게 해주세요. 아멘"</div>
+        </div>
+
+        <div class="highlight-box tip">
+          <strong>💡 한 줄만 써도 됩니다! 부담 갖지 마세요</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 6단계: 다른 분 글 보기 -->
+  <div class="section">
+    <div class="section-header purple">
+      👀 6단계: 다른 분들 묵상 보기
+    </div>
+    <div class="content-box">
+      <div class="step-detail">
+        <div class="step-content">
+          <p>나눔 등록이 완료되면 화면을 <strong>아래로 쭉~ 내려보세요</strong></p>
+          <p style="color: #718096;">(손가락으로 화면을 위로 쓸어 올리세요)</p>
+
+          <p style="margin-top: 15px;">다른 성도분들이 쓴 <strong>묵상 나눔</strong>이 보입니다</p>
+
+          <div style="margin: 20px 0; padding: 15px; background: white; border: 1px solid #e2e8f0; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+              <span>👤 <strong>김철수</strong></span>
+              <span style="color: #718096;">방금 전</span>
+            </div>
+            <p style="color: #4a5568; margin-bottom: 8px;">"오늘 말씀을 통해 큰 위로를 받았습니다..."</p>
+            <span style="color: #e53e3e;">❤️ 5</span>
+          </div>
+
+          <div class="highlight-box tip">
+            💡 <strong>❤️ 하트</strong>를 누르면 "좋아요"를 보낼 수 있어요
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 전체 순서 요약 -->
+  <div class="section">
+    <div class="section-header">
+      📋 전체 순서 한눈에 보기
+    </div>
+    <div class="content-box">
+      <div class="flow-summary">
+        <div class="flow-item">
+          <div class="flow-number">1</div>
+          <div class="flow-title">QR 코드 스캔</div>
+          <div class="flow-desc">카메라 앱을 열고<br>QR코드를 찍으세요</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">2</div>
+          <div class="flow-title">교회 화면 확인</div>
+          <div class="flow-desc">교회 이름과<br>오늘 성경 범위 확인</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">3</div>
+          <div class="flow-title">이름 확인</div>
+          <div class="flow-desc">이름 칸에<br>이름이 있는지 확인</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">4</div>
+          <div class="flow-title">묵상 내용 쓰기</div>
+          <div class="flow-desc">큰 칸에<br>느낀 점 한 줄이라도</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">5</div>
+          <div class="flow-title">나눔 등록 누르기</div>
+          <div class="flow-desc">주황색<br>[나눔 등록] 버튼 꾹</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">6</div>
+          <div class="flow-title">다른 분 글 보기</div>
+          <div class="flow-desc">아래로 내려<br>다른 분들의 묵상 읽기</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 더 자세한 QT -->
+  <div class="section">
+    <div class="section-header coral">
+      📖 더 자세한 QT를 쓰고 싶다면?
+    </div>
+    <div class="content-box">
+      <div class="step-detail">
+        <div class="step-content">
+          <p>화면 맨 아래에 두 개의 버튼이 있어요:</p>
+
+          <div class="screen-mockup" style="background: white;">
+            <p style="text-align: center; color: #718096; font-size: 14px; margin-bottom: 15px;">더 자세한 묵상을 남기고 싶다면?</p>
+            <div class="bottom-buttons">
+              <div class="bottom-btn qt">
+                <div class="bottom-btn-icon">📝</div>
+                <div class="bottom-btn-title">QT 작성</div>
+                <div class="bottom-btn-sub" style="color: #ed8936;">오늘의 묵상</div>
+              </div>
+              <div class="bottom-btn list">
+                <div class="bottom-btn-icon">📖</div>
+                <div class="bottom-btn-title">QT 목록</div>
+                <div class="bottom-btn-sub" style="color: #3182ce;">전체 일정</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="highlight-box">
+            <strong>[QT 작성]</strong> → 더 자세하게 묵상을 쓸 수 있어요<br>
+            <strong>[QT 목록]</strong> → 다른 날짜의 QT도 볼 수 있어요
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- QT 작성 순서 -->
+  <div class="section">
+    <div class="section-header coral">
+      ✏️ QT 작성 순서 (6단계)
+    </div>
+    <div class="content-box">
+      <div class="step-detail">
+        <div class="step-content">
+          <p><strong>[QT 작성]</strong> 버튼을 누르면 더 자세한 묵상을 쓸 수 있어요.</p>
+          <p style="margin-top: 10px;">아래 순서대로 하나씩 채워주세요:</p>
+        </div>
+      </div>
+
+      <!-- QT 작성 흐름도 -->
+      <div class="flow-summary">
+        <div class="flow-item">
+          <div class="flow-number">1</div>
+          <div class="flow-title">성경 구절</div>
+          <div class="flow-desc">자동으로 채워져 있어요<br>그대로 두세요</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">2</div>
+          <div class="flow-title">한 문장 요약</div>
+          <div class="flow-desc">오늘 말씀 중<br>가장 와닿는 한 문장</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">3</div>
+          <div class="flow-title">묵상</div>
+          <div class="flow-desc">말씀을 통해<br>깨달은 점, 적용할 점</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">4</div>
+          <div class="flow-title">감사 (선택)</div>
+          <div class="flow-desc">오늘 감사한 것<br>안 쓰셔도 돼요</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">5</div>
+          <div class="flow-title">기도 (선택)</div>
+          <div class="flow-desc">오늘의 기도<br>안 쓰셔도 돼요</div>
+        </div>
+        <div class="flow-item">
+          <div class="flow-number">6</div>
+          <div class="flow-title">제출 버튼</div>
+          <div class="flow-desc">맨 아래<br>버튼 꾹 누르기</div>
+        </div>
+      </div>
+
+      <div class="step-detail" style="margin-top: 25px;">
+        <div class="highlight-box tip">
+          <strong>💡 (선택) 표시가 있는 칸은 안 쓰셔도 됩니다!</strong><br>
+          ① 한 문장 요약 + ② 묵상 두 개만 쓰셔도 충분해요.
+        </div>
+
+        <div class="highlight-box example" style="margin-top: 15px;">
+          <strong>📝 한 문장 요약 예시</strong><br>
+          "하나님이 천지를 창조하시니라 - 모든 것의 시작은 하나님이시다"
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 자주 묻는 질문 -->
+  <div class="section">
+    <div class="section-header green">
+      ❓ 이런 경우에는요?
+    </div>
+    <div class="content-box">
+      <div class="faq-item">
+        <div class="faq-q">"글씨가 너무 작아요"</div>
+        <div class="faq-a">
+          손가락 두 개를 화면에 대고 <strong>벌리세요</strong> (확대됩니다)<br>
+          반대로 오므리면 축소됩니다
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">"실수로 잘못 썼어요"</div>
+        <div class="faq-a">
+          괜찮아요!<br>
+          내용을 지우려면 키보드의 <strong>[←] 버튼</strong>(지우기)을 계속 누르세요<br>
+          다 지우고 다시 쓰시면 됩니다
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">"버튼이 안 눌려요"</div>
+        <div class="faq-a">
+          손가락으로 버튼 가운데를 <strong>꾹~ 1초 정도</strong> 누르세요<br>
+          살짝 터치하면 안 될 때가 있어요
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">"나눔 등록 버튼이 안 보여요"</div>
+        <div class="faq-a">
+          화면을 조금 아래로 내려보세요<br>
+          주황색 <strong>[나눔 등록]</strong> 버튼이 보일 거예요
+        </div>
+      </div>
+
+      <div class="faq-item">
+        <div class="faq-q">"인터넷이 안 돼요"</div>
+        <div class="faq-a">
+          Wi-Fi나 데이터가 꺼져 있을 수 있어요<br>
+          • 교회 Wi-Fi에 연결하시거나<br>
+          • 화면 위에서 아래로 쓸어내려 데이터 버튼을 켜세요
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 푸터 -->
+  <div class="footer">
+    <p class="main-message">🙏 "한 줄도 괜찮습니다"</p>
+    <p>묵상 나눔은 길게 쓰지 않아도 됩니다.<br>
+    "감사합니다" 한 마디도 훌륭한 묵상입니다.</p>
+    <p style="margin-top: 15px;"><strong>함께 말씀을 나누는 것 자체가 큰 은혜입니다.</strong></p>
+    <p style="margin-top: 20px; color: #718096; font-size: 14px;">
+      Reading Jesus와 함께하는 매일의 묵상<br>
+      "매일, 삶 속에서 예수님을 읽어갑니다."
+    </p>
+  </div>
+</body>
+</html>

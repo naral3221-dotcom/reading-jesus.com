@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": ".."
+		},
+		{
+			"path": "../../AGENT"
+		},
+		{
+			"path": "../../CLAUDE-TOOLKIT"
+		}
+	],
+	"settings": {
+		"liveServer.settings.multiRootWorkspaceName": "[HTML VER]Result Page Design Overview"
+	}
+}

@@ -1,0 +1,201 @@
+/*
+ * 올리브 그린 테마 백업 - v1 (2024-12-29)
+ * 명암비 5:1 이상 접근성 개선 버전
+ * 원본 위치: src/app/globals.css
+ */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+
+
+@layer base {
+  :root {
+    /* 올리브 그린 테마 - 명암비 5:1 이상 보장 */
+    --background: 60 20% 98%;
+    --foreground: 80 15% 12%;
+    --card: 60 15% 99%;
+    --card-foreground: 80 15% 12%;
+    --popover: 60 15% 99%;
+    --popover-foreground: 80 15% 12%;
+    --primary: 82 50% 30%;
+    --primary-foreground: 60 20% 98%;
+    --secondary: 60 15% 94%;
+    --secondary-foreground: 80 15% 18%;
+    --muted: 60 12% 94%;
+    --muted-foreground: 80 12% 35%;
+    --accent: 45 70% 42%;
+    --accent-foreground: 80 15% 12%;
+    --destructive: 0 72% 45%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 60 15% 85%;
+    --input: 60 15% 88%;
+    --ring: 82 50% 30%;
+
+    /* 올리브 그린 커스텀 색상 - 명암비 개선 */
+    --olive-50: 80 30% 96%;
+    --olive-100: 80 28% 91%;
+    --olive-200: 80 25% 82%;
+    --olive-300: 80 22% 62%;
+    --olive-400: 82 35% 42%;
+    --olive-500: 82 50% 30%;
+    --olive-600: 82 55% 24%;
+    --olive-700: 82 55% 18%;
+    --olive-800: 82 50% 14%;
+    --olive-900: 82 45% 10%;
+
+    /* 보조 컬러 - 명암비 개선 */
+    --warm-50: 40 40% 96%;
+    --warm-100: 40 35% 90%;
+    --warm-200: 40 30% 78%;
+    --warm-300: 42 45% 55%;
+    --warm-400: 45 55% 42%;
+    --warm-500: 45 70% 35%;
+
+    /* 차트 컬러 - 명암비 개선 */
+    --chart-1: 82 50% 32%;
+    --chart-2: 45 65% 38%;
+    --chart-3: 30 55% 38%;
+    --chart-4: 160 40% 35%;
+    --chart-5: 200 45% 40%;
+    --radius: 0.625rem;
+  }
+  .dark {
+    /* 다크모드 - 명암비 5:1 이상 보장 */
+    --background: 80 15% 8%;
+    --foreground: 60 15% 92%;
+    --card: 80 12% 12%;
+    --card-foreground: 60 15% 92%;
+    --popover: 80 12% 12%;
+    --popover-foreground: 60 15% 92%;
+    --primary: 82 45% 55%;
+    --primary-foreground: 80 15% 8%;
+    --secondary: 80 12% 18%;
+    --secondary-foreground: 60 15% 88%;
+    --muted: 80 10% 18%;
+    --muted-foreground: 60 12% 65%;
+    --accent: 45 60% 58%;
+    --accent-foreground: 80 15% 8%;
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 80 12% 25%;
+    --input: 80 12% 25%;
+    --ring: 82 45% 55%;
+    --chart-1: 82 50% 58%;
+    --chart-2: 45 65% 58%;
+    --chart-3: 30 55% 55%;
+    --chart-4: 160 45% 55%;
+    --chart-5: 200 50% 58%;
+  }
+}
+
+
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  /* 버튼 및 인터랙티브 요소 기본 트랜지션 */
+  button,
+  [role="button"],
+  a {
+    @apply transition-all duration-200;
+  }
+
+  /* 포커스 스타일 통일 - 키보드 네비게이션 지원 */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+
+  /* 입력 요소 포커스 */
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-2 ring-ring;
+  }
+}
+
+@layer utilities {
+  /* 카드 hover 효과 */
+  .card-hover {
+    @apply transition-all duration-200 hover:shadow-md hover:-translate-y-0.5;
+  }
+
+  /* 버튼 press 효과 */
+  .btn-press {
+    @apply active:scale-95 transition-transform;
+  }
+
+  /* 진행바 애니메이션 */
+  .progress-animate {
+    @apply transition-all duration-500 ease-out;
+  }
+
+  /* 페이드 인 애니메이션 */
+  .fade-in {
+    animation: fadeIn 0.3s ease-out;
+  }
+
+  /* 슬라이드 업 애니메이션 */
+  .slide-up {
+    animation: slideUp 0.3s ease-out;
+  }
+
+  /* Safe Area 패딩 */
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .safe-area-left {
+    padding-left: env(safe-area-inset-left);
+  }
+
+  .safe-area-right {
+    padding-right: env(safe-area-inset-right);
+  }
+
+  /* 스크롤바 숨기기 (모바일 친화적) */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

@@ -1,0 +1,204 @@
+'use client';
+
+import { useState } from 'react';
+import { QTDailyContent } from '@/types';
+import { ChevronDown, ChevronUp, BookOpen, MessageCircle, Heart, PenLine } from 'lucide-react';
+
+interface QTViewerProps {
+  qt: QTDailyContent;
+  showWriteButton?: boolean;
+  onWrite?: () => void;
+}
+
+export default function QTViewer({ qt, showWriteButton = false, onWrite }: QTViewerProps) {
+  const [expandedSections, setExpandedSections] = useState({
+    verses: true,
+    guide: true,
+    question: true,
+  });
+
+  const toggleSection = (section: keyof typeof expandedSections) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* 헤더 */}
+      <div className="bg-gradient-to-r from-muted to-muted/50 rounded-xl p-5 border">
+        <div className="flex items-start justify-between">
+          <div>
+            <p className="text-sm text-accent-foreground font-medium">
+              {qt.date} ({qt.dayOfWeek})
+            </p>
+            <h1 className="text-xl font-bold text-foreground mt-1">
+              {qt.title || '오늘의 QT'}
+            </h1>
+            {qt.bibleRange && (
+              <p className="text-sm text-muted-foreground mt-2 flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4" />
+                통독: {qt.bibleRange}
+              </p>
+            )}
+          </div>
+          {qt.meditation?.oneWord && (
+            <div className="bg-background rounded-lg px-3 py-2 shadow-sm border">
+              <p className="text-xs text-accent-foreground font-medium">ONE WORD</p>
+              <p className="text-lg font-bold text-accent-foreground">{qt.meditation.oneWord}</p>
+              {qt.meditation.oneWordSubtitle && (
+                <p className="text-xs text-muted-foreground">{qt.meditation.oneWordSubtitle}</p>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* 성경 본문 */}
+      {qt.verses.length > 0 && (
+        <div className="bg-card rounded-xl border overflow-hidden">
+          <button
+            onClick={() => toggleSection('verses')}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
+                <BookOpen className="w-4 h-4 text-accent" />
+              </div>
+              <div className="text-left">
+                <h2 className="font-semibold text-foreground">오늘의 말씀</h2>
+                <p className="text-sm text-muted-foreground">{qt.verseReference}</p>
+              </div>
+            </div>
+            {expandedSections.verses ? (
+              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+          {expandedSections.verses && (
+            <div className="px-4 pb-4">
+              <div className="bg-muted/50 rounded-lg p-4 space-y-3">
+                {qt.verses.map((verse) => (
+                  <div key={verse.verse} className="flex gap-3">
+                    <span className="text-sm font-bold text-accent shrink-0 w-6">
+                      {verse.verse}
+                    </span>
+                    <p className="text-foreground leading-relaxed">{verse.content}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 묵상 길잡이 */}
+      {qt.meditation?.meditationGuide && (
+        <div className="bg-card rounded-xl border overflow-hidden">
+          <button
+            onClick={() => toggleSection('guide')}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
+                <MessageCircle className="w-4 h-4 text-accent" />
+              </div>
+              <h2 className="font-semibold text-foreground">묵상 길잡이</h2>
+            </div>
+            {expandedSections.guide ? (
+              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+          {expandedSections.guide && (
+            <div className="px-4 pb-4">
+              <p className="text-foreground leading-relaxed whitespace-pre-wrap">
+                {qt.meditation.meditationGuide}
+              </p>
+
+              {/* 예수님 연결 */}
+              {qt.meditation.jesusConnection && (
+                <div className="mt-4 p-4 bg-accent/10 rounded-lg border">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Heart className="w-4 h-4 text-accent" />
+                    <span className="text-sm font-semibold text-accent-foreground">예수님 연결</span>
+                  </div>
+                  <p className="text-sm text-foreground">{qt.meditation.jesusConnection}</p>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 묵상 질문 */}
+      {qt.meditation?.meditationQuestions && qt.meditation.meditationQuestions.length > 0 && (
+        <div className="bg-card rounded-xl border overflow-hidden">
+          <button
+            onClick={() => toggleSection('question')}
+            className="w-full flex items-center justify-between p-4 hover:bg-muted/50 transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-accent/10 rounded-lg flex items-center justify-center">
+                <span className="text-accent font-bold">?</span>
+              </div>
+              <h2 className="font-semibold text-foreground">
+                묵상 질문
+                {qt.meditation.meditationQuestions.length > 1 && (
+                  <span className="ml-1 text-sm font-normal text-accent">
+                    ({qt.meditation.meditationQuestions.length}개)
+                  </span>
+                )}
+              </h2>
+            </div>
+            {expandedSections.question ? (
+              <ChevronUp className="w-5 h-5 text-muted-foreground" />
+            ) : (
+              <ChevronDown className="w-5 h-5 text-muted-foreground" />
+            )}
+          </button>
+          {expandedSections.question && (
+            <div className="px-4 pb-4 space-y-3">
+              {qt.meditation.meditationQuestions.map((question, index) => (
+                <div key={index} className="bg-accent/10 rounded-lg p-4 border-l-4 border-accent">
+                  {qt.meditation!.meditationQuestions.length > 1 && (
+                    <span className="text-xs font-semibold text-accent mb-1 block">
+                      질문 {index + 1}
+                    </span>
+                  )}
+                  <p className="text-foreground italic">{question}</p>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* 오늘의 기도 */}
+      {qt.meditation?.prayer && (
+        <div className="bg-gradient-to-r from-muted to-muted/50 rounded-xl p-4 border">
+          <h3 className="font-semibold text-accent-foreground mb-2 flex items-center gap-2">
+            🙏 오늘의 기도
+          </h3>
+          <p className="text-foreground text-sm italic leading-relaxed">
+            {qt.meditation.prayer}
+          </p>
+        </div>
+      )}
+
+      {/* 묵상 작성 버튼 */}
+      {showWriteButton && onWrite && (
+        <button
+          onClick={onWrite}
+          className="w-full py-4 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-primary/25"
+        >
+          <PenLine className="w-5 h-5" />
+          QT 작성하기
+        </button>
+      )}
+    </div>
+  );
+}

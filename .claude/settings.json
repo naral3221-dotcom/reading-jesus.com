@@ -1,0 +1,32 @@
+{
+  "project": {
+    "name": "reading-jesus",
+    "description": "365일 성경 통독 앱",
+    "framework": "Next.js 14 (App Router)",
+    "language": "TypeScript",
+    "styling": "Tailwind CSS + shadcn/ui",
+    "database": "Supabase"
+  },
+  "rules": {
+    "always_read_before_edit": true,
+    "prefer_tailwind_over_css": true,
+    "use_css_variables_for_colors": true,
+    "component_self_contained": true,
+    "no_global_styles": true
+  },
+  "paths": {
+    "pages": "src/app/(main)/",
+    "components": "src/components/",
+    "ui": "src/components/ui/",
+    "lib": "src/lib/",
+    "types": "src/types/",
+    "data": "src/data/",
+    "migrations": "supabase/migrations/"
+  },
+  "conventions": {
+    "file_naming": "kebab-case for files, PascalCase for components",
+    "export_style": "default export for pages, named export for components",
+    "state_management": "React useState + Context API",
+    "data_fetching": "Supabase client in useEffect"
+  }
+}
