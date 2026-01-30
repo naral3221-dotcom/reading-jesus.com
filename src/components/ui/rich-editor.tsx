@@ -419,43 +419,17 @@ export function RichViewerWithEmbed({ content, className }: { content: string; c
   );
 }
 
-// 유튜브 임베드 컴포넌트
+// 유튜브 임베드 컴포넌트 (바로 영상 표시)
 function YoutubeEmbed({ videoId }: { videoId: string }) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const thumbnailUrl = `https://img.youtube.com/vi/${videoId}/mqdefault.jpg`;
-
-  if (isPlaying) {
-    return (
-      <div className="aspect-video rounded-lg overflow-hidden">
-        <iframe
-          src={`https://www.youtube.com/embed/${videoId}?autoplay=1`}
-          className="w-full h-full"
-          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-        />
-      </div>
-    );
-  }
-
   return (
-    <button
-      onClick={() => setIsPlaying(true)}
-      className="relative w-full aspect-video rounded-lg overflow-hidden bg-black cursor-pointer group"
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img
-        src={thumbnailUrl}
-        alt="YouTube video"
-        className="w-full h-full object-cover"
+    <div className="aspect-video rounded-lg overflow-hidden">
+      <iframe
+        src={`https://www.youtube.com/embed/${videoId}`}
+        className="w-full h-full"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowFullScreen
       />
-      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-black/30 transition-colors">
-        <div className="w-14 h-14 rounded-full bg-red-600 flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform">
-          <svg className="w-6 h-6 text-white ml-1" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M8 5v14l11-7z" />
-          </svg>
-        </div>
-      </div>
-    </button>
+    </div>
   );
 }
 

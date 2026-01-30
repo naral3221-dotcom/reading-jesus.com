@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { MeditationEditor, SelectedVerse, MeditationSubmitData } from './MeditationEditor';
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 import { VerseCardGenerator } from '@/components/church/VerseCardGenerator';
 import { cn } from '@/lib/utils';
 import {
@@ -33,6 +34,9 @@ interface MeditationPanelProps {
   showDayPicker?: boolean;
   showAnonymous?: boolean;
   defaultAnonymous?: boolean;
+  showVisibility?: boolean;
+  defaultVisibility?: ContentVisibility;
+  allowedVisibilityOptions?: ContentVisibility[];
   initialAuthorName?: string;
   churchName?: string; // 카드 생성용
 
@@ -56,6 +60,9 @@ export function MeditationPanel({
   showDayPicker = false,
   showAnonymous = false,
   defaultAnonymous = false,
+  showVisibility = false,
+  defaultVisibility = 'public',
+  allowedVisibilityOptions = ['private', 'church', 'public'],
   initialAuthorName = '',
   churchName,
   isSubmitting = false,
@@ -252,6 +259,9 @@ export function MeditationPanel({
                   identifier={identifier}
                   showAnonymous={showAnonymous}
                   defaultAnonymous={defaultAnonymous}
+                  showVisibility={showVisibility}
+                  defaultVisibility={defaultVisibility}
+                  allowedVisibilityOptions={allowedVisibilityOptions}
                   initialAuthorName={initialAuthorName}
                   isSubmitting={isSubmitting}
                   minHeight="150px"
@@ -362,6 +372,9 @@ export function MeditationPanel({
               identifier={identifier}
               showAnonymous={showAnonymous}
               defaultAnonymous={defaultAnonymous}
+              showVisibility={showVisibility}
+              defaultVisibility={defaultVisibility}
+              allowedVisibilityOptions={allowedVisibilityOptions}
               initialAuthorName={initialAuthorName}
               isSubmitting={isSubmitting}
               minHeight="300px"

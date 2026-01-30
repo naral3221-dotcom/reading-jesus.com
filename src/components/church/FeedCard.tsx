@@ -18,6 +18,7 @@ export interface FeedItem {
   type: FeedItemType;
   authorName: string;
   isAnonymous: boolean;
+  visibility?: string;
   createdAt: string;
   dayNumber?: number | null;
   bibleRange?: string | null;

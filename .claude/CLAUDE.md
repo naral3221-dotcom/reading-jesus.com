@@ -212,3 +212,39 @@ const { data, isLoading } = useChurchByCode(churchCode);
 | 격려 | `useSendEncouragement`, `useReceivedEncouragements` | useEncouragement.ts |
 
 **전체 목록과 사용법은 [ARCHITECTURE_GUIDE.md](./ARCHITECTURE_GUIDE.md) 참조**
+
+---
+
+## 🎨 디자인 시스템 (필수) - 색상 작업 전 읽기!
+
+> **⚠️ 색상/UI 작업 전 반드시 읽어야 함:**
+> **[.claude/DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)** - 브랜드 컬러 & 디자인 가이드
+
+### 브랜드 컬러 요약
+
+| 토큰 | 색상 | HEX | 용도 |
+|------|------|-----|------|
+| `--primary` | Warm Sage | `#7A8F6E` | 메인 CTA, 버튼, 진행바 |
+| `--accent-warm` | Warm Gold | `#D4A574` | 뱃지, 성취, 좋아요 |
+| `--accent-cool` | Soft Blue | `#7B9AAB` | 링크, 정보 |
+
+### 빠른 참조
+
+```tsx
+// ✅ 올바른 사용
+<Button className="bg-primary text-primary-foreground">
+<Badge className="bg-accent-warm text-white">
+<Progress className="bg-primary" />
+
+// ❌ 피해야 할 사용
+<Button className="bg-slate-900">  // 브랜드 컬러 사용
+<div className="text-blue-500">    // 디자인 토큰 사용
+```
+
+### 테마별 적용
+
+- **Light Mode**: 따뜻한 오프화이트 배경 + Warm Sage Primary
+- **Dark Mode**: 따뜻한 다크 배경 + 밝은 Sage Primary
+- **Beige/Sepia**: 고서 느낌 배경 + 동일한 Primary
+
+**전체 팔레트와 사용법은 [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) 참조**

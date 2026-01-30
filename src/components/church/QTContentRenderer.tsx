@@ -72,12 +72,12 @@ export function QTContentRenderer({ data, qtContent, className }: QTContentRende
             const question = meditationQuestions[index] || (index === 0 ? data.meditationQuestion : null);
 
             return (
-              <div key={index} className="rounded-lg border border-border bg-accent/10 p-3">
+              <div key={index} className="rounded-lg border border-border bg-primary/10 p-3">
                 {/* 질문 표시 */}
                 {question && (
                   <div className="mb-2 pb-2 border-b border-border">
                     {meditationQuestions.length > 1 && (
-                      <span className="text-xs font-semibold text-accent-foreground mb-1 block">
+                      <span className="text-xs font-semibold text-primary mb-1 block">
                         질문 {index + 1}
                       </span>
                     )}
@@ -85,8 +85,8 @@ export function QTContentRenderer({ data, qtContent, className }: QTContentRende
                   </div>
                 )}
                 {/* 답변 표시 */}
-                <p className="text-xs font-medium text-accent-foreground flex items-center gap-1.5 mb-1.5">
-                  <span className="w-5 h-5 bg-accent text-accent-foreground rounded flex items-center justify-center text-[10px] font-bold">A</span>
+                <p className="text-xs font-medium text-primary flex items-center gap-1.5 mb-1.5">
+                  <span className="w-5 h-5 bg-primary text-primary-foreground rounded flex items-center justify-center text-[10px] font-bold">A</span>
                   {meditationQuestions.length > 1 ? `답변 ${index + 1}` : '나의 답변'}
                 </p>
                 <p className="text-sm whitespace-pre-wrap text-foreground">{answer}</p>
@@ -109,9 +109,9 @@ export function QTContentRenderer({ data, qtContent, className }: QTContentRende
 
       {/* 나의 기도 */}
       {data.myPrayer && (
-        <div className="rounded-lg border border-border bg-accent/10 p-3">
-          <p className="text-xs font-medium text-accent-foreground flex items-center gap-1.5 mb-1.5">
-            <span className="w-5 h-5 bg-accent text-accent-foreground rounded flex items-center justify-center text-[10px]">🙏</span>
+        <div className="rounded-lg border border-border bg-primary/10 p-3">
+          <p className="text-xs font-medium text-primary flex items-center gap-1.5 mb-1.5">
+            <span className="w-5 h-5 bg-primary text-primary-foreground rounded flex items-center justify-center text-[10px]">🙏</span>
             나의 기도
           </p>
           <p className="text-sm whitespace-pre-wrap italic text-foreground">{data.myPrayer}</p>
@@ -120,9 +120,9 @@ export function QTContentRenderer({ data, qtContent, className }: QTContentRende
 
       {/* 하루 점검 */}
       {data.dayReview && (
-        <div className="rounded-lg border border-border bg-gradient-to-br from-accent/5 to-muted/50 p-3">
-          <p className="text-xs font-medium text-accent-foreground flex items-center gap-1.5 mb-1.5">
-            <span className="w-5 h-5 bg-gradient-to-br from-accent to-primary text-accent-foreground rounded flex items-center justify-center text-[10px]">✦</span>
+        <div className="rounded-lg border border-border bg-gradient-to-br from-primary/5 to-muted/50 p-3">
+          <p className="text-xs font-medium text-primary flex items-center gap-1.5 mb-1.5">
+            <span className="w-5 h-5 bg-gradient-to-br from-primary to-primary-dark text-primary-foreground rounded flex items-center justify-center text-[10px]">✦</span>
             하루 점검
           </p>
           <p className="text-sm whitespace-pre-wrap text-foreground">{data.dayReview}</p>

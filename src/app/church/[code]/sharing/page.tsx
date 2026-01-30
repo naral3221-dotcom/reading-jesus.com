@@ -38,14 +38,17 @@ import {
   Trash2,
   Filter,
   X,
+  Headphones,
 } from 'lucide-react';
 import { formatRelativeTime, getInitials, getAvatarColor, getTodayDateString } from '@/lib/date-utils';
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client';
 import { ChurchLayout } from '@/components/church/ChurchLayout';
 import { useToast } from '@/components/ui/toast';
+import { VisibilitySelector } from '@/components/ui/visibility-selector';
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 import { useAutoDraft, formatDraftTime } from '@/hooks/useAutoDraft';
 import { QTDailyContent } from '@/types';
-import { loadQTData, getQTByDate } from '@/lib/qt-content';
+import { loadQTData, getQTByDate, getDefaultQTMonth, getAvailableQTMonths, type QTMonthInfo } from '@/lib/qt-content';
 import { FeedCard, FeedItem, FeedItemType } from '@/components/church/FeedCard';
 import { InstagramStyleFeed } from '@/components/church/InstagramStyleFeed';
 import { EditPostDialog, EditPostData } from '@/components/church/EditPostDialog';
@@ -54,6 +57,7 @@ import readingPlan from '@/data/reading_plan.json';
 import { LayoutGrid, Play } from 'lucide-react';
 import { ReadingDayPicker, findReadingByDay } from '@/components/church/ReadingDayPicker';
 import { QTContentRenderer } from '@/components/church/QTContentRenderer';
+import { UnifiedQTWriteForm, createInitialQTFormData, type UnifiedQTFormData, MeditationAudioPlayer } from '@/components/qt';
 
 const RichViewerWithEmbed = dynamic(
   () => import('@/components/ui/rich-editor').then(mod => mod.RichViewerWithEmbed),
@@ -70,6 +74,13 @@ function isEmptyContent(html: string): boolean {
   if (!html) return true;
   const text = html.replace(/<[^>]*>/g, '').trim();
   return text.length === 0;
+}
+
+// Supabase Storage URL 생성 헬퍼
+function getMeditationAudioUrl(date: string): string {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!supabaseUrl) return '';
+  return `${supabaseUrl}/storage/v1/object/public/meditations/${date}-meditation.wav`;
 }
 
 interface ChurchInfo {
@@ -125,6 +136,10 @@ export default function ChurchSharingPage() {
   const [qtContentList, setQtContentList] = useState<QTDailyContent[]>([]);
   const [selectedQtDate, setSelectedQtDate] = useState<string>('');
   const [currentQtContent, setCurrentQtContent] = useState<QTDailyContent | null>(null);
+  // 월 선택 상태 (QT 작성 다이얼로그용)
+  const [availableMonths, setAvailableMonths] = useState<QTMonthInfo[]>([]);
+  const [selectedQtYear, setSelectedQtYear] = useState<number>(2026);
+  const [selectedQtMonth, setSelectedQtMonth] = useState<number>(1);
 
   // 작성 다이얼로그 상태
   const [writeType, setWriteType] = useState<'meditation' | 'qt'>('meditation');
@@ -138,23 +153,23 @@ export default function ChurchSharingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [visibility, setVisibility] = useState<ContentVisibility>('church');
 
   // QT 작성 상태
-  const [qtFormData, setQtFormData] = useState({
-    authorName: '',
-    mySentence: '',
-    meditationAnswers: [] as string[], // 다중 질문 답변 지원
-    gratitude: '',
-    myPrayer: '',
-    dayReview: '',
-  });
+  const [qtAuthorName, setQtAuthorName] = useState('');
+  const [qtFormData, setQtFormData] = useState<UnifiedQTFormData>(createInitialQTFormData());
   const [qtSubmitting, setQtSubmitting] = useState(false);
   const [qtIsAnonymous, setQtIsAnonymous] = useState(false);
+  const [qtVisibility, setQtVisibility] = useState<ContentVisibility>('church');
   const [expandedSections, setExpandedSections] = useState({
     verses: true,
     guide: true,
     question: true,
   });
+
+  // 오디오 상태
+  const [audioUrl, setAudioUrl] = useState<string | null>(null);
+  const [audioAvailable, setAudioAvailable] = useState(false);
 
   // 상세 보기 상태
   const [selectedItem, setSelectedItem] = useState<FeedItem | null>(null);
@@ -230,13 +245,13 @@ export default function ChurchSharingPage() {
           profileData = profile;
           setUserProfile(profile);
           setGuestName(profile.nickname);
-          setQtFormData(prev => ({ ...prev, authorName: profile.nickname }));
+          setQtAuthorName(profile.nickname);
         }
       } else {
         const savedName = localStorage.getItem('guest_name');
         if (savedName) {
           setGuestName(savedName);
-          setQtFormData(prev => ({ ...prev, authorName: savedName }));
+          setQtAuthorName(savedName);
         }
       }
 
@@ -264,10 +279,17 @@ export default function ChurchSharingPage() {
     loadChurchAndUser();
   }, [churchCode]);
 
-  // QT 컨텐츠 로드
+  // QT 컨텐츠 로드 (초기화 - 오늘 날짜 기준 월)
   useEffect(() => {
     const loadQT = async () => {
-      const data = await loadQTData();
+      const months = getAvailableQTMonths();
+      setAvailableMonths(months);
+
+      const defaultMonth = getDefaultQTMonth();
+      setSelectedQtYear(defaultMonth.year);
+      setSelectedQtMonth(defaultMonth.month);
+
+      const data = await loadQTData(defaultMonth.year, defaultMonth.month);
       setQtContentList(data);
 
       const today = getTodayDateString();
@@ -282,6 +304,23 @@ export default function ChurchSharingPage() {
     };
     loadQT();
   }, []);
+
+  // 월 변경 시 해당 월의 QT 데이터 로드
+  const handleQtMonthChange = async (year: number, month: number) => {
+    setSelectedQtYear(year);
+    setSelectedQtMonth(month);
+
+    const data = await loadQTData(year, month);
+    setQtContentList(data);
+
+    if (data.length > 0) {
+      setSelectedQtDate(data[0].date);
+      setCurrentQtContent(data[0]);
+    } else {
+      setSelectedQtDate('');
+      setCurrentQtContent(null);
+    }
+  };
 
   // URL 파라미터로 QT 작성 다이얼로그 열기 (홈에서 QT 작성하기 링크)
   useEffect(() => {
@@ -300,6 +339,32 @@ export default function ChurchSharingPage() {
       setCurrentQtContent(qt || null);
     }
   }, [selectedQtDate, qtContentList]);
+
+  // 오디오 가용성 체크
+  useEffect(() => {
+    if (currentQtContent?.date) {
+      const url = getMeditationAudioUrl(currentQtContent.date);
+      if (url) {
+        fetch(url, { method: 'HEAD' })
+          .then((res) => {
+            if (res.ok) {
+              setAudioUrl(url);
+              setAudioAvailable(true);
+            } else {
+              setAudioUrl(null);
+              setAudioAvailable(false);
+            }
+          })
+          .catch(() => {
+            setAudioUrl(null);
+            setAudioAvailable(false);
+          });
+      }
+    } else {
+      setAudioUrl(null);
+      setAudioAvailable(false);
+    }
+  }, [currentQtContent?.date]);
 
   // 피드 데이터 로드
   const loadFeed = useCallback(async (reset = false) => {
@@ -357,6 +422,7 @@ export default function ChurchSharingPage() {
             type: 'meditation' as FeedItemType,
             authorName: m.guest_name,
             isAnonymous: m.is_anonymous || false,
+            visibility: m.visibility || 'church',
             createdAt: m.created_at,
             dayNumber: m.day_number,
             bibleRange: m.bible_range,
@@ -409,6 +475,7 @@ export default function ChurchSharingPage() {
               type: 'qt' as FeedItemType,
               authorName: p.author_name,
               isAnonymous: p.is_anonymous || false,
+              visibility: p.visibility || 'church',
               createdAt: p.created_at,
               dayNumber: p.day_number,
               qtDate: p.qt_date,
@@ -724,14 +791,8 @@ export default function ChurchSharingPage() {
         setShowDraftRestore(true);
       }
     } else {
-      setQtFormData({
-        authorName: isRegisteredMember && userProfile ? userProfile.nickname : guestName,
-        mySentence: '',
-        meditationAnswers: [],
-        gratitude: '',
-        myPrayer: '',
-        dayReview: '',
-      });
+      setQtAuthorName(isRegisteredMember && userProfile ? userProfile.nickname : guestName);
+      setQtFormData(createInitialQTFormData());
       setQtIsAnonymous(false);
     }
     setWriteDialogOpen(true);
@@ -792,6 +853,7 @@ export default function ChurchSharingPage() {
         content: content,
         bible_range: bibleRange.trim() || null,
         is_anonymous: isAnonymous,
+        visibility: visibility,
         day_number: selectedDayNumber,
       };
 
@@ -828,13 +890,13 @@ export default function ChurchSharingPage() {
   const handleSubmitQt = async () => {
     if (!church || !currentQtContent) return;
 
-    if (!qtFormData.authorName.trim()) {
+    if (!qtAuthorName.trim()) {
       toast({ variant: 'error', title: '이름을 입력해주세요' });
       return;
     }
 
     const hasAnswers = qtFormData.meditationAnswers.some(a => a.trim());
-    const hasContent = qtFormData.mySentence || hasAnswers ||
+    const hasContent = qtFormData.oneWord || hasAnswers ||
       qtFormData.gratitude || qtFormData.myPrayer || qtFormData.dayReview;
 
     if (!hasContent) {
@@ -857,16 +919,18 @@ export default function ChurchSharingPage() {
 
       const insertData = {
         church_id: church.id,
-        author_name: qtFormData.authorName.trim(),
+        author_name: qtAuthorName.trim(),
         qt_date: selectedQtDate,
         day_number: matchingDay?.day || null,
-        my_sentence: qtFormData.mySentence.trim() || null,
+        bible_range: currentQtContent?.bibleRange || null, // 통독 일정 저장
+        my_sentence: qtFormData.oneWord.trim() || null,
         meditation_answer: meditationAnswerJson,
         gratitude: qtFormData.gratitude.trim() || null,
         my_prayer: qtFormData.myPrayer.trim() || null,
         day_review: qtFormData.dayReview.trim() || null,
         user_id: currentUser?.id || null,
         is_anonymous: qtIsAnonymous,
+        visibility: qtVisibility,
       };
 
       const { error } = await supabase
@@ -894,7 +958,7 @@ export default function ChurchSharingPage() {
       }
 
       if (!isRegisteredMember) {
-        localStorage.setItem('guest_name', qtFormData.authorName.trim());
+        localStorage.setItem('guest_name', qtAuthorName.trim());
       }
 
       toast({ variant: 'success', title: 'QT 나눔이 등록되었습니다' });
@@ -949,6 +1013,7 @@ export default function ChurchSharingPage() {
             day_number: data.dayNumber,
             bible_range: newBibleRange,
             is_anonymous: data.isAnonymous,
+            visibility: data.visibility,
           })
           .eq('id', data.id);
 
@@ -968,6 +1033,7 @@ export default function ChurchSharingPage() {
             day_number: data.dayNumber,
             qt_date: newQtDate,
             is_anonymous: data.isAnonymous,
+            visibility: data.visibility,
           })
           .eq('id', data.id);
 
@@ -1216,6 +1282,7 @@ export default function ChurchSharingPage() {
                     onEdit={handleOpenEdit}
                     onDelete={handleOpenDeleteConfirm}
                     onViewDetail={handleViewDetail}
+                    onAuthorClick={(authorId) => router.push(`/profile/${authorId}`)}
                   />
                 ))}
 
@@ -1376,18 +1443,27 @@ export default function ChurchSharingPage() {
                   />
                 </div>
 
-                <div className="flex items-center gap-2 pt-2">
-                  <input
-                    type="checkbox"
-                    id="anonymous-comment"
-                    checked={isAnonymous}
-                    onChange={(e) => setIsAnonymous(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                {/* 공개 범위 및 익명 설정 */}
+                <div className="pt-4 space-y-3 border-t">
+                  <VisibilitySelector
+                    value={visibility}
+                    onChange={setVisibility}
+                    allowedOptions={['private', 'church', 'public']}
+                    variant="inline"
                   />
-                  <label htmlFor="anonymous-comment" className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" />
-                    익명으로 작성하기
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="anonymous-comment"
+                      checked={isAnonymous}
+                      onChange={(e) => setIsAnonymous(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <label htmlFor="anonymous-comment" className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5" />
+                      익명으로 작성하기
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -1411,16 +1487,38 @@ export default function ChurchSharingPage() {
           ) : (
             // QT 작성 폼
             <div className="space-y-6 py-4">
-              {/* 날짜 선택 */}
+              {/* 월 선택 */}
               <div className="space-y-2">
                 <label className="text-sm font-medium flex items-center gap-2">
                   <Calendar className="w-4 h-4" />
+                  월 선택
+                </label>
+                <select
+                  value={`${selectedQtYear}-${selectedQtMonth}`}
+                  onChange={(e) => {
+                    const [year, month] = e.target.value.split('-').map(Number);
+                    handleQtMonthChange(year, month);
+                  }}
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-background"
+                >
+                  {availableMonths.map((m) => (
+                    <option key={`${m.year}-${m.month}`} value={`${m.year}-${m.month}`}>
+                      {m.displayName}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* QT 날짜 선택 */}
+              <div className="space-y-2">
+                <label className="text-sm font-medium flex items-center gap-2">
+                  <BookOpen className="w-4 h-4" />
                   QT 날짜 선택
                 </label>
                 <select
                   value={selectedQtDate}
                   onChange={(e) => setSelectedQtDate(e.target.value)}
-                  className="w-full px-3 py-2 border rounded-lg text-sm"
+                  className="w-full px-3 py-2 border rounded-lg text-sm bg-background"
                 >
                   {qtContentList.map((qt) => (
                     <option key={qt.date} value={qt.date}>
@@ -1499,7 +1597,21 @@ export default function ChurchSharingPage() {
                         {expandedSections.guide ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                       </button>
                       {expandedSections.guide && (
-                        <div className="px-3 pb-3">
+                        <div className="px-3 pb-3 space-y-3">
+                          {/* 오디오 플레이어 */}
+                          {audioAvailable && audioUrl && (
+                            <div>
+                              <div className="flex items-center gap-2 mb-2">
+                                <Headphones className="w-4 h-4 text-primary" />
+                                <span className="text-sm font-medium text-muted-foreground">묵상 길잡이 듣기</span>
+                              </div>
+                              <MeditationAudioPlayer
+                                audioUrl={audioUrl}
+                                title={`${currentQtContent.title} - 묵상 길잡이`}
+                                compact
+                              />
+                            </div>
+                          )}
                           <p className="text-sm text-gray-700 leading-relaxed">
                             {currentQtContent.meditation.meditationGuide}
                           </p>
@@ -1537,8 +1649,8 @@ export default function ChurchSharingPage() {
                     </div>
                   ) : (
                     <Input
-                      value={qtFormData.authorName}
-                      onChange={(e) => setQtFormData(prev => ({ ...prev, authorName: e.target.value }))}
+                      value={qtAuthorName}
+                      onChange={(e) => setQtAuthorName(e.target.value)}
                       placeholder="이름을 입력하세요"
                       maxLength={20}
                     />
@@ -1553,8 +1665,8 @@ export default function ChurchSharingPage() {
                       내 말로 한 문장
                     </label>
                     <Textarea
-                      value={qtFormData.mySentence}
-                      onChange={(e) => setQtFormData(prev => ({ ...prev, mySentence: e.target.value }))}
+                      value={qtFormData.oneWord}
+                      onChange={(e) => setQtFormData(prev => ({ ...prev, oneWord: e.target.value }))}
                       placeholder="오늘 말씀을 나의 말로 요약해 보세요"
                       rows={2}
                       className="resize-none"
@@ -1648,19 +1760,27 @@ export default function ChurchSharingPage() {
                   </div>
                 </div>
 
-                {/* 익명 체크박스 */}
-                <div className="flex items-center gap-2 pt-4 mt-4 border-t">
-                  <input
-                    type="checkbox"
-                    id="anonymous-qt"
-                    checked={qtIsAnonymous}
-                    onChange={(e) => setQtIsAnonymous(e.target.checked)}
-                    className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent"
+                {/* 공개 범위 및 익명 설정 */}
+                <div className="pt-4 mt-4 border-t space-y-3">
+                  <VisibilitySelector
+                    value={qtVisibility}
+                    onChange={setQtVisibility}
+                    allowedOptions={['private', 'church', 'public']}
+                    variant="inline"
                   />
-                  <label htmlFor="anonymous-qt" className="text-sm text-muted-foreground flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" />
-                    익명으로 작성하기
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="anonymous-qt"
+                      checked={qtIsAnonymous}
+                      onChange={(e) => setQtIsAnonymous(e.target.checked)}
+                      className="w-4 h-4 rounded border-gray-300 text-accent focus:ring-accent"
+                    />
+                    <label htmlFor="anonymous-qt" className="text-sm text-muted-foreground flex items-center gap-1">
+                      <Lock className="w-3.5 h-3.5" />
+                      익명으로 작성하기
+                    </label>
+                  </div>
                 </div>
               </div>
 
@@ -1670,7 +1790,7 @@ export default function ChurchSharingPage() {
                 </Button>
                 <Button
                   onClick={handleSubmitQt}
-                  disabled={qtSubmitting || !qtFormData.authorName.trim()}
+                  disabled={qtSubmitting || !qtAuthorName.trim()}
                   className="bg-primary hover:bg-primary"
                 >
                   {qtSubmitting ? (
@@ -1908,7 +2028,7 @@ export default function ChurchSharingPage() {
                         <span className="text-white font-semibold text-sm">{initials}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-slate-800">{displayName}</p>
+                        <p className="text-sm font-semibold text-foreground">{displayName}</p>
                         <p className="text-xs text-muted-foreground">{formatRelativeTime(selectedItem.createdAt)}</p>
                       </div>
                     </div>

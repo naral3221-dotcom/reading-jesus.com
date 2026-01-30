@@ -26,6 +26,7 @@ export class CreateComment {
         dayNumber: input.dayNumber,
         content: input.content,
         isAnonymous: input.isAnonymous ?? false,
+        visibility: input.visibility ?? 'group',
         likesCount: 0,
         repliesCount: 0,
         isPinned: false,

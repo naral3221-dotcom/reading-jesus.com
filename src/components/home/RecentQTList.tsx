@@ -8,6 +8,14 @@ import { PenLine, ChevronRight, BookOpen } from 'lucide-react';
 import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client';
+import readingPlan from '@/data/reading_plan.json';
+import { ReadingPlan } from '@/types';
+
+// day 번호로 날짜 조회
+function getDateByDay(dayNumber: number): string | null {
+  const plan = (readingPlan as ReadingPlan[]).find(p => p.day === dayNumber);
+  return plan?.date || null;
+}
 
 interface QTPost {
   id: string;
@@ -123,8 +131,10 @@ export function RecentQTList({ userId }: RecentQTListProps) {
         </div>
       </CardHeader>
       <CardContent className="space-y-2">
-        {posts.map((post) => (
-          <Link key={post.id} href={post.day_number ? `/qt/${post.day_number}` : '/qt'}>
+        {posts.map((post) => {
+          const qtDate = post.day_number ? getDateByDay(post.day_number) : null;
+          return (
+          <Link key={post.id} href={qtDate ? `/qt/${qtDate}` : '/qt'}>
             <div className="p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer">
               <div className="flex items-center justify-between mb-1">
                 <span className="text-xs font-medium text-primary">
@@ -139,7 +149,8 @@ export function RecentQTList({ userId }: RecentQTListProps) {
               </p>
             </div>
           </Link>
-        ))}
+          );
+        })}
       </CardContent>
     </Card>
   );

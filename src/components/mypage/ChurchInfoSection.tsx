@@ -2,9 +2,10 @@
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Church, ExternalLink, Plus, UserMinus, UserCheck } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { Church, ExternalLink, Plus, UserMinus, UserCheck, Flame } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import type { Church as ChurchType } from '@/types';
+import type { Church as ChurchType, ActivityStats } from '@/types';
 
 interface ChurchInfoSectionProps {
   // 메인 컨텍스트: 등록된 교회 표시
@@ -17,6 +18,8 @@ interface ChurchInfoSectionProps {
   isRegisteredMember?: boolean;
   isLoggedIn?: boolean;
   onRegisterMember?: () => void;
+  // 교회 활동 통계 (통합 표시용)
+  churchActivity?: ActivityStats | null;
 }
 
 export function ChurchInfoSection({
@@ -28,6 +31,7 @@ export function ChurchInfoSection({
   isRegisteredMember = false,
   isLoggedIn = false,
   onRegisterMember,
+  churchActivity,
 }: ChurchInfoSectionProps) {
   const router = useRouter();
 
@@ -106,6 +110,29 @@ export function ChurchInfoSection({
                 <ExternalLink className="w-4 h-4" />
               </Button>
             </div>
+
+            {/* 교회 활동 진행률 (통합) */}
+            {churchActivity && (
+              <div className="space-y-2 pt-2 border-t">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted-foreground">
+                    {churchActivity.completedDays}일 / {churchActivity.totalDays}일
+                  </span>
+                  <div className="flex items-center gap-2">
+                    {churchActivity.currentStreak > 0 && (
+                      <div className="flex items-center gap-1 text-accent-warm">
+                        <Flame className="w-3.5 h-3.5" />
+                        <span className="text-xs font-medium">{churchActivity.currentStreak}일</span>
+                      </div>
+                    )}
+                    <span className="text-xs font-medium text-primary">
+                      {churchActivity.progressPercentage}%
+                    </span>
+                  </div>
+                </div>
+                <Progress value={churchActivity.progressPercentage} className="h-2" />
+              </div>
+            )}
 
             <div className="flex gap-2">
               <Button

@@ -122,9 +122,14 @@ export default function ChurchQTDetailPage() {
 
   useEffect(() => {
     async function fetchData() {
+      // URL의 date에서 년/월 파싱
+      const [yearStr, monthStr] = date.split('-');
+      const year = parseInt(yearStr, 10);
+      const month = parseInt(monthStr, 10);
+
       const [qtData, allData] = await Promise.all([
         getQTByDate(date),
-        loadQTData(),
+        loadQTData(year, month),
       ]);
       setQt(qtData);
       setAllQTs(allData);
@@ -295,8 +300,8 @@ export default function ChurchQTDetailPage() {
     return (
       <SplitViewProvider>
         <ChurchLayout churchCode={churchCode}>
-          <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-            <Loader2 className="w-8 h-8 animate-spin text-accent" />
+          <div className="min-h-screen bg-background flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
           </div>
         </ChurchLayout>
       </SplitViewProvider>
@@ -307,11 +312,11 @@ export default function ChurchQTDetailPage() {
     return (
       <SplitViewProvider>
         <ChurchLayout churchCode={churchCode}>
-          <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
-            <p className="text-gray-500 mb-4">해당 날짜의 QT를 찾을 수 없습니다.</p>
+          <div className="min-h-screen bg-background flex flex-col items-center justify-center p-4">
+            <p className="text-muted-foreground mb-4">해당 날짜의 QT를 찾을 수 없습니다.</p>
             <Link
               href={`/church/${churchCode}/qt`}
-              className="text-accent font-medium hover:underline"
+              className="text-primary font-medium hover:underline"
             >
               목록으로 돌아가기
             </Link>
@@ -324,13 +329,13 @@ export default function ChurchQTDetailPage() {
   return (
     <SplitViewProvider>
       <ChurchLayout churchCode={churchCode}>
-        <div className="min-h-screen bg-gray-50">
+        <div className="min-h-screen bg-background">
       {/* 헤더 */}
-      <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
+      <div className="bg-card border-b border-border sticky top-0 z-10">
         <div className="max-w-lg mx-auto px-4 py-3 flex items-center justify-between">
           <Link
             href={`/church/${churchCode}/qt`}
-            className="flex items-center gap-1 text-gray-600 hover:text-gray-900"
+            className="flex items-center gap-1 text-muted-foreground hover:text-foreground"
           >
             <ArrowLeft className="w-5 h-5" />
             <span className="text-sm">목록</span>
@@ -340,30 +345,30 @@ export default function ChurchQTDetailPage() {
             {prevQT ? (
               <Link
                 href={`/church/${churchCode}/qt/${prevQT.date}`}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
               >
-                <ChevronLeft className="w-5 h-5 text-gray-600" />
+                <ChevronLeft className="w-5 h-5 text-muted-foreground" />
               </Link>
             ) : (
               <div className="p-2">
-                <ChevronLeft className="w-5 h-5 text-gray-300" />
+                <ChevronLeft className="w-5 h-5 text-muted-foreground/50" />
               </div>
             )}
 
-            <span className="text-sm font-medium text-gray-700 min-w-[60px] text-center">
+            <span className="text-sm font-medium text-foreground min-w-[60px] text-center">
               {qt.month}/{qt.day}
             </span>
 
             {nextQT ? (
               <Link
                 href={`/church/${churchCode}/qt/${nextQT.date}`}
-                className="p-2 rounded-lg hover:bg-gray-100 transition-colors"
+                className="p-2 rounded-lg hover:bg-muted transition-colors"
               >
-                <ChevronRight className="w-5 h-5 text-gray-600" />
+                <ChevronRight className="w-5 h-5 text-muted-foreground" />
               </Link>
             ) : (
               <div className="p-2">
-                <ChevronRight className="w-5 h-5 text-gray-300" />
+                <ChevronRight className="w-5 h-5 text-muted-foreground/50" />
               </div>
             )}
           </div>
@@ -382,22 +387,22 @@ export default function ChurchQTDetailPage() {
         {myComments.length > 0 && (
           <div className="mt-8">
             <div className="flex items-center gap-2 mb-4">
-              <MessageCircle className="w-5 h-5 text-accent" />
-              <h3 className="font-semibold text-gray-900">내가 쓴 묵상</h3>
-              <span className="text-sm text-gray-500">({myComments.length})</span>
+              <MessageCircle className="w-5 h-5 text-primary" />
+              <h3 className="font-semibold text-foreground">내가 쓴 묵상</h3>
+              <span className="text-sm text-muted-foreground">({myComments.length})</span>
             </div>
             <div className="space-y-3">
               {myComments.map((comment) => (
                 <div
                   key={comment.id}
-                  className="bg-white rounded-xl border border-gray-200 p-4"
+                  className="bg-card rounded-xl border border-border p-4"
                 >
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="text-sm font-medium text-gray-900">
+                      <p className="text-sm font-medium text-foreground">
                         {comment.is_anonymous ? '익명' : comment.guest_name}
                       </p>
-                      <p className="text-xs text-gray-500">
+                      <p className="text-xs text-muted-foreground">
                         {formatRelativeTime(comment.created_at)}
                       </p>
                     </div>
@@ -408,7 +413,7 @@ export default function ChurchQTDetailPage() {
                         className="h-8 w-8"
                         onClick={() => handleOpenEdit(comment)}
                       >
-                        <Edit2 className="w-4 h-4 text-gray-500" />
+                        <Edit2 className="w-4 h-4 text-muted-foreground" />
                       </Button>
                       <Button
                         variant="ghost"
@@ -416,14 +421,14 @@ export default function ChurchQTDetailPage() {
                         className="h-8 w-8"
                         onClick={() => handleOpenDelete(comment)}
                       >
-                        <Trash2 className="w-4 h-4 text-red-500" />
+                        <Trash2 className="w-4 h-4 text-destructive" />
                       </Button>
                     </div>
                   </div>
                   {comment.bible_range && (
-                    <p className="text-xs text-accent mb-2">{comment.bible_range}</p>
+                    <p className="text-xs text-primary mb-2">{comment.bible_range}</p>
                   )}
-                  <p className="text-sm text-gray-700 whitespace-pre-wrap">{comment.content}</p>
+                  <p className="text-sm text-foreground whitespace-pre-wrap">{comment.content}</p>
                 </div>
               ))}
             </div>
@@ -432,23 +437,23 @@ export default function ChurchQTDetailPage() {
 
         {loadingComments && (
           <div className="mt-8 flex justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-accent" />
+            <Loader2 className="w-6 h-6 animate-spin text-primary" />
           </div>
         )}
       </div>
 
       {/* 하단 네비게이션 */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-4 py-3">
+      <div className="fixed bottom-0 left-0 right-0 bg-card border-t border-border px-4 py-3">
         <div className="max-w-lg mx-auto flex items-center justify-between">
           {prevQT ? (
             <Link
               href={`/church/${churchCode}/qt/${prevQT.date}`}
-              className="flex items-center gap-2 text-gray-600 hover:text-accent"
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
             >
               <ChevronLeft className="w-5 h-5" />
               <div className="text-left">
-                <p className="text-xs text-gray-400">이전</p>
-                <p className="text-sm font-medium">{prevQT.title?.split(' (')[0] || `${prevQT.month}/${prevQT.day}`}</p>
+                <p className="text-xs text-muted-foreground">이전</p>
+                <p className="text-sm font-medium text-foreground">{prevQT.title?.split(' (')[0] || `${prevQT.month}/${prevQT.day}`}</p>
               </div>
             </Link>
           ) : (
@@ -458,11 +463,11 @@ export default function ChurchQTDetailPage() {
           {nextQT ? (
             <Link
               href={`/church/${churchCode}/qt/${nextQT.date}`}
-              className="flex items-center gap-2 text-gray-600 hover:text-accent"
+              className="flex items-center gap-2 text-muted-foreground hover:text-primary"
             >
               <div className="text-right">
-                <p className="text-xs text-gray-400">다음</p>
-                <p className="text-sm font-medium">{nextQT.title?.split(' (')[0] || `${nextQT.month}/${nextQT.day}`}</p>
+                <p className="text-xs text-muted-foreground">다음</p>
+                <p className="text-sm font-medium text-foreground">{nextQT.title?.split(' (')[0] || `${nextQT.month}/${nextQT.day}`}</p>
               </div>
               <ChevronRight className="w-5 h-5" />
             </Link>
@@ -496,14 +501,14 @@ export default function ChurchQTDetailPage() {
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <Edit2 className="w-5 h-5 text-accent" />
+              <Edit2 className="w-5 h-5 text-primary" />
               묵상 수정
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium">이름</label>
+              <label className="text-sm font-medium text-foreground">이름</label>
               <Input
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
@@ -513,8 +518,8 @@ export default function ChurchQTDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">
-                성경 구절 <span className="text-gray-400 font-normal">(선택)</span>
+              <label className="text-sm font-medium text-foreground">
+                성경 구절 <span className="text-muted-foreground font-normal">(선택)</span>
               </label>
               <Input
                 value={editBibleRange}
@@ -525,7 +530,7 @@ export default function ChurchQTDetailPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium">묵상 내용</label>
+              <label className="text-sm font-medium text-foreground">묵상 내용</label>
               <Textarea
                 value={editContent}
                 onChange={(e) => setEditContent(e.target.value)}
@@ -564,17 +569,17 @@ export default function ChurchQTDetailPage() {
       <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="flex items-center gap-2 text-red-600">
+            <DialogTitle className="flex items-center gap-2 text-destructive">
               <Trash2 className="w-5 h-5" />
               묵상 삭제
             </DialogTitle>
           </DialogHeader>
 
           <div className="py-4">
-            <p className="text-gray-700">
+            <p className="text-foreground">
               정말로 이 묵상을 삭제하시겠습니까?
             </p>
-            <p className="text-sm text-gray-500 mt-2">
+            <p className="text-sm text-muted-foreground mt-2">
               삭제된 묵상은 복구할 수 없습니다.
             </p>
           </div>

@@ -178,12 +178,12 @@ export function ShortsViewer({ shorts, churchName }: ShortsViewerProps) {
     <div className="space-y-3">
       {/* 섹션 헤더 */}
       <div className="flex items-center justify-between px-1">
-        <h2 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+        <h2 className="font-semibold text-sm text-foreground flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg bg-gradient-to-br from-red-500 to-pink-500 flex items-center justify-center">
             <Play className="w-3.5 h-3.5 text-white" />
           </div>
           교회 Shorts
-          <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full text-xs font-medium">
+          <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded-full text-xs font-medium">
             {shorts.length}
           </span>
         </h2>
@@ -203,7 +203,7 @@ export function ShortsViewer({ shorts, churchName }: ShortsViewerProps) {
             }`}
           >
             {/* 썸네일 */}
-            <div className="w-28 h-48 bg-slate-200 relative">
+            <div className="w-28 h-48 bg-muted relative">
               <Image
                 src={short.thumbnailUrl || getYouTubeThumbnail(short.videoId)}
                 alt={short.title || `Shorts ${index + 1}`}
@@ -214,7 +214,7 @@ export function ShortsViewer({ shorts, churchName }: ShortsViewerProps) {
               {/* 재생 오버레이 */}
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
                 <div className="w-10 h-10 rounded-full bg-white/90 flex items-center justify-center">
-                  <Play className="w-5 h-5 text-slate-800 ml-0.5" />
+                  <Play className="w-5 h-5 text-foreground ml-0.5" />
                 </div>
               </div>
               {/* 제목 */}

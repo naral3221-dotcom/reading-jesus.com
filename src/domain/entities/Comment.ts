@@ -5,6 +5,8 @@
  * 교회 게스트 댓글(GuestComment)과 별개.
  */
 
+import type { ContentVisibility } from './PublicMeditation'
+
 /**
  * 댓글 속성
  */
@@ -15,6 +17,7 @@ export interface CommentProps {
   dayNumber: number
   content: string
   isAnonymous: boolean
+  visibility: ContentVisibility
   likesCount: number
   repliesCount: number
   isPinned: boolean
@@ -72,13 +75,15 @@ export interface CreateCommentInput {
   content: string
   bibleRange?: string
   isAnonymous?: boolean
+  visibility?: ContentVisibility
 }
 
 /**
  * 댓글 업데이트 입력
  */
 export interface UpdateCommentInput {
-  content: string
+  content?: string
+  visibility?: ContentVisibility
 }
 
 /**
@@ -166,6 +171,10 @@ export class Comment {
 
   get isAnonymous(): boolean {
     return this.props.isAnonymous
+  }
+
+  get visibility(): ContentVisibility {
+    return this.props.visibility
   }
 
   get likesCount(): number {

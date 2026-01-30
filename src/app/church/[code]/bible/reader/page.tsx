@@ -22,6 +22,7 @@ import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client';
 import { cn } from '@/lib/utils';
 import { ChurchLayout } from '@/components/church/ChurchLayout';
 import { BibleAccessGuard } from '@/components/bible/BibleAccessGuard';
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 
 interface ChurchInfo {
     id: string;
@@ -604,6 +605,7 @@ function ChurchBibleReaderContent() {
                 bible_range: string;
                 day_number: number | null;
                 is_anonymous: boolean;
+                visibility: ContentVisibility;
                 linked_user_id?: string;
                 linked_at?: string;
             } = {
@@ -614,6 +616,7 @@ function ChurchBibleReaderContent() {
                 bible_range: bibleRange,
                 day_number: data.dayNumber || null,
                 is_anonymous: data.isAnonymous,
+                visibility: data.visibility || 'church',
             };
 
             if (isRegisteredMember && currentUser) {
@@ -903,6 +906,9 @@ function ChurchBibleReaderContent() {
                 identifier={churchCode}
                 showDayPicker={true}
                 showAnonymous={true}
+                showVisibility={true}
+                defaultVisibility="public"
+                allowedVisibilityOptions={['private', 'church', 'public']}
                 initialAuthorName={initialAuthorName}
                 isSubmitting={submitting}
                 minHeight="300px"
@@ -1062,6 +1068,9 @@ function ChurchBibleReaderContent() {
                 showCardButton={true}
                 showDayPicker={true}
                 showAnonymous={true}
+                showVisibility={true}
+                defaultVisibility="public"
+                allowedVisibilityOptions={['private', 'church', 'public']}
                 initialAuthorName={initialAuthorName}
                 churchName={church?.name}
                 isSubmitting={submitting}

@@ -21,6 +21,7 @@ import type {
   UnifiedMeditationReplyProps,
   CreateUnifiedMeditationReplyInput,
 } from '@/domain/entities/UnifiedMeditation'
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation'
 
 // DB Row 타입
 interface MeditationRow {
@@ -41,6 +42,7 @@ interface MeditationRow {
   my_prayer: string | null
   day_review: string | null
   is_anonymous: boolean
+  visibility: ContentVisibility | null
   is_pinned: boolean
   likes_count: number
   replies_count: number
@@ -96,6 +98,7 @@ export class SupabaseUnifiedMeditationRepository implements IUnifiedMeditationRe
       myPrayer: row.my_prayer,
       dayReview: row.day_review,
       isAnonymous: row.is_anonymous,
+      visibility: row.visibility ?? (row.source_type === 'church' ? 'church' : 'group'),
       isPinned: row.is_pinned,
       likesCount: row.likes_count,
       repliesCount: row.replies_count,

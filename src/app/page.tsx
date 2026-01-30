@@ -3,6 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import Image from 'next/image';
 import { useCurrentUser } from '@/presentation/hooks/queries/useUser';
 import { useLandingStats } from '@/presentation/hooks/queries/useChurchStats';
 import { Button } from '@/components/ui/button';
@@ -51,8 +52,14 @@ export default function LandingPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-muted/30 to-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <BookOpen className="w-8 h-8 text-primary" />
+          <div className="w-16 h-16 rounded-2xl overflow-hidden">
+            <Image
+              src="/logo.png"
+              alt="리딩지저스"
+              width={64}
+              height={64}
+              className="w-full h-full object-cover"
+            />
           </div>
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
         </div>
@@ -66,8 +73,14 @@ export default function LandingPage() {
       <header className="sticky top-0 z-50 bg-background/80 backdrop-blur-xl border-b border-border/40">
         <div className="max-w-4xl mx-auto flex items-center justify-between px-4 h-14">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-primary/10 flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-primary" />
+            <div className="w-8 h-8 rounded-xl overflow-hidden">
+              <Image
+                src="/logo.png"
+                alt="리딩지저스"
+                width={32}
+                height={32}
+                className="w-full h-full object-cover"
+              />
             </div>
             <span className="font-bold text-lg">리딩지저스</span>
           </Link>
@@ -85,8 +98,15 @@ export default function LandingPage() {
       <section className="py-16 md:py-24 px-4">
         <div className="max-w-4xl mx-auto text-center">
           {/* 로고 아이콘 */}
-          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 rounded-2xl bg-primary/10 flex items-center justify-center">
-            <BookOpen className="w-10 h-10 md:w-12 md:h-12 text-primary" />
+          <div className="w-20 h-20 md:w-24 md:h-24 mx-auto mb-6 rounded-2xl overflow-hidden shadow-lg">
+            <Image
+              src="/logo.png"
+              alt="리딩지저스"
+              width={96}
+              height={96}
+              className="w-full h-full object-cover"
+              priority
+            />
           </div>
 
           {/* 메인 타이틀 */}
@@ -167,12 +187,12 @@ export default function LandingPage() {
               description="구약과 신약을 균형있게 읽는 1년 통독 일정을 제공합니다."
             />
             <FeatureCard
-              icon={<Heart className="w-8 h-8 text-accent" />}
+              icon={<Heart className="w-8 h-8 text-accent-warm" />}
               title="QT 묵상 가이드"
               description="매일 제공되는 묵상 질문으로 말씀을 깊이 묵상할 수 있습니다."
             />
             <FeatureCard
-              icon={<MessageSquare className="w-8 h-8 text-accent" />}
+              icon={<MessageSquare className="w-8 h-8 text-accent-cool" />}
               title="묵상 나눔 커뮤니티"
               description="전국의 성도들과 묵상을 나누고 서로 격려할 수 있습니다."
             />

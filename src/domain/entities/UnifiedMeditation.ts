@@ -5,6 +5,8 @@
  * 그룹 묵상(comments), 교회 묵상(guest_comments), QT 나눔(church_qt_posts)을 통합.
  */
 
+import type { ContentVisibility } from './PublicMeditation'
+
 export type SourceType = 'group' | 'church'
 export type ContentType = 'free' | 'qt'
 
@@ -31,6 +33,7 @@ export interface UnifiedMeditationProps {
   dayReview: string | null
   // 상태
   isAnonymous: boolean
+  visibility: ContentVisibility
   isPinned: boolean
   likesCount: number
   repliesCount: number
@@ -68,6 +71,7 @@ export interface CreateUnifiedMeditationInput {
   myPrayer?: string | null
   dayReview?: string | null
   isAnonymous?: boolean
+  visibility?: ContentVisibility
 }
 
 /**
@@ -83,6 +87,7 @@ export interface UpdateUnifiedMeditationInput {
   myPrayer?: string | null
   dayReview?: string | null
   isAnonymous?: boolean
+  visibility?: ContentVisibility
 }
 
 /**
@@ -244,6 +249,10 @@ export class UnifiedMeditation {
 
   get isAnonymous(): boolean {
     return this.props.isAnonymous
+  }
+
+  get visibility(): ContentVisibility {
+    return this.props.visibility
   }
 
   get isPinned(): boolean {

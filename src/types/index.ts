@@ -763,7 +763,9 @@ export const TOTAL_BIBLE_CHAPTERS = {
 export interface PublicFeedItem {
   id: string;
   type: 'meditation' | 'qt';
+  authorId?: string | null;  // 작성자 ID (프로필 링크용)
   authorName: string;
+  authorAvatarUrl?: string | null;  // 작성자 아바타
   isAnonymous: boolean;
   createdAt: string;
   // 교회 정보
@@ -820,6 +822,37 @@ export interface MyPageStats {
   commentCount?: number; // 교회 컨텍스트에서만 사용
 }
 
+// =============================================
+// Integrated Stats (통합 통계 시스템)
+// =============================================
+
+// 활동 소스 타입
+export type ActivitySourceType = 'church' | 'group' | 'personal';
+
+// 개별 활동 통계
+export interface ActivityStats {
+  sourceType: ActivitySourceType;
+  sourceId: string;
+  sourceName: string;          // 교회 이름, 그룹 이름, 프로젝트 이름
+  completedDays: number;
+  totalDays: number;
+  progressPercentage: number;
+  currentStreak: number;
+}
+
+// 통합 통계 (메인 마이페이지용)
+export interface IntegratedStats {
+  // 전체 통합
+  totalCompletedDays: number;
+  totalStreak: number;           // 전체 기준 연속일 (가장 긴 것 또는 합산)
+  // 활동별 상세
+  activities: ActivityStats[];
+  // 메타
+  hasChurchActivity: boolean;
+  hasGroupActivity: boolean;
+  hasPersonalActivity: boolean;
+}
+
 // 마이페이지 사용자 정보
 export interface MyPageUser {
   id: string;
@@ -833,6 +866,38 @@ export interface MyPageUser {
 
 // 마이페이지 컨텍스트 타입
 export type MyPageContextType = 'main' | 'church';
+
+// 프로필 그리드 피드 아이템
+export interface GridFeedItem {
+  id: string;
+  type: 'meditation' | 'qt';
+  source: 'church' | 'group' | 'personal';
+  sourceId?: string;
+  sourceName?: string;
+  thumbnailUrl?: string | null;
+  textPreview: string;
+  likesCount: number;
+  repliesCount: number;
+  dayNumber?: number | null;
+  bibleRange?: string | null;
+  qtDate?: string | null;
+  createdAt: string;
+  // 상세 보기용 전체 데이터
+  fullData?: {
+    authorId: string;
+    authorName: string;
+    authorAvatarUrl?: string | null;
+    isAnonymous: boolean;
+    content?: string;
+    mySentence?: string | null;
+    meditationAnswer?: string | null;
+    gratitude?: string | null;
+    myPrayer?: string | null;
+    dayReview?: string | null;
+    churchCode?: string;
+    churchName?: string;
+  };
+}
 
 // =============================================
 // Church Admin (교회 관리자)

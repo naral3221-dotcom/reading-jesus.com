@@ -28,6 +28,8 @@ export const publicMeditationKeys = {
   lists: () => [...publicMeditationKeys.all, 'list'] as const,
   list: (options: { userId?: string; followingUserIds?: string[] }) =>
     [...publicMeditationKeys.lists(), options] as const,
+  popular: (options?: { limit?: number; daysAgo?: number }) =>
+    [...publicMeditationKeys.all, 'popular', options] as const,
   details: () => [...publicMeditationKeys.all, 'detail'] as const,
   detail: (id: string) => [...publicMeditationKeys.details(), id] as const,
   replies: (id: string) => [...publicMeditationKeys.all, 'replies', id] as const,
@@ -35,6 +37,8 @@ export const publicMeditationKeys = {
   project: (projectId: string) => [...publicMeditationKeys.all, 'project', projectId] as const,
   projectDay: (projectId: string, dayNumber: number) =>
     [...publicMeditationKeys.all, 'project', projectId, 'day', dayNumber] as const,
+  // 사용자별 개인 묵상
+  byUser: (userId: string) => [...publicMeditationKeys.all, 'user', userId] as const,
 }
 
 // 공개 묵상 목록 조회 (무한 스크롤)
@@ -42,6 +46,7 @@ export function usePublicMeditations(options?: {
   userId?: string
   followingUserIds?: string[]
   currentUserId?: string
+  visibility?: ('private' | 'church' | 'public')[]
 }) {
   return useInfiniteQuery({
     queryKey: publicMeditationKeys.list({
@@ -57,6 +62,7 @@ export function usePublicMeditations(options?: {
         userId: options?.userId,
         followingUserIds: options?.followingUserIds,
         currentUserId: options?.currentUserId,
+        visibility: options?.visibility,
       })
       return {
         data,
@@ -65,6 +71,31 @@ export function usePublicMeditations(options?: {
     },
     getNextPageParam: (lastPage) => lastPage.nextOffset,
     initialPageParam: 0,
+  })
+}
+
+// 인기 묵상 조회 (좋아요 순)
+export function usePopularMeditations(options?: {
+  limit?: number
+  currentUserId?: string
+  daysAgo?: number
+  enabled?: boolean
+}) {
+  return useQuery({
+    queryKey: publicMeditationKeys.popular({
+      limit: options?.limit,
+      daysAgo: options?.daysAgo,
+    }),
+    queryFn: async () => {
+      const repository = new SupabasePublicMeditationRepository()
+      return repository.findPopular({
+        limit: options?.limit ?? 10,
+        currentUserId: options?.currentUserId,
+        daysAgo: options?.daysAgo ?? 7,
+      })
+    },
+    enabled: options?.enabled !== false,
+    staleTime: 5 * 60 * 1000, // 5분
   })
 }
 
@@ -229,6 +260,26 @@ export function useDeletePublicMeditationReply() {
 // 개인 프로젝트 묵상 훅
 // ============================================================================
 
+// 사용자의 모든 개인 묵상 조회 (마이페이지용)
+export function useUserPersonalMeditations(
+  userId: string | null,
+  options?: { limit?: number; offset?: number; enabled?: boolean }
+) {
+  return useQuery({
+    queryKey: publicMeditationKeys.byUser(userId ?? ''),
+    queryFn: async () => {
+      const repository = new SupabasePublicMeditationRepository()
+      return repository.findByUserId(userId!, {
+        limit: options?.limit ?? 50,
+        offset: options?.offset ?? 0,
+        currentUserId: userId!,
+      })
+    },
+    enabled: (options?.enabled ?? true) && !!userId,
+    staleTime: 1000 * 30,
+  })
+}
+
 // 프로젝트별 묵상 목록 조회
 export function useProjectMeditations(
   projectId: string,
@@ -296,8 +347,8 @@ export function useCreatePersonalMeditation() {
       queryClient.invalidateQueries({
         queryKey: publicMeditationKeys.projectDay(variables.projectId, variables.dayNumber),
       })
-      // is_public인 경우 전체 목록도 갱신
-      if (variables.isPublic) {
+      // 공개 글인 경우 전체 목록도 갱신
+      if (variables.visibility === 'public') {
         queryClient.invalidateQueries({ queryKey: publicMeditationKeys.lists() })
       }
     },

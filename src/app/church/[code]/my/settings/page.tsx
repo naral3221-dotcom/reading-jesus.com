@@ -93,7 +93,8 @@ export default function ChurchSettingsPage() {
 
   const toggleDarkMode = () => {
     const isDark = resolvedTheme === 'dark';
-    const newTheme = isDark ? 'light' : 'dark';
+    // 'light' 대신 'system' 사용 (OS 설정 따름, 기본 Warm Sage 테마)
+    const newTheme = isDark ? 'system' : 'dark';
     setTheme(newTheme);
 
     // 로컬 설정도 업데이트
@@ -101,7 +102,7 @@ export default function ChurchSettingsPage() {
     saveSettings(newSettings);
 
     toast({
-      title: !isDark ? '다크 모드 활성화' : '라이트 모드 활성화',
+      title: !isDark ? '다크 모드 활성화' : '라이트 모드 해제',
     });
   };
 

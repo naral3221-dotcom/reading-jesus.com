@@ -165,9 +165,9 @@ export default function ChurchRegisterPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b">
         <div className="flex items-center gap-3 p-4 max-w-2xl mx-auto">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-5 h-5" />
@@ -401,7 +401,7 @@ export default function ChurchRegisterPage() {
 
           <div className="space-y-4 py-4">
             {/* 교회 코드 표시 */}
-            <div className="bg-slate-100 rounded-lg p-4 text-center">
+            <div className="bg-muted rounded-lg p-4 text-center">
               <p className="text-sm text-muted-foreground mb-1">교회 코드</p>
               <div className="flex items-center justify-center gap-2">
                 <span className="text-2xl font-bold text-primary">{createdChurchCode}</span>

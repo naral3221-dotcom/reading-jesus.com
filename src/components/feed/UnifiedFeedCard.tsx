@@ -3,36 +3,49 @@
 /**
  * UnifiedFeedCard 컴포넌트
  *
- * Instagram/Threads 스타일의 깔끔한 피드 카드입니다.
+ * 통합 피드 카드입니다.
  * 그룹/교회/개인 묵상을 통합하여 표시합니다.
+ * - QT: QTFeedCard 컴포넌트 사용 (인스타그램 스타일)
+ * - 묵상: 기존 카드 스타일 유지
  */
 
-import { useState, useMemo } from 'react';
-import Image from 'next/image';
+import { useState, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import {
-  Heart,
-  MessageCircle,
   MoreHorizontal,
   Pencil,
   Trash2,
+  Heart,
+  MessageCircle,
+  Link as LinkIcon,
+  Bookmark,
+  BookmarkCheck,
+  Loader2,
   BookOpen,
-  Users,
-  Church,
 } from 'lucide-react';
+import { useIsBookmarked, useToggleBookmark } from '@/presentation/hooks/queries/useUserBookmarks';
+
+// HTML 콘텐츠 렌더링을 위한 dynamic import (SSR 비활성화)
+const RichViewerWithEmbed = dynamic(
+  () => import('@/components/ui/rich-editor').then((mod) => mod.RichViewerWithEmbed),
+  { ssr: false, loading: () => <div className="animate-pulse bg-muted h-20 rounded" /> }
+);
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { formatRelativeTime, getInitials, getAvatarColor } from '@/lib/date-utils';
-import { extractImagesFromHtml, removeImagesFromHtml } from '@/components/ui/rich-editor';
-import dynamic from 'next/dynamic';
-
-const RichViewerWithEmbed = dynamic(
-  () => import('@/components/ui/rich-editor').then(mod => mod.RichViewerWithEmbed),
-  { ssr: false }
-);
+import { formatRelativeTime } from '@/lib/date-utils';
+import { useFeedCard } from './hooks/useFeedCard';
+import {
+  FeedCardAvatar,
+  FeedCardContent,
+} from './components';
+import { MediaCarousel } from './components/MediaCarousel';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { QTFeedCard } from './QTFeedCard';
 
 // 피드 소스 타입
 export type FeedSource = 'group' | 'church' | 'personal';
@@ -84,14 +97,13 @@ interface UnifiedFeedCardProps {
   onSourceClick?: (source: FeedSource, sourceId?: string) => void;
   onChurchClick?: (churchCode: string) => void;
   onAuthorClick?: (authorId: string) => void;
-  // QT 관련 props 제거 - 단순화
   qtContent?: unknown;
 }
 
 export function UnifiedFeedCard({
   item,
   currentUserId,
-  variant = 'full',
+  variant: _variant = 'full',
   showSource = true,
   onLike,
   onComment,
@@ -102,323 +114,263 @@ export function UnifiedFeedCard({
   onChurchClick,
   onAuthorClick,
 }: UnifiedFeedCardProps) {
-  const [isLiked, setIsLiked] = useState(item.isLiked || false);
-  const [likesCount, setLikesCount] = useState(item.likesCount);
+  const {
+    isLiked,
+    likesCount,
+    displayName,
+    avatarColor,
+    initials,
+    contentWithoutImages,
+    images,
+    handleLikeClick,
+    handleCommentClick,
+    qtSections,
+    isHtmlContent,
+  } = useFeedCard({ item });
 
   const isOwner = currentUserId && item.authorId && currentUserId === item.authorId;
-  const displayName = item.isAnonymous ? '익명' : item.authorName;
-  const avatarColor = item.isAnonymous ? 'bg-gray-400' : getAvatarColor(item.authorName);
-  const initials = item.isAnonymous ? '?' : getInitials(item.authorName);
 
-  // 콘텐츠에서 이미지 분리
-  const { contentWithoutImages, images } = useMemo(() => {
-    if (item.type === 'meditation' && item.content?.startsWith('<')) {
-      return {
-        contentWithoutImages: removeImagesFromHtml(item.content),
-        images: extractImagesFromHtml(item.content),
-      };
-    }
-    return { contentWithoutImages: item.content || '', images: [] };
-  }, [item.type, item.content]);
+  // 북마크 기능
+  const { data: isBookmarked = false } = useIsBookmarked(item.id, currentUserId ?? null);
+  const toggleBookmark = useToggleBookmark();
+
+  const handleBookmark = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!currentUserId) return;
+    toggleBookmark.mutate({
+      meditationId: item.id,
+      userId: currentUserId,
+      source: 'unified',
+    });
+  }, [currentUserId, item.id, toggleBookmark]);
 
   const handleLike = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    setIsLiked(!isLiked);
-    setLikesCount(prev => isLiked ? prev - 1 : prev + 1);
+    handleLikeClick(e);
     onLike(item.id, item.source);
   };
 
   const handleComment = (e: React.MouseEvent) => {
-    e.stopPropagation();
+    handleCommentClick(e);
     onComment(item.id, item.source);
   };
 
-  // QT 콘텐츠 렌더링 - 심플하게
-  const renderQTContent = () => {
-    const sections = [];
-
-    if (item.mySentence) {
-      sections.push(
-        <p key="sentence" className="text-[15px] leading-relaxed">
-          <span className="font-semibold">한 문장</span>{' '}
-          {item.mySentence}
-        </p>
-      );
-    }
-
-    if (item.meditationAnswer) {
-      sections.push(
-        <p key="answer" className="text-[15px] leading-relaxed">
-          <span className="font-semibold">묵상</span>{' '}
-          {item.meditationAnswer}
-        </p>
-      );
-    }
-
-    if (item.gratitude) {
-      sections.push(
-        <p key="gratitude" className="text-[15px] leading-relaxed">
-          <span className="font-semibold">감사</span>{' '}
-          {item.gratitude}
-        </p>
-      );
-    }
-
-    if (item.myPrayer) {
-      sections.push(
-        <p key="prayer" className="text-[15px] leading-relaxed">
-          <span className="font-semibold">기도</span>{' '}
-          {item.myPrayer}
-        </p>
-      );
-    }
-
-    if (item.dayReview) {
-      sections.push(
-        <p key="review" className="text-[15px] leading-relaxed">
-          <span className="font-semibold">하루 점검</span>{' '}
-          {item.dayReview}
-        </p>
-      );
-    }
-
-    return sections.length > 0 ? (
-      <div className="space-y-3">{sections}</div>
-    ) : null;
+  const handleUserClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!item.isAnonymous) onAuthorClick?.(item.authorId);
   };
 
-  // 콘텐츠 렌더링
-  const renderContent = () => {
-    if (item.type === 'meditation') {
-      if (item.content?.startsWith('<')) {
-        return <RichViewerWithEmbed content={contentWithoutImages} className="text-[15px] leading-relaxed" />;
-      }
-      return <p className="text-[15px] leading-relaxed whitespace-pre-wrap">{item.content}</p>;
-    }
-    return renderQTContent();
+  // 묵상글은 항상 전체 표시 (더보기 없음)
+  const displayedContent = contentWithoutImages;
+
+  // 소스 라벨 생성
+  const getSourceLabel = () => {
+    if (item.source === 'church') return item.churchName || item.sourceName;
+    if (item.source === 'group') return item.sourceName;
+    return '개인';
   };
 
+  // QT 타입: QTFeedCard 컴포넌트 사용 (인스타그램 스타일)
+  if (item.type === 'qt') {
+    return (
+      <QTFeedCard
+        item={item}
+        currentUserId={currentUserId}
+        showSource={showSource}
+        onLike={onLike}
+        onComment={onComment}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onViewDetail={onViewDetail}
+        onSourceClick={onSourceClick}
+        onChurchClick={onChurchClick}
+        onAuthorClick={onAuthorClick}
+      />
+    );
+  }
+
+  // 묵상 타입: QT 카드와 일관된 스타일
   return (
-    <article
-      className="bg-background border-b border-border/50 cursor-pointer"
-      onClick={() => onViewDetail?.(item)}
-    >
-      <div className="px-4 py-3">
-        {/* 헤더 */}
-        <div className="flex items-center gap-3 mb-3">
-          {/* 아바타 - 심플한 원형 */}
-          <button
-            className="shrink-0"
-            onClick={(e) => {
-              e.stopPropagation();
-              if (!item.isAnonymous) onAuthorClick?.(item.authorId);
-            }}
-          >
-            <div className={`w-10 h-10 rounded-full ${avatarColor} flex items-center justify-center overflow-hidden`}>
-              {item.authorAvatarUrl && !item.isAnonymous ? (
-                <Image
-                  src={item.authorAvatarUrl}
-                  alt={displayName}
-                  width={40}
-                  height={40}
-                  className="w-full h-full object-cover"
-                  unoptimized
-                />
-              ) : (
-                <span className="text-white font-semibold text-sm">{initials}</span>
-              )}
-            </div>
-          </button>
-
-          {/* 사용자 정보 */}
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <button
-                className="font-semibold text-[14px] hover:opacity-70"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (!item.isAnonymous) onAuthorClick?.(item.authorId);
-                }}
-              >
-                {displayName}
-              </button>
-              <span className="text-muted-foreground text-[13px]">
-                · {formatRelativeTime(item.createdAt)}
-              </span>
+    <article className="mx-3 my-4 lg:mx-0">
+      <div className="bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+        {/* ========== 프로필 헤더 (상단 - QT와 동일) ========== */}
+        <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
+          <div className="flex items-center gap-3">
+            {/* 아바타 */}
+            <div
+              className="cursor-pointer"
+              onClick={handleUserClick}
+            >
+              <FeedCardAvatar
+                avatarUrl={item.authorAvatarUrl}
+                avatarColor={avatarColor}
+                initials={initials}
+                displayName={displayName}
+                isAnonymous={item.isAnonymous}
+                className="w-10 h-10 ring-2 ring-primary/20"
+                onClick={handleUserClick}
+              />
             </div>
 
-            {/* 소스 정보 - 미니멀 */}
-            {showSource && (
-              <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
-                {item.source === 'church' && (
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (item.churchCode) onChurchClick?.(item.churchCode);
-                      else onSourceClick?.(item.source, item.sourceId);
-                    }}
-                  >
-                    <Church className="w-3 h-3" />
-                    {item.churchName || item.sourceName}
-                  </button>
-                )}
-                {item.source === 'group' && (
-                  <button
-                    className="flex items-center gap-1 hover:text-foreground"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSourceClick?.(item.source, item.sourceId);
-                    }}
-                  >
-                    <Users className="w-3 h-3" />
-                    {item.sourceName}
-                  </button>
-                )}
-                {item.dayNumber && (
-                  <>
-                    <span>·</span>
-                    <span>{item.dayNumber}일차</span>
-                  </>
-                )}
-                {item.type === 'qt' && (
-                  <>
-                    <span>·</span>
-                    <span className="flex items-center gap-0.5">
-                      <BookOpen className="w-3 h-3" />
-                      QT
-                    </span>
-                  </>
-                )}
+            {/* 이름 + 배지 + 소스 + 시간 */}
+            <div className="flex flex-col">
+              <div className="flex items-center gap-2">
+                <button
+                  className="text-[14px] font-bold hover:text-primary transition-colors"
+                  onClick={handleUserClick}
+                >
+                  {displayName}
+                </button>
+                {/* 묵상 배지 */}
+                <span className="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 text-[10px] font-semibold">
+                  묵상
+                </span>
               </div>
-            )}
+              <div className="flex items-center gap-1.5 text-[12px] text-muted-foreground">
+                {showSource && (
+                  <>
+                    <button
+                      className="hover:text-foreground transition-colors"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (item.source === 'church' && item.churchCode) {
+                          onChurchClick?.(item.churchCode);
+                        } else if (item.source === 'group') {
+                          onSourceClick?.(item.source, item.sourceId);
+                        }
+                      }}
+                    >
+                      {getSourceLabel()}
+                    </button>
+                    <span className="text-border">·</span>
+                  </>
+                )}
+                <span>{formatRelativeTime(item.createdAt)}</span>
+              </div>
+            </div>
           </div>
 
           {/* 더보기 메뉴 */}
-          {isOwner && (onEdit || onDelete) && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  className="p-2 -mr-2 hover:bg-muted/50 rounded-full"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" onClick={(e) => e.stopPropagation()}>
-                {onEdit && (
-                  <DropdownMenuItem onClick={() => onEdit(item)} className="gap-2">
-                    <Pencil className="w-4 h-4" />
-                    수정
-                  </DropdownMenuItem>
-                )}
-                {onDelete && (
-                  <DropdownMenuItem
-                    onClick={() => onDelete(item)}
-                    className="text-destructive focus:text-destructive gap-2"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                    삭제
-                  </DropdownMenuItem>
-                )}
-              </DropdownMenuContent>
-            </DropdownMenu>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button className="p-2 rounded-full hover:bg-muted transition-colors" onClick={(e) => e.stopPropagation()}>
+                <MoreHorizontal className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              {isOwner ? (
+                <>
+                  {onEdit && (
+                    <DropdownMenuItem onClick={() => onEdit(item)} className="gap-2">
+                      <Pencil className="w-4 h-4" />
+                      수정
+                    </DropdownMenuItem>
+                  )}
+                  {onDelete && (
+                    <DropdownMenuItem
+                      onClick={() => onDelete(item)}
+                      className="text-destructive focus:text-destructive gap-2"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                      삭제
+                    </DropdownMenuItem>
+                  )}
+                </>
+              ) : (
+                <DropdownMenuItem className="gap-2">
+                  <LinkIcon className="w-4 h-4" />
+                  링크 복사
+                </DropdownMenuItem>
+              )}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* ========== 성경 구절 헤더 ========== */}
+        {item.bibleRange && (
+          <div className="px-4 py-3 bg-muted/20 border-b border-border/40">
+            <p className="text-sm text-foreground flex items-center gap-1.5">
+              <BookOpen className="w-4 h-4 text-primary" />
+              <span className="font-medium">{item.bibleRange}</span>
+            </p>
+          </div>
+        )}
+
+        {/* ========== 이미지 영역 ========== */}
+        {images.length > 0 && (
+          <div className="bg-muted/30">
+            <MediaCarousel
+              images={images}
+              onImageClick={() => onViewDetail?.(item)}
+            />
+          </div>
+        )}
+
+        {/* ========== 묵상 콘텐츠 (항상 전체 표시) ========== */}
+        <div className="px-4 py-4">
+          {isHtmlContent ? (
+            <RichViewerWithEmbed
+              content={displayedContent}
+              className="text-base leading-relaxed"
+            />
+          ) : (
+            <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">
+              {displayedContent}
+            </p>
           )}
         </div>
 
-        {/* 콘텐츠 */}
-        <div className="mb-3">
-          {renderContent()}
-        </div>
+        {/* ========== 액션 바 ========== */}
+        <div className="px-4 py-3 border-t border-border/40 flex items-center justify-between">
+          <div className="flex items-center gap-1">
+            {/* 좋아요 */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className={cn(
+                "gap-1.5 px-3 rounded-full transition-all",
+                isLiked && "text-red-500 bg-red-50 hover:bg-red-100 dark:bg-red-950/30 dark:hover:bg-red-950/50"
+              )}
+              onClick={handleLike}
+            >
+              <Heart className={cn(
+                "w-5 h-5 transition-all",
+                isLiked && "fill-current scale-110"
+              )} />
+              {likesCount > 0 && <span className="text-sm font-medium">{likesCount}</span>}
+            </Button>
 
-        {/* 이미지 */}
-        {images.length > 0 && (
-          <div className="-mx-4 mb-3">
-            {images.length === 1 ? (
-              <div
-                className="relative aspect-square max-h-[500px] cursor-pointer"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  window.open(images[0], '_blank');
-                }}
-              >
-                <Image
-                  src={images[0]}
-                  alt="첨부 이미지"
-                  fill
-                  className="object-cover"
-                  unoptimized
-                />
-              </div>
+            {/* 댓글 */}
+            <Button
+              variant="ghost"
+              size="sm"
+              className="gap-1.5 px-3 rounded-full"
+              onClick={handleComment}
+            >
+              <MessageCircle className="w-5 h-5" />
+              {item.repliesCount > 0 && <span className="text-sm font-medium">{item.repliesCount}</span>}
+            </Button>
+          </div>
+
+          {/* 북마크 */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "rounded-full transition-all",
+              isBookmarked && "text-primary"
+            )}
+            onClick={handleBookmark}
+            disabled={toggleBookmark.isPending || !currentUserId}
+          >
+            {toggleBookmark.isPending ? (
+              <Loader2 className="w-5 h-5 animate-spin" />
+            ) : isBookmarked ? (
+              <BookmarkCheck className="w-5 h-5 fill-current" />
             ) : (
-              <div className="grid grid-cols-2 gap-0.5">
-                {images.slice(0, 4).map((src, index) => (
-                  <div
-                    key={index}
-                    className="relative aspect-square cursor-pointer"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      window.open(src, '_blank');
-                    }}
-                  >
-                    <Image
-                      src={src}
-                      alt={`이미지 ${index + 1}`}
-                      fill
-                      className="object-cover"
-                      unoptimized
-                    />
-                    {index === 3 && images.length > 4 && (
-                      <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                        <span className="text-white text-lg font-semibold">+{images.length - 4}</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
+              <Bookmark className="w-5 h-5" />
             )}
-          </div>
-        )}
-
-        {/* 인터랙션 - Instagram 스타일 */}
-        {variant !== 'minimal' && (
-          <div className="space-y-2">
-            {/* 아이콘 버튼 */}
-            <div className="flex items-center gap-4 -ml-2">
-              <button
-                className="p-2 active:scale-90 transition-transform"
-                onClick={handleLike}
-              >
-                <Heart
-                  className={`w-6 h-6 ${isLiked ? 'fill-red-500 text-red-500' : ''}`}
-                />
-              </button>
-              <button
-                className="p-2 active:scale-90 transition-transform"
-                onClick={handleComment}
-              >
-                <MessageCircle className="w-6 h-6" />
-              </button>
-            </div>
-
-            {/* 좋아요/댓글 수 */}
-            {(likesCount > 0 || item.repliesCount > 0) && (
-              <div className="space-y-1">
-                {likesCount > 0 && (
-                  <p className="font-semibold text-[14px]">좋아요 {likesCount}개</p>
-                )}
-                {item.repliesCount > 0 && (
-                  <button
-                    className="text-muted-foreground text-[14px]"
-                    onClick={handleComment}
-                  >
-                    댓글 {item.repliesCount}개 모두 보기
-                  </button>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+          </Button>
+        </div>
       </div>
     </article>
   );

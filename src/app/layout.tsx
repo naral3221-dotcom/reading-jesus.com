@@ -12,6 +12,23 @@ const geistSans = localFont({
   weight: "100 900",
 });
 
+const julianScript = localFont({
+  src: [
+    {
+      path: "./fonts/Jullian-Regular.woff2",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "./fonts/Jullian-Regular.woff",
+      weight: "400",
+      style: "normal",
+    },
+  ],
+  variable: "--font-julian-script",
+  display: "swap",
+});
+
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://reading-jesus.com'),
   title: {
@@ -115,44 +132,27 @@ export default function RootLayout({
               (function() {
                 try {
                   var theme = localStorage.getItem('reading-jesus-theme') || 'system';
-                  var validThemes = ['light', 'dark', 'beige', 'sepia'];
+                  var validThemes = ['minimal', 'dark', 'beige', 'sepia'];
                   var resolvedTheme = theme;
 
                   if (theme === 'system') {
-                    resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+                    // 시스템 설정: OS가 다크면 dark, 라이트면 클래스 없음 (root = Warm Sage)
+                    resolvedTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : '';
                   }
 
-                  if (validThemes.includes(resolvedTheme)) {
+                  if (resolvedTheme && validThemes.includes(resolvedTheme)) {
                     document.documentElement.classList.add(resolvedTheme);
-                  } else {
-                    document.documentElement.classList.add('light');
                   }
+                  // 빈 문자열이면 클래스 추가 안함 → :root (Warm Sage) 적용
                 } catch (e) {
-                  document.documentElement.classList.add('light');
+                  // 오류 시에도 클래스 추가 안함 → :root (Warm Sage) 적용
                 }
               })();
             `,
           }}
         />
-        {/* 글꼴 크기 초기화 스크립트 */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              (function() {
-                try {
-                  var fontSizeKey = 'reading-jesus-font-size';
-                  var fontScales = { xs: 0.85, sm: 0.92, base: 1, lg: 1.1, xl: 1.2 };
-                  var saved = localStorage.getItem(fontSizeKey) || 'base';
-                  var scale = fontScales[saved] || 1;
-                  document.documentElement.style.setProperty('--font-scale', scale);
-                  document.documentElement.setAttribute('data-font-size', saved);
-                } catch (e) {}
-              })();
-            `,
-          }}
-        />
       </head>
-      <body className={`${geistSans.variable} antialiased`}>
+      <body className={`${geistSans.variable} ${julianScript.variable} antialiased`}>
         <ThemeProvider>
           <QueryProvider>
             <ToastProvider>

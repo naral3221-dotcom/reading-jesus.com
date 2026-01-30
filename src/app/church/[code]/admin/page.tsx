@@ -2923,7 +2923,7 @@ export default function ChurchAdminPage() {
                           }`}
                         >
                           {/* 썸네일 */}
-                          <div className="relative w-16 h-28 flex-shrink-0 rounded overflow-hidden bg-slate-200">
+                          <div className="relative w-16 h-28 flex-shrink-0 rounded overflow-hidden bg-muted">
                             <Image
                               src={short.thumbnail_url || `https://img.youtube.com/vi/${short.video_id}/hqdefault.jpg`}
                               alt={short.title || 'Shorts'}
@@ -2945,7 +2945,7 @@ export default function ChurchAdminPage() {
                               <span className={`text-xs px-1.5 py-0.5 rounded ${
                                 short.is_active
                                   ? 'bg-accent/10 text-accent'
-                                  : 'bg-slate-100 text-slate-500'
+                                  : 'bg-muted text-muted-foreground'
                               }`}>
                                 {short.is_active ? '표시 중' : '숨김'}
                               </span>

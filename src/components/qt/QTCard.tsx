@@ -73,9 +73,9 @@ export default function QTCard({ qt, href, churchCode, isToday = false }: QTCard
 
           {/* ONE WORD */}
           {qt.meditation?.oneWord && (
-            <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-accent/10 rounded-md">
-              <span className="text-xs text-accent-foreground/70 font-medium">ONE WORD</span>
-              <span className="text-sm font-bold text-accent-foreground">{qt.meditation.oneWord}</span>
+            <div className="mt-2 inline-flex items-center gap-1.5 px-2 py-1 bg-primary/10 rounded-md">
+              <span className="text-xs text-primary/70 font-medium">ONE WORD</span>
+              <span className="text-sm font-bold text-primary">{qt.meditation.oneWord}</span>
             </div>
           )}
         </div>

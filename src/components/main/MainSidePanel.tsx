@@ -104,7 +104,7 @@ export function MainSidePanel() {
           <Card className="border-border/60">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Skeleton className="w-12 h-12 rounded-full" />
+                <Skeleton className="w-10 h-10 rounded-full" />
                 <div className="flex-1">
                   <Skeleton className="h-4 w-20 mb-1" />
                   <Skeleton className="h-3 w-16" />
@@ -116,14 +116,14 @@ export function MainSidePanel() {
           <Card className="border-border/60">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
-                <Avatar className="w-12 h-12 ring-2 ring-primary/20 dark:ring-primary/30">
+                <Avatar className="w-10 h-10 ring-2 ring-primary/20 dark:ring-primary/30">
                   <AvatarImage src={user.avatarUrl ?? undefined} />
-                  <AvatarFallback className="bg-muted text-muted-foreground">
-                    {user.nickname?.[0] ?? <User className="w-5 h-5" />}
+                  <AvatarFallback className="bg-muted text-muted-foreground text-sm">
+                    {user.nickname?.[0] ?? <User className="w-4 h-4" />}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate">
+                  <p className="font-semibold text-sm truncate">
                     {user.nickname ?? '사용자'}
                   </p>
                   <p className="text-xs text-muted-foreground">
@@ -131,7 +131,7 @@ export function MainSidePanel() {
                   </p>
                 </div>
                 <Link href="/mypage">
-                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </Link>
               </div>
             </CardContent>
@@ -141,23 +141,23 @@ export function MainSidePanel() {
         {/* 오늘의 읽기 */}
         {isLoading ? (
           <Card className="border-border">
-            <CardHeader className="pb-2">
+            <CardHeader className="p-4 pb-3">
               <Skeleton className="h-4 w-24" />
             </CardHeader>
-            <CardContent className="pt-0 space-y-3">
+            <CardContent className="p-4 pt-0 space-y-3">
               <Skeleton className="h-4 w-32" />
               <Skeleton className="h-9 w-full" />
             </CardContent>
           </Card>
         ) : activeGroup ? (
           <Card className="border-border bg-muted/30">
-            <CardHeader className="pb-2">
+            <CardHeader className="p-4 pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
                 <BookOpen className="w-4 h-4" />
                 오늘의 읽기
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0 space-y-3">
+            <CardContent className="p-4 pt-0 space-y-3">
               <div>
                 <p className="text-xs text-muted-foreground mb-1">통독 범위</p>
                 <p className="font-medium text-sm">{todayReading.range}</p>
@@ -168,7 +168,7 @@ export function MainSidePanel() {
                   <p className="font-medium text-sm">{todayPlan.memory_verse}</p>
                 </div>
               )}
-              <Link href={todayPlan ? `/qt/${todayPlan.day}` : '/bible'}>
+              <Link href={todayPlan ? `/qt/${todayPlan.date}` : '/bible'}>
                 <Button size="sm" className="w-full">
                   <Sparkles className="w-4 h-4 mr-2" />
                   묵상 시작하기
@@ -178,13 +178,13 @@ export function MainSidePanel() {
           </Card>
         ) : (
           <Card className="border-border bg-muted/30">
-            <CardHeader className="pb-2">
+            <CardHeader className="p-4 pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground">
                 <BookOpen className="w-4 h-4" />
                 그룹에 참여하세요
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0 space-y-3">
+            <CardContent className="p-4 pt-0 space-y-3">
               <p className="text-xs text-muted-foreground">
                 그룹에 참여하여 함께 성경을 읽어보세요!
               </p>
@@ -201,23 +201,23 @@ export function MainSidePanel() {
         {/* 진행률 */}
         {isLoading ? (
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-4 pb-3">
               <Skeleton className="h-4 w-28" />
             </CardHeader>
-            <CardContent className="pt-0 space-y-2">
+            <CardContent className="p-4 pt-0 space-y-2">
               <Skeleton className="h-2 w-full" />
               <Skeleton className="h-3 w-20 mx-auto" />
             </CardContent>
           </Card>
         ) : (
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader className="p-4 pb-3">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <TrendingUp className="w-4 h-4 text-primary" />
                 연간 통독 진행률
               </CardTitle>
             </CardHeader>
-            <CardContent className="pt-0 space-y-2">
+            <CardContent className="p-4 pt-0 space-y-2">
               <div className="flex justify-between text-xs">
                 <span className="text-muted-foreground">{readingProgress.currentDay}일 완료</span>
                 <span className="font-semibold text-primary">{readingProgress.percentage}%</span>
@@ -232,7 +232,7 @@ export function MainSidePanel() {
 
         {/* 추천 사용자 */}
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader className="p-4 pb-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm font-semibold flex items-center gap-2">
                 <Users className="w-4 h-4 text-accent" />
@@ -243,7 +243,7 @@ export function MainSidePanel() {
               </Link>
             </div>
           </CardHeader>
-          <CardContent className="pt-0 space-y-3">
+          <CardContent className="p-4 pt-0 space-y-3">
             {suggestedLoading ? (
               <>
                 {[1, 2, 3].map((i) => (

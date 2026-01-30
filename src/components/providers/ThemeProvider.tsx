@@ -12,11 +12,9 @@ export {
   AppPreferencesProvider as ThemeProvider,
   useTheme,
   useAppPreferences,
-  useFontSize,
   useNextTheme,
   THEMES,
   THEME_META,
-  FONT_SIZE_LEVELS,
 } from './AppPreferencesProvider';
 
-export type { Theme, FontSizeLevel } from './AppPreferencesProvider';
+export type { Theme } from './AppPreferencesProvider';

@@ -54,7 +54,9 @@ export class GetPublicFeed {
           likes_count,
           replies_count,
           church_id,
-          churches!inner(id, code, name)
+          linked_user_id,
+          churches!inner(id, code, name),
+          profiles:linked_user_id(avatar_url)
         `)
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -74,10 +76,13 @@ export class GetPublicFeed {
       if (!guestError && guestData) {
         for (const item of guestData) {
           const church = item.churches as unknown as { id: string; code: string; name: string }
+          const profile = item.profiles as unknown as { avatar_url: string | null } | null
           items.push({
             id: item.id,
             type: 'meditation',
+            authorId: item.linked_user_id,
             authorName: item.guest_name,
+            authorAvatarUrl: profile?.avatar_url,
             isAnonymous: item.is_anonymous || false,
             createdAt: item.created_at,
             churchId: church.id,
@@ -112,7 +117,9 @@ export class GetPublicFeed {
           replies_count,
           day_number,
           church_id,
-          churches!inner(id, code, name)
+          user_id,
+          churches!inner(id, code, name),
+          profiles:user_id(avatar_url)
         `)
         .order('created_at', { ascending: false })
         .limit(limit)
@@ -132,10 +139,13 @@ export class GetPublicFeed {
       if (!qtError && qtData) {
         for (const item of qtData) {
           const church = item.churches as unknown as { id: string; code: string; name: string }
+          const profile = item.profiles as unknown as { avatar_url: string | null } | null
           items.push({
             id: item.id,
             type: 'qt',
+            authorId: item.user_id,
             authorName: item.author_name,
+            authorAvatarUrl: profile?.avatar_url,
             isAnonymous: item.is_anonymous || false,
             createdAt: item.created_at,
             churchId: church.id,

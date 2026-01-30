@@ -36,14 +36,14 @@ export function DashboardQuickLinks({ church, activeGroup }: DashboardQuickLinks
             <Card className="h-full border-dashed border-border hover:border-primary/50 hover:shadow-md transition-all cursor-pointer">
               <CardContent className="p-3">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
-                    <Church className="w-4 h-4 text-slate-500" />
+                  <div className="w-8 h-8 rounded-lg bg-muted flex items-center justify-center">
+                    <Church className="w-4 h-4 text-muted-foreground" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs text-muted-foreground">기존 교회</p>
-                    <p className="font-medium text-sm text-slate-700">교회 검색하기</p>
+                    <p className="font-medium text-sm text-foreground">교회 검색하기</p>
                   </div>
-                  <ChevronRight className="w-4 h-4 text-slate-400" />
+                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </div>
               </CardContent>
             </Card>
@@ -79,7 +79,7 @@ export function DashboardQuickLinks({ church, activeGroup }: DashboardQuickLinks
                 <ChevronRight className="w-4 h-4 text-accent" />
               </div>
               <p className="text-xs text-muted-foreground mb-0.5">내 소속그룹</p>
-              <p className="font-semibold text-sm text-slate-800 truncate">{activeGroup.name}</p>
+              <p className="font-semibold text-sm text-foreground truncate">{activeGroup.name}</p>
             </CardContent>
           </Card>
         </Link>
@@ -88,13 +88,13 @@ export function DashboardQuickLinks({ church, activeGroup }: DashboardQuickLinks
           <Card className="h-full border-dashed border-border hover:border-accent hover:shadow-md transition-all cursor-pointer">
             <CardContent className="p-4">
               <div className="flex items-start justify-between">
-                <div className="w-10 h-10 rounded-xl bg-slate-100 flex items-center justify-center mb-3">
-                  <Users className="w-5 h-5 text-slate-400" />
+                <div className="w-10 h-10 rounded-xl bg-muted flex items-center justify-center mb-3">
+                  <Users className="w-5 h-5 text-muted-foreground" />
                 </div>
-                <ChevronRight className="w-4 h-4 text-slate-400" />
+                <ChevronRight className="w-4 h-4 text-muted-foreground" />
               </div>
               <p className="text-xs text-muted-foreground mb-0.5">그룹 찾기</p>
-              <p className="font-semibold text-sm text-slate-600">그룹 참여하기</p>
+              <p className="font-semibold text-sm text-muted-foreground">그룹 참여하기</p>
             </CardContent>
           </Card>
         </Link>

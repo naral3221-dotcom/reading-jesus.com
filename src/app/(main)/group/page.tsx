@@ -532,10 +532,10 @@ export default function GroupPage() {
 
   if (loading) {
     return (
-      <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-background to-muted/30">
+      <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
         {/* 헤더 스켈레톤 */}
-        <header className="bg-gradient-to-r from-muted/80 via-white to-slate-50/60 sticky top-0 z-10 border-b border-border/50">
-          <div className="flex items-center justify-between px-4 py-3">
+        <header className="bg-gradient-to-r from-muted/80 via-background to-muted/20 sticky top-0 z-10 border-b border-border/50">
+          <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto w-full">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
               <div className="space-y-1">
@@ -549,7 +549,7 @@ export default function GroupPage() {
             </div>
           </div>
         </header>
-        <main className="flex-1 p-4">
+        <main className="flex-1 p-4 max-w-2xl mx-auto w-full">
           <ListSkeleton count={3} />
         </main>
       </div>
@@ -557,25 +557,25 @@ export default function GroupPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gradient-to-br from-slate-50 via-background to-muted/30">
+    <div className="flex flex-col min-h-screen bg-gradient-to-br from-background via-background to-muted/30">
       {/* 헤더 - 교회/홈 페이지 스타일 */}
-      <header className="bg-gradient-to-r from-muted/80 via-white to-slate-50/60 sticky top-0 z-10 border-b border-border/50">
-        <div className="flex items-center justify-between px-4 py-3">
+      <header className="bg-gradient-to-r from-muted/80 via-background to-muted/20 sticky top-0 z-10 border-b border-border/50">
+        <div className="flex items-center justify-between px-4 py-3 max-w-2xl mx-auto w-full">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-muted0 to-blue-600 flex items-center justify-center shadow-md">
-              <Users className="w-5 h-5 text-white" />
+            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-md">
+              <Users className="w-5 h-5 text-primary-foreground" />
             </div>
             <div>
-              <h1 className="font-bold text-base text-slate-800">내 그룹</h1>
+              <h1 className="font-bold text-base text-foreground">내 그룹</h1>
               {userChurch ? (
                 <Link href={`/church/${userChurch.code}`}>
-                  <span className="inline-flex items-center gap-1 text-xs text-slate-500 hover:text-primary transition-colors">
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition-colors">
                     <Church className="w-3 h-3" />
                     {userChurch.name}
                   </span>
                 </Link>
               ) : (
-                <p className="text-xs text-slate-500">{groups.length}개의 그룹</p>
+                <p className="text-xs text-muted-foreground">{groups.length}개의 그룹</p>
               )}
             </div>
           </div>
@@ -608,7 +608,7 @@ export default function GroupPage() {
         </div>
       </header>
 
-      <main className="flex-1 p-4 space-y-4 pb-24">
+      <main className="flex-1 p-4 space-y-4 pb-24 max-w-2xl mx-auto w-full">
 
       {/* 활성 그룹 안내 */}
       {activeGroup && groups.length > 1 && (

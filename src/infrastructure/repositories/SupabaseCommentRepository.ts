@@ -19,6 +19,7 @@ import type {
   CommentAttachmentProps,
   MemberRankProps,
 } from '@/domain/entities/Comment'
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation'
 
 // DB Row 타입
 interface CommentRow {
@@ -28,6 +29,7 @@ interface CommentRow {
   day_number: number
   content: string
   is_anonymous: boolean
+  visibility: ContentVisibility | null
   likes_count: number
   replies_count: number
   is_pinned: boolean
@@ -92,6 +94,7 @@ export class SupabaseCommentRepository implements ICommentRepository {
       dayNumber: row.day_number,
       content: row.content,
       isAnonymous: row.is_anonymous,
+      visibility: row.visibility ?? 'group',
       likesCount: row.likes_count,
       repliesCount: row.replies_count,
       isPinned: row.is_pinned,

@@ -30,13 +30,13 @@ export function GroupsContent({ churchCode }: GroupsContentProps) {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-background to-muted/30">
+    <div className="min-h-full bg-gradient-to-br from-background via-background to-muted/30">
       {/* 헤더 */}
       <header className="bg-gradient-to-r from-muted via-white to-muted/50 sticky top-0 z-10 border-b border-border">
         <div className="px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-muted0 to-blue-600 flex items-center justify-center shadow-md">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-md">
                 <Users className="w-6 h-6 text-white" />
               </div>
               <div>

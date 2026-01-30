@@ -27,6 +27,10 @@ export interface UserWithFollowStatus {
   followingCount: number
   isFollowing: boolean // 현재 사용자가 이 사용자를 팔로우하고 있는지
   isFollowedBy: boolean // 이 사용자가 현재 사용자를 팔로우하고 있는지
+  // 소속 교회 정보 (선택적)
+  churchId?: string
+  churchName?: string
+  churchCode?: string
 }
 
 export class UserFollow {

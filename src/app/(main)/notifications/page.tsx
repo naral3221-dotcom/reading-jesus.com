@@ -55,8 +55,8 @@ const notificationConfig: Record<NotificationType, { icon: React.ReactNode; colo
   },
   reminder: {
     icon: <Clock className="w-4 h-4" />,
-    color: 'text-slate-500',
-    bgColor: 'bg-slate-50'
+    color: 'text-muted-foreground',
+    bgColor: 'bg-muted'
   },
 };
 

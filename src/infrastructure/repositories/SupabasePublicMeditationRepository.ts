@@ -11,7 +11,7 @@ import type {
   UpdatePublicMeditationInput,
   CreatePublicMeditationReplyInput,
 } from '@/domain/repositories/IPublicMeditationRepository'
-import type { PublicMeditationProps, PublicMeditationReplyProps, MeditationType } from '@/domain/entities/PublicMeditation'
+import type { PublicMeditationProps, PublicMeditationReplyProps, MeditationType, ContentVisibility } from '@/domain/entities/PublicMeditation'
 
 export class SupabasePublicMeditationRepository implements IPublicMeditationRepository {
   // ID로 단일 조회
@@ -20,14 +20,22 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
 
     const { data, error } = await supabase
       .from('public_meditations')
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .eq('id', id)
       .single()
 
     if (error || !data) return null
+
+    // 프로필 정보 별도 조회
+    let profile: { nickname: string; avatar_url: string | null } | null = null
+    if (data.user_id) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('nickname, avatar_url')
+        .eq('id', data.user_id)
+        .single()
+      profile = profileData
+    }
 
     // 좋아요 상태 확인
     let isLiked = false
@@ -41,20 +49,17 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       isLiked = !!likeData
     }
 
-    return this.mapToProps(data, isLiked)
+    return this.mapToProps({ ...data, profile }, isLiked)
   }
 
   // 전체 조회 (페이지네이션)
   async findAll(options: GetPublicMeditationsOptions): Promise<PublicMeditationProps[]> {
     const supabase = getSupabaseBrowserClient()
-    const { limit = 20, offset = 0, userId, currentUserId, followingUserIds } = options
+    const { limit = 20, offset = 0, userId, currentUserId, followingUserIds, visibility } = options
 
     let query = supabase
       .from('public_meditations')
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
@@ -68,9 +73,29 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       query = query.in('user_id', followingUserIds)
     }
 
+    // 공개 범위 필터
+    if (visibility && visibility.length > 0) {
+      query = query.in('visibility', visibility)
+    }
+
     const { data, error } = await query
 
     if (error || !data) return []
+
+    // 프로필 정보 별도 조회
+    const userIds = Array.from(new Set(data.map(d => d.user_id).filter((id): id is string => id !== null)))
+    let profileMap = new Map<string, { nickname: string; avatar_url: string | null }>()
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_url')
+        .in('id', userIds)
+
+      if (profiles) {
+        profileMap = new Map(profiles.map(p => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url }]))
+      }
+    }
 
     // 좋아요 상태 일괄 조회
     let likedIds: Set<string> = new Set()
@@ -87,7 +112,10 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       }
     }
 
-    return data.map(d => this.mapToProps(d, likedIds.has(d.id)))
+    return data.map(d => this.mapToProps({
+      ...d,
+      profile: d.user_id ? profileMap.get(d.user_id) || null : null
+    }, likedIds.has(d.id)))
   }
 
   // 특정 사용자의 묵상 조회
@@ -99,6 +127,177 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       ...options,
       userId,
     })
+  }
+
+  // 인기 묵상 조회 (좋아요 순) - public_meditations + church_qt_posts 통합
+  async findPopular(options?: {
+    limit?: number
+    currentUserId?: string
+    daysAgo?: number
+  }): Promise<PublicMeditationProps[]> {
+    const supabase = getSupabaseBrowserClient()
+    const { limit = 10, currentUserId, daysAgo = 7 } = options ?? {}
+
+    // 최근 N일 이내의 묵상만 조회
+    const sinceDate = new Date()
+    sinceDate.setDate(sinceDate.getDate() - daysAgo)
+    const sinceDateStr = sinceDate.toISOString()
+
+    // 1. public_meditations 조회
+    const { data: publicData } = await supabase
+      .from('public_meditations')
+      .select('*')
+      .gte('created_at', sinceDateStr)
+      .gte('likes_count', 2)
+      .order('likes_count', { ascending: false })
+      .limit(limit)
+
+    // 2. church_qt_posts 조회 (좋아요 2개 이상)
+    const { data: churchData } = await supabase
+      .from('church_qt_posts')
+      .select(`
+        *,
+        church:churches(name, code)
+      `)
+      .gte('created_at', sinceDateStr)
+      .gte('likes_count', 2)
+      .order('likes_count', { ascending: false })
+      .limit(limit)
+
+    // 결과 통합
+    const results: PublicMeditationProps[] = []
+
+    // public_meditations 변환
+    if (publicData && publicData.length > 0) {
+      // 프로필 정보 별도 조회
+      const publicUserIds = Array.from(new Set(publicData.map(p => p.user_id).filter((id): id is string => id !== null)))
+      let publicProfileMap = new Map<string, { nickname: string; avatar_url: string | null }>()
+
+      if (publicUserIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nickname, avatar_url')
+          .in('id', publicUserIds)
+
+        if (profiles) {
+          publicProfileMap = new Map(profiles.map(p => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url }]))
+        }
+      }
+
+      // 좋아요 상태 조회
+      let publicLikedIds: Set<string> = new Set()
+      if (currentUserId) {
+        const { data: likesData } = await supabase
+          .from('public_meditation_likes')
+          .select('meditation_id')
+          .eq('user_id', currentUserId)
+          .in('meditation_id', publicData.map(d => d.id))
+
+        if (likesData) {
+          publicLikedIds = new Set(likesData.map(l => l.meditation_id))
+        }
+      }
+
+      results.push(...publicData.map(d => this.mapToProps({
+        ...d,
+        profile: d.user_id ? publicProfileMap.get(d.user_id) || null : null
+      }, publicLikedIds.has(d.id))))
+    }
+
+    // church_qt_posts 변환
+    if (churchData && churchData.length > 0) {
+      // 프로필 정보 조회
+      const userIds = Array.from(new Set(churchData.map(p => p.user_id).filter((id): id is string => id !== null)))
+      let profileMap = new Map<string, { nickname: string; avatar_url: string | null }>()
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nickname, avatar_url')
+          .in('id', userIds)
+
+        if (profiles) {
+          profileMap = new Map(profiles.map(p => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url }]))
+        }
+      }
+
+      // 좋아요 상태 조회
+      let churchLikedIds: Set<string> = new Set()
+      if (currentUserId) {
+        const { data: likesData } = await supabase
+          .from('church_qt_post_likes')
+          .select('post_id')
+          .eq('user_id', currentUserId)
+          .in('post_id', churchData.map(d => d.id))
+
+        if (likesData) {
+          churchLikedIds = new Set(likesData.map(l => l.post_id))
+        }
+      }
+
+      // church_qt_posts를 PublicMeditationProps 형태로 변환
+      results.push(...churchData.map(d => this.mapChurchQTToProps(d, profileMap.get(d.user_id ?? ''), churchLikedIds.has(d.id))))
+    }
+
+    // 좋아요 순으로 정렬하고 limit 적용
+    results.sort((a, b) => b.likesCount - a.likesCount)
+    return results.slice(0, limit)
+  }
+
+  // church_qt_posts를 PublicMeditationProps로 변환
+  private mapChurchQTToProps(
+    data: Record<string, unknown>,
+    profile: { nickname: string; avatar_url: string | null } | undefined,
+    isLiked: boolean
+  ): PublicMeditationProps {
+    const church = data.church as { name: string; code: string } | null
+
+    // meditation_answer를 content로 사용 (배열인 경우 join)
+    let content = ''
+    const meditationAnswer = data.meditation_answer
+    if (Array.isArray(meditationAnswer)) {
+      content = meditationAnswer.filter(Boolean).join('\n')
+    } else if (typeof meditationAnswer === 'string') {
+      content = meditationAnswer
+    }
+
+    // content가 비어있으면 다른 필드 사용
+    if (!content) {
+      const mySentence = data.my_sentence
+      if (Array.isArray(mySentence)) {
+        content = mySentence.filter(Boolean).join('\n')
+      } else if (typeof mySentence === 'string') {
+        content = mySentence
+      }
+    }
+
+    return {
+      id: data.id as string,
+      userId: (data.user_id as string) ?? '',
+      title: null,
+      content: content || '(내용 없음)',
+      bibleReference: church ? `${church.name}` : null,
+      isAnonymous: (data.is_anonymous as boolean) ?? false,
+      visibility: (data.visibility as ContentVisibility) ?? 'church',
+      likesCount: (data.likes_count as number) ?? 0,
+      repliesCount: (data.replies_count as number) ?? 0,
+      createdAt: new Date(data.created_at as string),
+      updatedAt: new Date(data.updated_at as string),
+      projectId: null,
+      dayNumber: data.day_number as number | null,
+      meditationType: 'qt',
+      oneWord: null,
+      meditationQuestion: null,
+      meditationAnswer: content,
+      gratitude: data.gratitude as string | null,
+      myPrayer: data.my_prayer as string | null,
+      dayReview: data.day_review as string | null,
+      profile: profile ? {
+        nickname: profile.nickname,
+        avatarUrl: profile.avatar_url,
+      } : null,
+      isLiked,
+    }
   }
 
   // 팔로잉 사용자들의 묵상 조회
@@ -143,16 +342,28 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
 
     const { data, error } = await supabase
       .from('public_meditations')
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .eq('project_id', projectId)
       .order('day_number', { ascending: false })
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
     if (error || !data) return []
+
+    // 프로필 정보 별도 조회
+    const userIds = Array.from(new Set(data.map(d => d.user_id).filter((id): id is string => id !== null)))
+    let profileMap = new Map<string, { nickname: string; avatar_url: string | null }>()
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_url')
+        .in('id', userIds)
+
+      if (profiles) {
+        profileMap = new Map(profiles.map(p => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url }]))
+      }
+    }
 
     // 좋아요 상태 일괄 조회
     let likedIds: Set<string> = new Set()
@@ -169,7 +380,10 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       }
     }
 
-    return data.map(d => this.mapToProps(d, likedIds.has(d.id)))
+    return data.map(d => this.mapToProps({
+      ...d,
+      profile: d.user_id ? profileMap.get(d.user_id) || null : null
+    }, likedIds.has(d.id)))
   }
 
   // 특정 프로젝트의 특정 Day 묵상 조회 (신규)
@@ -182,10 +396,7 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
 
     const { data, error } = await supabase
       .from('public_meditations')
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .eq('project_id', projectId)
       .eq('day_number', dayNumber)
       .order('created_at', { ascending: false })
@@ -193,6 +404,17 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       .single()
 
     if (error || !data) return null
+
+    // 프로필 정보 별도 조회
+    let profile: { nickname: string; avatar_url: string | null } | null = null
+    if (data.user_id) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('nickname, avatar_url')
+        .eq('id', data.user_id)
+        .single()
+      profile = profileData
+    }
 
     // 좋아요 상태 확인
     let isLiked = false
@@ -206,7 +428,7 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       isLiked = !!likeData
     }
 
-    return this.mapToProps(data, isLiked)
+    return this.mapToProps({ ...data, profile }, isLiked)
   }
 
   // 프로젝트별 묵상 개수 (신규)
@@ -233,6 +455,7 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
         content: input.content,
         bible_reference: input.bibleReference ?? null,
         is_anonymous: input.isAnonymous ?? false,
+        visibility: input.visibility ?? 'public',
         // 개인 프로젝트 관련 필드 (신규)
         project_id: input.projectId ?? null,
         day_number: input.dayNumber ?? null,
@@ -245,17 +468,25 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
         my_prayer: input.myPrayer ?? null,
         day_review: input.dayReview ?? null,
       })
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .single()
 
     if (error || !data) {
       throw new Error(`공개 묵상 생성 실패: ${error?.message}`)
     }
 
-    return this.mapToProps(data, false)
+    // 프로필 정보 별도 조회
+    let profile: { nickname: string; avatar_url: string | null } | null = null
+    if (data.user_id) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('nickname, avatar_url')
+        .eq('id', data.user_id)
+        .single()
+      profile = profileData
+    }
+
+    return this.mapToProps({ ...data, profile }, false)
   }
 
   // 수정
@@ -267,6 +498,7 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
     if (input.content !== undefined) updateData.content = input.content
     if (input.bibleReference !== undefined) updateData.bible_reference = input.bibleReference
     if (input.isAnonymous !== undefined) updateData.is_anonymous = input.isAnonymous
+    if (input.visibility !== undefined) updateData.visibility = input.visibility
     // QT 형식 필드 (신규)
     if (input.oneWord !== undefined) updateData.one_word = input.oneWord
     if (input.meditationQuestion !== undefined) updateData.meditation_question = input.meditationQuestion
@@ -280,17 +512,25 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       .update(updateData)
       .eq('id', id)
       .eq('user_id', userId) // 본인만 수정 가능
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .single()
 
     if (error || !data) {
       throw new Error(`공개 묵상 수정 실패: ${error?.message}`)
     }
 
-    return this.mapToProps(data, false)
+    // 프로필 정보 별도 조회
+    let profile: { nickname: string; avatar_url: string | null } | null = null
+    if (data.user_id) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('nickname, avatar_url')
+        .eq('id', data.user_id)
+        .single()
+      profile = profileData
+    }
+
+    return this.mapToProps({ ...data, profile }, false)
   }
 
   // 삭제
@@ -346,16 +586,31 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
 
     const { data, error } = await supabase
       .from('public_meditation_replies')
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .eq('meditation_id', meditationId)
       .order('created_at', { ascending: true })
 
     if (error || !data) return []
 
-    return data.map(d => this.mapReplyToProps(d))
+    // 프로필 정보 별도 조회
+    const userIds = Array.from(new Set(data.map(d => d.user_id).filter((id): id is string => id !== null)))
+    let profileMap = new Map<string, { nickname: string; avatar_url: string | null }>()
+
+    if (userIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from('profiles')
+        .select('id, nickname, avatar_url')
+        .in('id', userIds)
+
+      if (profiles) {
+        profileMap = new Map(profiles.map(p => [p.id, { nickname: p.nickname, avatar_url: p.avatar_url }]))
+      }
+    }
+
+    return data.map(d => this.mapReplyToProps({
+      ...d,
+      profile: d.user_id ? profileMap.get(d.user_id) || null : null
+    }))
   }
 
   // 댓글 생성
@@ -373,17 +628,25 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
         mention_user_id: input.mentionUserId ?? null,
         mention_nickname: input.mentionNickname ?? null,
       })
-      .select(`
-        *,
-        profile:profiles!user_id(nickname, avatar_url)
-      `)
+      .select('*')
       .single()
 
     if (error || !data) {
       throw new Error(`댓글 생성 실패: ${error?.message}`)
     }
 
-    return this.mapReplyToProps(data)
+    // 프로필 정보 별도 조회
+    let profile: { nickname: string; avatar_url: string | null } | null = null
+    if (data.user_id) {
+      const { data: profileData } = await supabase
+        .from('profiles')
+        .select('nickname, avatar_url')
+        .eq('id', data.user_id)
+        .single()
+      profile = profileData
+    }
+
+    return this.mapReplyToProps({ ...data, profile })
   }
 
   // 댓글 삭제
@@ -411,6 +674,7 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       content: data.content as string,
       bibleReference: data.bible_reference as string | null,
       isAnonymous: data.is_anonymous as boolean,
+      visibility: (data.visibility as ContentVisibility) ?? 'public',
       likesCount: (data.likes_count as number) ?? 0,
       repliesCount: (data.replies_count as number) ?? 0,
       createdAt: new Date(data.created_at as string),

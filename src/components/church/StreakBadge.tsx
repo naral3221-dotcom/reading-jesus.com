@@ -67,7 +67,7 @@ export function StreakHeader({ streak, className }: StreakHeaderProps) {
   return (
     <div
       className={cn(
-        'flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-muted/50 to-accent/10 border border-border',
+        'flex items-center gap-2 px-3 py-1.5 rounded-full bg-gradient-to-r from-muted/50 to-accent-warm/10 border border-border',
         className
       )}
     >

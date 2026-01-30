@@ -54,7 +54,7 @@ function ChurchLayoutInner({
     // Split View 활성화 시
     if (isLg && state.isEnabled) {
         return (
-            <div className="min-h-screen lg:ml-20">
+            <div className="min-h-screen lg:ml-48">
                 <SplitViewContainer churchCode={churchCode} />
                 <DraggableSidebar churchCode={churchCode} />
             </div>
@@ -65,8 +65,8 @@ function ChurchLayoutInner({
     return (
         <div className={cn(
             'min-h-screen flex',
-            // PC에서 좌측 사이드바 공간 확보
-            'lg:ml-20',
+            // PC에서 좌측 사이드바 공간 확보 (expanded: w-48 = 192px)
+            'lg:ml-48',
             className
         )}>
             {/* 메인 콘텐츠 영역 */}

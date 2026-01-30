@@ -13,6 +13,7 @@ import {
   UpdateChurchQTPostInput,
   CreateChurchQTPostReplyInput,
 } from '@/domain/entities/ChurchQTPost'
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation'
 import {
   IChurchQTPostRepository,
   ChurchQTPostSearchParams,
@@ -32,6 +33,7 @@ interface ChurchQTPostRow {
   day_review: string | null
   user_id: string | null
   is_anonymous: boolean
+  visibility: ContentVisibility | null
   is_pinned: boolean
   likes_count: number
   replies_count: number
@@ -64,6 +66,7 @@ function mapRowToPostProps(row: ChurchQTPostRow): ChurchQTPostProps {
     dayReview: row.day_review,
     userId: row.user_id,
     isAnonymous: row.is_anonymous ?? false,
+    visibility: row.visibility ?? 'church',
     isPinned: row.is_pinned ?? false,
     likesCount: row.likes_count ?? 0,
     repliesCount: row.replies_count ?? 0,

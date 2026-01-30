@@ -25,13 +25,11 @@ import {
   LogOut,
   Shield,
   Info,
-  Type,
 } from 'lucide-react';
 import { signOut } from '@/lib/supabase';  // Auth 헬퍼는 그대로 사용
 import { useCurrentUser, useDeleteAccount } from '@/presentation/hooks/queries/useUser';
 import { cn } from '@/lib/utils';
 import { ThemeSelector } from '@/components/ThemeSelector';
-import { FontSizeSelector } from '@/components/FontSizeSelector';
 
 interface UserSettings {
   notifications: {
@@ -170,20 +168,6 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent>
             <ThemeSelector variant="grid" showDescription={false} />
-          </CardContent>
-        </Card>
-
-        {/* 글꼴 크기 설정 */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Type className="w-5 h-5" />
-              글꼴 크기
-            </CardTitle>
-            <CardDescription>읽기 편한 글꼴 크기를 선택하세요</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <FontSizeSelector variant="slider" showPreview={true} />
           </CardContent>
         </Card>
 

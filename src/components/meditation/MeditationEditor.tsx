@@ -20,6 +20,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ReadingDayPicker } from '@/components/church/ReadingDayPicker';
+import { VisibilitySelector } from '@/components/ui/visibility-selector';
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 
 // 선택된 구절 타입
 export interface SelectedVerse {
@@ -62,6 +64,11 @@ export interface MeditationEditorProps {
   showAnonymous?: boolean;
   defaultAnonymous?: boolean;
 
+  // 공개 범위 옵션
+  showVisibility?: boolean;
+  defaultVisibility?: ContentVisibility;
+  allowedVisibilityOptions?: ContentVisibility[];
+
   // 발행 텍스트
   submitLabel?: string;
 
@@ -85,6 +92,7 @@ export interface MeditationSubmitData {
   attachedLinks?: string[];
   isAnonymous: boolean;
   dayNumber?: number | null;
+  visibility?: ContentVisibility;
 }
 
 export function MeditationEditor({
@@ -104,6 +112,9 @@ export function MeditationEditor({
   showDayPicker = false,
   showAnonymous = false,
   defaultAnonymous = false,
+  showVisibility = false,
+  defaultVisibility = 'public',
+  allowedVisibilityOptions = ['private', 'church', 'public'],
   submitLabel = '발행하기',
   onClose,
   onDraftSaved,
@@ -118,6 +129,7 @@ export function MeditationEditor({
   const [authorName, setAuthorName] = useState(initialAuthorName);
   const [dayNumber, setDayNumber] = useState<number | null>(initialDayNumber);
   const [isAnonymous, setIsAnonymous] = useState(defaultAnonymous);
+  const [visibility, setVisibility] = useState<ContentVisibility>(defaultVisibility);
   const [showVerses, setShowVerses] = useState(false); // 기본 접힌 상태
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [attachedLinks, setAttachedLinks] = useState<string[]>([]);
@@ -315,6 +327,7 @@ export function MeditationEditor({
         attachedLinks: attachedLinks.length > 0 ? attachedLinks : undefined,
         isAnonymous,
         dayNumber,
+        visibility: showVisibility ? visibility : undefined,
       });
 
       // 성공 시 초기화
@@ -463,6 +476,18 @@ export function MeditationEditor({
             value={dayNumber}
             onChange={setDayNumber}
             placeholder="통독일정을 선택하세요"
+          />
+        </div>
+      )}
+
+      {/* 공개 범위 선택 */}
+      {showVisibility && (
+        <div className="mb-3">
+          <VisibilitySelector
+            value={visibility}
+            onChange={setVisibility}
+            allowedOptions={allowedVisibilityOptions}
+            variant="inline"
           />
         </div>
       )}

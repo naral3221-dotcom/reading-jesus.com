@@ -73,7 +73,7 @@ export function SharingContent({ churchCode }: SharingContentProps) {
         ) : (
           posts.map((post) => {
             const displayName = post.is_anonymous ? '익명' : post.guest_name;
-            const avatarColor = post.is_anonymous ? 'bg-muted' : getAvatarColor(post.guest_name);
+            const avatarColor = post.is_anonymous ? 'bg-slate-600' : getAvatarColor(post.guest_name);
             const initials = post.is_anonymous ? '?' : getInitials(post.guest_name);
             const contentPreview = stripHtml(post.content).slice(0, 100);
 

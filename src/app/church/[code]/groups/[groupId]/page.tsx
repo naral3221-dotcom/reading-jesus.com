@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -27,6 +27,7 @@ import {
   ChevronLeft,
   ChevronRight,
   BookOpen,
+  Rss,
   Hand,
   CalendarDays,
   MapPin,
@@ -156,6 +157,7 @@ export default function ChurchGroupDetailPage() {
 
   // 묵상 관련 상태
   const [currentDay, setCurrentDay] = useState(1);
+  const [feedViewMode, setFeedViewMode] = useState<'day' | 'feed'>('feed'); // 피드 모드: 전체 or 일자별
   const [comments, setComments] = useState<(CommentWithProfile | GuestComment)[]>([]);
   const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentContent, setCommentContent] = useState('');
@@ -394,6 +396,12 @@ export default function ChurchGroupDetailPage() {
     }
   }, [churchCode, groupId, calculateCurrentDay]);
 
+  // 멤버 ID 메모이제이션 (성능 최적화)
+  const memberUserIds = useMemo(
+    () => members.map(m => m.user_id),
+    [members]
+  );
+
   // 묵상 로드
   const loadComments = useCallback(async () => {
     if (!group || !church) return;
@@ -403,28 +411,42 @@ export default function ChurchGroupDetailPage() {
 
     try {
       // 1. 그룹 내 comments 로드
-      const { data: groupComments } = await supabase
+      // feedViewMode === 'feed'이면 모든 날짜, 'day'이면 현재 날짜만
+      let groupCommentsQuery = supabase
         .from('comments')
         .select(`
           *,
           profile:user_id (nickname, avatar_url)
         `)
-        .eq('group_id', groupId)
-        .eq('day_number', currentDay)
-        .order('created_at', { ascending: false });
+        .eq('group_id', groupId);
+
+      // 일자별 모드에서만 day_number 필터 적용
+      if (feedViewMode === 'day') {
+        groupCommentsQuery = groupCommentsQuery.eq('day_number', currentDay);
+      }
+
+      const { data: groupComments } = await groupCommentsQuery
+        .order('created_at', { ascending: false })
+        .limit(50);
 
       // 2. 연동된 guest_comments 로드 (그룹 멤버들의 교회 묵상)
-      const memberUserIds = members.map(m => m.user_id);
-
+      // memberUserIds는 useMemo로 메모이제이션됨
       let guestComments: GuestComment[] = [];
       if (memberUserIds.length > 0) {
-        const { data: linkedComments } = await supabase
+        let guestQuery = supabase
           .from('guest_comments')
           .select('*')
           .eq('church_id', church.id)
-          .eq('day_number', currentDay)
-          .in('linked_user_id', memberUserIds)
-          .order('created_at', { ascending: false });
+          .in('linked_user_id', memberUserIds);
+
+        // 일자별 모드에서만 day_number 필터 적용
+        if (feedViewMode === 'day') {
+          guestQuery = guestQuery.eq('day_number', currentDay);
+        }
+
+        const { data: linkedComments } = await guestQuery
+          .order('created_at', { ascending: false })
+          .limit(50);
 
         guestComments = linkedComments || [];
       }
@@ -459,10 +481,14 @@ export default function ChurchGroupDetailPage() {
       }
     } catch (err) {
       console.error('묵상 로드 에러:', err);
+      toast({
+        title: '묵상을 불러오는 중 오류가 발생했습니다.',
+        variant: 'error',
+      });
     } finally {
       setCommentsLoading(false);
     }
-  }, [group, church, groupId, currentDay, members, currentUser]);
+  }, [group, church, groupId, currentDay, feedViewMode, memberUserIds, currentUser, toast]);
 
   useEffect(() => {
     loadData();
@@ -514,7 +540,8 @@ export default function ChurchGroupDetailPage() {
     const supabase = getSupabaseBrowserClient();
 
     try {
-      const { error } = await supabase
+      // 1. Legacy: comments 테이블에 저장
+      const { data: legacyData, error: legacyError } = await supabase
         .from('comments')
         .insert({
           user_id: currentUser.id,
@@ -522,9 +549,33 @@ export default function ChurchGroupDetailPage() {
           day_number: currentDay,
           content: commentContent,
           is_anonymous: isAnonymous,
+        })
+        .select('id')
+        .single();
+
+      if (legacyError) throw legacyError;
+
+      // 2. Dual-Write: unified_meditations 테이블에도 저장
+      const authorName = isAnonymous ? '익명' : (userProfile?.nickname || '사용자');
+      const { error: unifiedError } = await supabase
+        .from('unified_meditations')
+        .insert({
+          user_id: currentUser.id,
+          author_name: authorName,
+          source_type: 'group',
+          source_id: groupId,
+          content_type: 'free',
+          day_number: currentDay,
+          content: commentContent,
+          is_anonymous: isAnonymous,
+          legacy_table: 'comments',
+          legacy_id: legacyData.id,
         });
 
-      if (error) throw error;
+      // unified_meditations 저장 실패는 로그만 남기고 계속 진행
+      if (unifiedError) {
+        console.warn('unified_meditations 저장 실패 (비치명적):', unifiedError);
+      }
 
       setCommentContent('');
       setIsAnonymous(false); // 작성 후 익명 옵션 초기화
@@ -584,11 +635,40 @@ export default function ChurchGroupDetailPage() {
         is_anonymous: isAnonymous,
       };
 
-      const { error } = await supabase
+      // 1. Legacy: church_qt_posts 테이블에 저장
+      const { data: legacyData, error: legacyError } = await supabase
         .from('church_qt_posts')
-        .insert(insertData);
+        .insert(insertData)
+        .select('id')
+        .single();
 
-      if (error) throw error;
+      if (legacyError) throw legacyError;
+
+      // 2. Dual-Write: unified_meditations 테이블에도 저장
+      const { error: unifiedError } = await supabase
+        .from('unified_meditations')
+        .insert({
+          user_id: currentUser.id,
+          author_name: insertData.author_name,
+          source_type: 'church',
+          source_id: church.id,
+          content_type: 'qt',
+          day_number: currentDay,
+          qt_date: qtDate,
+          my_sentence: insertData.my_sentence,
+          meditation_answer: insertData.meditation_answer,
+          gratitude: insertData.gratitude,
+          my_prayer: insertData.my_prayer,
+          day_review: insertData.day_review,
+          is_anonymous: isAnonymous,
+          legacy_table: 'church_qt_posts',
+          legacy_id: legacyData.id,
+        });
+
+      // unified_meditations 저장 실패는 로그만 남기고 계속 진행
+      if (unifiedError) {
+        console.warn('unified_meditations 저장 실패 (비치명적):', unifiedError);
+      }
 
       // 폼 초기화
       setQtFormData({
@@ -1502,38 +1582,63 @@ export default function ChurchGroupDetailPage() {
 
           {/* 묵상 탭 */}
           <TabsContent value="meditation" className="space-y-4">
-            {/* Day 선택 */}
+            {/* 피드 모드 선택 + Day 선택 */}
             <Card>
               <CardContent className="py-3">
-                <div className="flex items-center justify-between">
+                {/* 피드 모드 토글 */}
+                <div className="flex items-center justify-center gap-2 mb-3 pb-3 border-b border-border/40">
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handlePrevDay}
-                    disabled={currentDay <= 1}
+                    variant={feedViewMode === 'feed' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-8 px-4"
+                    onClick={() => setFeedViewMode('feed')}
                   >
-                    <ChevronLeft className="w-5 h-5" />
+                    <Rss className="w-4 h-4 mr-1.5" />
+                    전체 피드
                   </Button>
-
-                  <div className="text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <BookOpen className="w-4 h-4 text-primary" />
-                      <span className="font-semibold">Day {currentDay}</span>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      / {totalDays}일
-                    </p>
-                  </div>
-
                   <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleNextDay}
-                    disabled={currentDay >= totalDays}
+                    variant={feedViewMode === 'day' ? 'secondary' : 'ghost'}
+                    size="sm"
+                    className="h-8 px-4"
+                    onClick={() => setFeedViewMode('day')}
                   >
-                    <ChevronRight className="w-5 h-5" />
+                    <CalendarDays className="w-4 h-4 mr-1.5" />
+                    일자별
                   </Button>
                 </div>
+
+                {/* Day 선택 (일자별 모드에서만 표시) */}
+                {feedViewMode === 'day' && (
+                  <div className="flex items-center justify-between">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handlePrevDay}
+                      disabled={currentDay <= 1}
+                    >
+                      <ChevronLeft className="w-5 h-5" />
+                    </Button>
+
+                    <div className="text-center">
+                      <div className="flex items-center justify-center gap-2">
+                        <BookOpen className="w-4 h-4 text-primary" />
+                        <span className="font-semibold">Day {currentDay}</span>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        / {totalDays}일
+                      </p>
+                    </div>
+
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={handleNextDay}
+                      disabled={currentDay >= totalDays}
+                    >
+                      <ChevronRight className="w-5 h-5" />
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 

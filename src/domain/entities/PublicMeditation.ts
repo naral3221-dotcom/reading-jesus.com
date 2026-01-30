@@ -6,6 +6,9 @@
 // 묵상 형식 타입
 export type MeditationType = 'free' | 'qt' | 'memo'
 
+// 공개 범위 타입
+export type ContentVisibility = 'private' | 'group' | 'church' | 'public'
+
 export interface PublicMeditationProps {
   id: string
   userId: string
@@ -13,6 +16,7 @@ export interface PublicMeditationProps {
   content: string
   bibleReference: string | null
   isAnonymous: boolean
+  visibility: ContentVisibility
   likesCount: number
   repliesCount: number
   createdAt: Date
@@ -110,6 +114,10 @@ export class PublicMeditation {
     return this.props.isLiked ?? false
   }
 
+  get visibility(): ContentVisibility {
+    return this.props.visibility
+  }
+
   get displayName(): string {
     if (this.props.isAnonymous) {
       return '익명'
@@ -182,6 +190,7 @@ export class PublicMeditation {
       projectId: props.projectId ?? null,
       dayNumber: props.dayNumber ?? null,
       meditationType: props.meditationType ?? 'free',
+      visibility: props.visibility ?? 'public',
       oneWord: props.oneWord ?? null,
       meditationQuestion: props.meditationQuestion ?? null,
       meditationAnswer: props.meditationAnswer ?? null,

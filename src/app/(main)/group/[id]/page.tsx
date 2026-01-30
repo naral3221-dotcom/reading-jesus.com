@@ -53,7 +53,7 @@ import {
 import { useGroupCompat } from '@/presentation/hooks/stores/useGroupStore';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import type { Profile, Comment } from '@/types';
+import type { Profile } from '@/types';
 import { GroupNotices } from '@/components/GroupNotices';
 import { RichViewer } from '@/components/ui/rich-editor';
 import { format } from 'date-fns';
@@ -66,12 +66,12 @@ import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client';
 import {
   useCurrentUser,
   useGroupById,
-  useGroupFeed,
   groupKeys,
   commentKeys,
 } from '@/presentation/hooks/queries';
 import { useIsGroupAdmin } from '@/presentation/hooks/queries/useGroup';
 import { useQuery } from '@tanstack/react-query';
+import type { UnifiedMeditationProps } from '@/domain/entities/UnifiedMeditation';
 
 // Domain Entity GroupMember를 UI용 타입으로 변환하기 위한 인터페이스
 interface MemberWithProfile {
@@ -161,8 +161,93 @@ export default function GroupDetailPage() {
 
   const { isAdmin } = useIsGroupAdmin(groupId, userId);
 
-  const { data: commentsData, isLoading: commentsLoading } = useGroupFeed(groupId, { limit: 50 });
-  const comments = (commentsData ?? []) as CommentWithProfile[];
+  // 콘텐츠 타입 필터 상태
+  const [contentTypeFilter, setContentTypeFilter] = useState<'all' | 'free' | 'qt'>('all');
+
+  // 그룹 묵상 피드 조회 (comments 테이블 직접 조회)
+  const { data: feedData, isLoading: commentsLoading } = useQuery({
+    queryKey: [...commentKeys.all, 'groupFeed', groupId, contentTypeFilter],
+    queryFn: async () => {
+      if (!groupId) return [];
+      const supabase = getSupabaseBrowserClient();
+
+      // comments 테이블에서 그룹 묵상 조회
+      let query = supabase
+        .from('comments')
+        .select(`
+          id,
+          user_id,
+          group_id,
+          day_number,
+          content,
+          is_anonymous,
+          is_pinned,
+          likes_count,
+          created_at,
+          profile:profiles!comments_user_id_fkey(
+            id,
+            nickname,
+            avatar_url
+          )
+        `)
+        .eq('group_id', groupId);
+
+      // 콘텐츠 타입 필터 (qt 타입은 church_qt_posts에만 있으므로 free만 필터)
+      // comments 테이블은 기본적으로 free 타입의 묵상
+      if (contentTypeFilter === 'qt') {
+        // QT는 comments 테이블에 없으므로 빈 배열 반환
+        return [];
+      }
+
+      const { data, error } = await query
+        .order('is_pinned', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('그룹 묵상 조회 에러:', error);
+        return [];
+      }
+
+      // UnifiedMeditationProps 형식으로 변환
+      return (data || []).map(row => {
+        const profileData = Array.isArray(row.profile) ? row.profile[0] : row.profile;
+        return {
+          id: row.id,
+          userId: row.user_id,
+          guestToken: null,
+          authorName: profileData?.nickname || '사용자',
+          sourceType: 'group' as const,
+          sourceId: row.group_id,
+          contentType: 'free' as 'free' | 'qt',
+          dayNumber: row.day_number,
+          content: row.content,
+          bibleRange: null,
+          qtDate: null,
+          mySentence: null,
+          meditationAnswer: null,
+          gratitude: null,
+          myPrayer: null,
+          dayReview: null,
+          isAnonymous: row.is_anonymous,
+          visibility: 'group' as const,
+          isPinned: row.is_pinned || false,
+          likesCount: row.likes_count || 0,
+          repliesCount: 0,
+          createdAt: new Date(row.created_at),
+          updatedAt: null,
+          profile: profileData ? {
+            nickname: profileData.nickname,
+            avatarUrl: profileData.avatar_url,
+          } : null,
+          isLiked: false, // 좋아요 상태는 별도 조회 필요
+        };
+      });
+    },
+    enabled: !!groupId,
+    staleTime: 1000 * 30,
+  });
+  const comments = feedData ?? [];
 
   // 로딩 상태 통합
   const loading = userLoading || groupLoading || membersLoading || commentsLoading;
@@ -407,9 +492,9 @@ export default function GroupDetailPage() {
     router.push('/group');
   };
 
-  // 본인 댓글인지 확인
-  const canDeleteComment = (comment: CommentWithProfile): boolean => {
-    return comment.user_id === userId;
+  // 본인 묵상인지 확인
+  const canDeleteComment = (meditation: UnifiedMeditationProps): boolean => {
+    return meditation.userId === userId;
   };
 
   // 댓글 삭제
@@ -514,8 +599,8 @@ export default function GroupDetailPage() {
   if (!group) return null;
 
   // 고정된 묵상 분리
-  const pinnedComments = comments.filter(c => c.is_pinned);
-  const regularComments = comments.filter(c => !c.is_pinned);
+  const pinnedComments = comments.filter(c => c.isPinned);
+  const regularComments = comments.filter(c => !c.isPinned);
 
   return (
     <div className="flex flex-col min-h-screen bg-background">
@@ -626,6 +711,31 @@ export default function GroupDetailPage() {
 
         {/* 묵상 피드 */}
         <TabsContent value="feed" className="mt-0 px-4 py-4 space-y-4">
+          {/* 콘텐츠 타입 필터 */}
+          <div className="flex items-center gap-2">
+            <Button
+              variant={contentTypeFilter === 'all' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setContentTypeFilter('all')}
+            >
+              전체
+            </Button>
+            <Button
+              variant={contentTypeFilter === 'free' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setContentTypeFilter('free')}
+            >
+              묵상
+            </Button>
+            <Button
+              variant={contentTypeFilter === 'qt' ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setContentTypeFilter('qt')}
+            >
+              QT
+            </Button>
+          </div>
+
           {/* 고정된 묵상 */}
           {pinnedComments.length > 0 && (
             <div className="space-y-3">
@@ -633,44 +743,51 @@ export default function GroupDetailPage() {
                 <Pin className="w-4 h-4" />
                 고정된 묵상
               </h3>
-              {pinnedComments.map((comment) => (
-                <Card key={comment.id} className="border-primary/30 bg-primary/5">
+              {pinnedComments.map((meditation) => (
+                <Card key={meditation.id} className="border-primary/30 bg-primary/5">
                   <CardContent className="pt-4">
                     <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={comment.profile?.avatar_url || undefined} />
+                        <AvatarImage src={meditation.profile?.avatarUrl || undefined} />
                         <AvatarFallback>
-                          {comment.is_anonymous ? '?' : comment.profile?.nickname?.[0]}
+                          {meditation.isAnonymous ? '?' : (meditation.profile?.nickname || meditation.authorName)?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">
-                            {comment.is_anonymous ? '익명' : comment.profile?.nickname}
+                            {meditation.isAnonymous ? '익명' : (meditation.profile?.nickname || meditation.authorName)}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            Day {comment.day_number}
-                          </span>
+                          {meditation.dayNumber && (
+                            <span className="text-xs text-muted-foreground">
+                              Day {meditation.dayNumber}
+                            </span>
+                          )}
+                          {meditation.contentType === 'qt' && (
+                            <span className="text-xs bg-accent-warm/20 text-accent-warm px-1.5 py-0.5 rounded">QT</span>
+                          )}
                           <Pin className="w-3 h-3 text-primary" />
                         </div>
                         <p className="text-sm line-clamp-3 whitespace-pre-wrap">
-                          {comment.content.replace(/<[^>]*>/g, '').slice(0, 150)}
-                          {comment.content.length > 150 && '...'}
+                          {meditation.contentType === 'qt'
+                            ? (meditation.mySentence || meditation.meditationAnswer || '').replace(/<[^>]*>/g, '').slice(0, 150)
+                            : (meditation.content || '').replace(/<[^>]*>/g, '').slice(0, 150)}
+                          {((meditation.content || meditation.mySentence || '').length > 150) && '...'}
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Heart className="w-3 h-3" />
-                              {comment.likes_count || 0}
+                              {meditation.likesCount || 0}
                             </span>
                             <span>
-                              {format(new Date(comment.created_at), 'M/d HH:mm', { locale: ko })}
+                              {format(new Date(meditation.createdAt), 'M/d HH:mm', { locale: ko })}
                             </span>
                           </div>
-                          {canDeleteComment(comment) && (
+                          {canDeleteComment(meditation) && (
                             <button
                               type="button"
-                              onClick={() => setDeleteCommentDialog({ open: true, commentId: comment.id })}
+                              onClick={() => setDeleteCommentDialog({ open: true, commentId: meditation.id })}
                               className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -689,7 +806,9 @@ export default function GroupDetailPage() {
           {/* 최근 묵상 */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-medium text-muted-foreground">최근 묵상</h3>
+              <h3 className="text-sm font-medium text-muted-foreground">
+                {contentTypeFilter === 'all' ? '최근 묵상' : contentTypeFilter === 'qt' ? '최근 QT' : '최근 묵상'}
+              </h3>
               <Link href="/community">
                 <Button variant="ghost" size="sm" className="text-xs">
                   전체보기
@@ -703,53 +822,60 @@ export default function GroupDetailPage() {
                 <CardContent className="py-8 text-center">
                   <MessageSquare className="w-12 h-12 mx-auto text-muted-foreground mb-3" />
                   <p className="text-sm text-muted-foreground">
-                    아직 묵상이 없습니다
+                    {contentTypeFilter === 'qt' ? '아직 QT가 없습니다' : '아직 묵상이 없습니다'}
                   </p>
                   <Link href="/community">
                     <Button className="mt-3" size="sm">
-                      첫 묵상 작성하기
+                      첫 {contentTypeFilter === 'qt' ? 'QT' : '묵상'} 작성하기
                     </Button>
                   </Link>
                 </CardContent>
               </Card>
             ) : (
-              regularComments.slice(0, 10).map((comment) => (
-                <Card key={comment.id} className="hover:bg-muted/30 transition-colors">
+              regularComments.slice(0, 10).map((meditation) => (
+                <Card key={meditation.id} className="hover:bg-muted/30 transition-colors">
                   <CardContent className="pt-4">
                     <div className="flex items-start gap-3">
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={comment.profile?.avatar_url || undefined} />
+                        <AvatarImage src={meditation.profile?.avatarUrl || undefined} />
                         <AvatarFallback>
-                          {comment.is_anonymous ? '?' : comment.profile?.nickname?.[0]}
+                          {meditation.isAnonymous ? '?' : (meditation.profile?.nickname || meditation.authorName)?.[0]}
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 mb-1">
                           <span className="font-medium text-sm">
-                            {comment.is_anonymous ? '익명' : comment.profile?.nickname}
+                            {meditation.isAnonymous ? '익명' : (meditation.profile?.nickname || meditation.authorName)}
                           </span>
-                          <span className="text-xs text-muted-foreground">
-                            Day {comment.day_number}
-                          </span>
+                          {meditation.dayNumber && (
+                            <span className="text-xs text-muted-foreground">
+                              Day {meditation.dayNumber}
+                            </span>
+                          )}
+                          {meditation.contentType === 'qt' && (
+                            <span className="text-xs bg-accent-warm/20 text-accent-warm px-1.5 py-0.5 rounded">QT</span>
+                          )}
                         </div>
                         <p className="text-sm line-clamp-3 whitespace-pre-wrap">
-                          {comment.content.replace(/<[^>]*>/g, '').slice(0, 150)}
-                          {comment.content.length > 150 && '...'}
+                          {meditation.contentType === 'qt'
+                            ? (meditation.mySentence || meditation.meditationAnswer || '').replace(/<[^>]*>/g, '').slice(0, 150)
+                            : (meditation.content || '').replace(/<[^>]*>/g, '').slice(0, 150)}
+                          {((meditation.content || meditation.mySentence || '').length > 150) && '...'}
                         </p>
                         <div className="flex items-center justify-between mt-2">
                           <div className="flex items-center gap-3 text-xs text-muted-foreground">
                             <span className="flex items-center gap-1">
                               <Heart className="w-3 h-3" />
-                              {comment.likes_count || 0}
+                              {meditation.likesCount || 0}
                             </span>
                             <span>
-                              {format(new Date(comment.created_at), 'M/d HH:mm', { locale: ko })}
+                              {format(new Date(meditation.createdAt), 'M/d HH:mm', { locale: ko })}
                             </span>
                           </div>
-                          {canDeleteComment(comment) && (
+                          {canDeleteComment(meditation) && (
                             <button
                               type="button"
-                              onClick={() => setDeleteCommentDialog({ open: true, commentId: comment.id })}
+                              onClick={() => setDeleteCommentDialog({ open: true, commentId: meditation.id })}
                               className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
                             >
                               <Trash2 className="w-3 h-3" />
@@ -826,17 +952,24 @@ export default function GroupDetailPage() {
                 <CardContent className="py-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                      <Avatar className="w-10 h-10">
-                        <AvatarImage src={member.profile?.avatar_url || undefined} />
-                        <AvatarFallback>
-                          {member.profile?.nickname?.[0] || '?'}
-                        </AvatarFallback>
-                      </Avatar>
+                      {/* 아바타 - 프로필 링크 */}
+                      <Link href={`/profile/${member.user_id}`}>
+                        <Avatar className="w-10 h-10 cursor-pointer hover:ring-2 hover:ring-primary/30 transition-all">
+                          <AvatarImage src={member.profile?.avatar_url || undefined} />
+                          <AvatarFallback>
+                            {member.profile?.nickname?.[0] || '?'}
+                          </AvatarFallback>
+                        </Avatar>
+                      </Link>
                       <div>
                         <div className="flex items-center gap-2">
-                          <span className="font-medium">
+                          {/* 닉네임 - 프로필 링크 */}
+                          <Link
+                            href={`/profile/${member.user_id}`}
+                            className="font-medium hover:underline"
+                          >
                             {member.profile?.nickname || '알 수 없음'}
-                          </span>
+                          </Link>
                           {member.role === 'admin' && (
                             <Crown className="w-4 h-4 text-accent" />
                           )}

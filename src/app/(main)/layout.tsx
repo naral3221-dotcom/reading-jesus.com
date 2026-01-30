@@ -2,23 +2,16 @@
 
 import { Suspense, useEffect } from 'react';
 import Link from 'next/link';
-import { usePathname, useSearchParams } from 'next/navigation';
-import { Home, BookOpen, User, UsersRound, Bell, Search, Loader2 } from 'lucide-react';
+import { useSearchParams } from 'next/navigation';
+import { Bell, Search, Loader2 } from 'lucide-react';
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client';
-import { cn } from '@/lib/utils';
 import { useCurrentUser } from '@/presentation/hooks/queries/useUser';
 import { useUnreadNotificationCount, notificationKeys } from '@/presentation/hooks/queries/useNotification';
 import { useQueryClient } from '@tanstack/react-query';
-import { MainSidebar, MainSidePanel, MainSplitViewContainer, MainSplitViewDropZone } from '@/components/main';
+import { MainSidebar, MainBottomNav, MainSidePanel, MainSplitViewContainer, MainSplitViewDropZone } from '@/components/main';
+import { mobileHeaderStyles } from '@/components/navigation';
 import { MainSplitViewProvider } from '@/contexts/MainSplitViewContext';
 import { MainDataProvider } from '@/contexts/MainDataContext';
-
-const navItems = [
-  { href: '/home', icon: Home, label: '홈' },
-  { href: '/bible', icon: BookOpen, label: '성경' },
-  { href: '/group', icon: UsersRound, label: '그룹' },
-  { href: '/mypage', icon: User, label: '마이' },
-];
 
 // 실제 레이아웃 컴포넌트 (useSearchParams 사용)
 function MainLayoutContent({
@@ -26,7 +19,6 @@ function MainLayoutContent({
 }: {
   children: React.ReactNode;
 }) {
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
 
@@ -102,24 +94,24 @@ function MainLayoutContent({
           {/* PC: 좌측 사이드바 */}
           <MainSidebar />
 
-          {/* 모바일: 상단 검색/알림 버튼 - Apple 스타일 */}
-          <header className="lg:hidden fixed top-0 left-0 right-0 z-40 bg-background/80 backdrop-blur-xl border-b border-border/40 shadow-sm">
-            <div className="flex items-center justify-end gap-1 px-4 h-12 max-w-lg mx-auto">
+          {/* 모바일: 상단 검색/알림 버튼 */}
+          <header className={mobileHeaderStyles.container}>
+            <div className={mobileHeaderStyles.inner}>
               <Link
                 href="/search"
                 aria-label="검색"
-                className="flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl hover:bg-muted/60 active:scale-95 transition-all duration-200"
+                className={mobileHeaderStyles.iconButton}
               >
                 <Search className="w-5 h-5" aria-hidden="true" />
               </Link>
               <Link
                 href="/notifications"
                 aria-label={unreadCount > 0 ? `알림 ${unreadCount}개` : '알림'}
-                className="relative flex items-center justify-center min-w-[44px] min-h-[44px] rounded-xl hover:bg-muted/60 active:scale-95 transition-all duration-200"
+                className={`relative ${mobileHeaderStyles.iconButton}`}
               >
                 <Bell className="w-5 h-5" aria-hidden="true" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 min-w-[20px] h-[20px] flex items-center justify-center bg-destructive text-destructive-foreground text-[10px] font-bold rounded-full px-1.5 shadow-sm">
+                  <span className={mobileHeaderStyles.notificationBadge}>
                     {unreadCount > 99 ? '99+' : unreadCount}
                   </span>
                 )}
@@ -140,64 +132,8 @@ function MainLayoutContent({
             <MainSidePanel />
           </div>
 
-          {/* 모바일: 하단 탭바 - Apple 스타일 */}
-          <nav
-            className="lg:hidden fixed bottom-0 left-0 right-0 bg-background/80 backdrop-blur-xl border-t border-border/40 z-50 shadow-[0_-4px_20px_rgba(0,0,0,0.04)] dark:shadow-[0_-4px_20px_rgba(0,0,0,0.2)]"
-            aria-label="메인 네비게이션"
-            role="navigation"
-          >
-            <div
-              className="flex items-center justify-around max-w-lg mx-auto"
-              style={{
-                height: 'calc(4rem + env(safe-area-inset-bottom))',
-                paddingBottom: 'env(safe-area-inset-bottom)',
-              }}
-            >
-              {navItems.map((item) => {
-                const isActive = pathname.startsWith(item.href);
-                const Icon = item.icon;
-
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    aria-label={item.label}
-                    aria-current={isActive ? 'page' : undefined}
-                    className={cn(
-                      "flex flex-col items-center justify-center w-full min-w-[64px] h-16 transition-all duration-300 relative group",
-                      isActive
-                        ? "text-primary"
-                        : "text-muted-foreground hover:text-foreground active:scale-95"
-                    )}
-                  >
-                    {/* Active Indicator - Apple 스타일 pill */}
-                    {isActive && (
-                      <span className="absolute top-0 left-1/2 -translate-x-1/2 w-10 h-1 bg-primary rounded-full shadow-sm" />
-                    )}
-                    {/* 아이콘 컨테이너 - 부드러운 배경 효과 */}
-                    <div className={cn(
-                      "flex items-center justify-center min-h-[44px] min-w-[44px] rounded-xl transition-all duration-200",
-                      isActive && "bg-primary/10"
-                    )}>
-                      <Icon
-                        className={cn(
-                          "w-6 h-6 transition-all duration-200",
-                          isActive && "scale-110"
-                        )}
-                        aria-hidden="true"
-                      />
-                    </div>
-                    <span className={cn(
-                      "text-xs transition-all duration-200 -mt-1.5",
-                      isActive ? "font-semibold text-primary" : "font-medium"
-                    )}>
-                      {item.label}
-                    </span>
-                  </Link>
-                );
-              })}
-            </div>
-          </nav>
+          {/* 모바일: 하단 탭바 - 공통 컴포넌트 사용 */}
+          <MainBottomNav />
 
           {/* PC: Split View 드롭 영역 (드래그 중에만 표시) */}
           <MainSplitViewDropZone />

@@ -64,7 +64,7 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
       .select('id')
       .eq('follower_id', followerId)
       .eq('following_id', followingId)
-      .single()
+      .maybeSingle()
 
     return !!data
   }
@@ -77,24 +77,41 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
     // userId를 팔로우하는 사람들 목록
     const { data, error } = await supabase
       .from('user_follows')
-      .select(`
-        follower_id,
-        created_at,
-        follower:profiles!follower_id(id, nickname, avatar_url, followers_count, following_count)
-      `)
+      .select('follower_id, created_at')
       .eq('following_id', userId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (error || !data) return []
+    if (error || !data || data.length === 0) return []
+
+    const followerIds = data.map(d => d.follower_id)
+
+    // 프로필 정보 별도 조회
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, nickname, avatar_url')
+      .in('id', followerIds)
+
+    const profileMap = new Map(
+      (profiles ?? []).map(p => [p.id, p])
+    )
+
+    // 팔로워/팔로잉 수는 실시간으로 계산
+    const countsPromises = followerIds.map(async (id) => {
+      const [followersCount, followingCount] = await Promise.all([
+        this.getFollowersCount(id),
+        this.getFollowingCount(id),
+      ])
+      return { id, followersCount, followingCount }
+    })
+    const counts = await Promise.all(countsPromises)
+    const countsMap = new Map(counts.map(c => [c.id, c]))
 
     // 현재 사용자의 팔로우 상태 일괄 조회
     let followingIds: Set<string> = new Set()
     let followedByIds: Set<string> = new Set()
 
     if (currentUserId) {
-      const followerIds = data.map(d => d.follower_id)
-
       // 현재 사용자가 팔로우하는지
       const { data: followingData } = await supabase
         .from('user_follows')
@@ -119,19 +136,14 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
     }
 
     return data.map(d => {
-      const profile = d.follower as unknown as {
-        id: string
-        nickname: string
-        avatar_url: string | null
-        followers_count: number
-        following_count: number
-      }
+      const profile = profileMap.get(d.follower_id)
+      const countData = countsMap.get(d.follower_id)
       return {
-        id: profile.id,
-        nickname: profile.nickname,
-        avatarUrl: profile.avatar_url,
-        followersCount: profile.followers_count ?? 0,
-        followingCount: profile.following_count ?? 0,
+        id: d.follower_id,
+        nickname: profile?.nickname ?? '사용자',
+        avatarUrl: profile?.avatar_url ?? null,
+        followersCount: countData?.followersCount ?? 0,
+        followingCount: countData?.followingCount ?? 0,
         isFollowing: followingIds.has(d.follower_id),
         isFollowedBy: followedByIds.has(d.follower_id),
       }
@@ -146,24 +158,41 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
     // userId가 팔로우하는 사람들 목록
     const { data, error } = await supabase
       .from('user_follows')
-      .select(`
-        following_id,
-        created_at,
-        following:profiles!following_id(id, nickname, avatar_url, followers_count, following_count)
-      `)
+      .select('following_id, created_at')
       .eq('follower_id', userId)
       .order('created_at', { ascending: false })
       .range(offset, offset + limit - 1)
 
-    if (error || !data) return []
+    if (error || !data || data.length === 0) return []
+
+    const targetIds = data.map(d => d.following_id)
+
+    // 프로필 정보 별도 조회
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id, nickname, avatar_url')
+      .in('id', targetIds)
+
+    const profileMap = new Map(
+      (profiles ?? []).map(p => [p.id, p])
+    )
+
+    // 팔로워/팔로잉 수는 실시간으로 계산
+    const countsPromises = targetIds.map(async (id) => {
+      const [followersCount, followingCount] = await Promise.all([
+        this.getFollowersCount(id),
+        this.getFollowingCount(id),
+      ])
+      return { id, followersCount, followingCount }
+    })
+    const counts = await Promise.all(countsPromises)
+    const countsMap = new Map(counts.map(c => [c.id, c]))
 
     // 현재 사용자의 팔로우 상태 일괄 조회
     let followingIds: Set<string> = new Set()
     let followedByIds: Set<string> = new Set()
 
     if (currentUserId && currentUserId !== userId) {
-      const targetIds = data.map(d => d.following_id)
-
       // 현재 사용자가 팔로우하는지
       const { data: followingData } = await supabase
         .from('user_follows')
@@ -187,23 +216,18 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
       }
     } else if (currentUserId === userId) {
       // 본인의 팔로잉 목록이면 모두 팔로잉 상태
-      followingIds = new Set(data.map(d => d.following_id))
+      followingIds = new Set(targetIds)
     }
 
     return data.map(d => {
-      const profile = d.following as unknown as {
-        id: string
-        nickname: string
-        avatar_url: string | null
-        followers_count: number
-        following_count: number
-      }
+      const profile = profileMap.get(d.following_id)
+      const countData = countsMap.get(d.following_id)
       return {
-        id: profile.id,
-        nickname: profile.nickname,
-        avatarUrl: profile.avatar_url,
-        followersCount: profile.followers_count ?? 0,
-        followingCount: profile.following_count ?? 0,
+        id: d.following_id,
+        nickname: profile?.nickname ?? '사용자',
+        avatarUrl: profile?.avatar_url ?? null,
+        followersCount: countData?.followersCount ?? 0,
+        followingCount: countData?.followingCount ?? 0,
         isFollowing: followingIds.has(d.following_id),
         isFollowedBy: followedByIds.has(d.following_id),
       }
@@ -254,11 +278,23 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
 
     const { data: profile, error } = await supabase
       .from('profiles')
-      .select('id, nickname, avatar_url, followers_count, following_count')
+      .select(`
+        id,
+        nickname,
+        avatar_url,
+        church_id,
+        church:churches(id, name, code)
+      `)
       .eq('id', targetUserId)
-      .single()
+      .maybeSingle()
 
     if (error || !profile) return null
+
+    // 팔로워/팔로잉 수 실시간 계산
+    const [followersCount, followingCount] = await Promise.all([
+      this.getFollowersCount(targetUserId),
+      this.getFollowingCount(targetUserId),
+    ])
 
     let isFollowing = false
     let isFollowedBy = false
@@ -270,7 +306,7 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
         .select('id')
         .eq('follower_id', currentUserId)
         .eq('following_id', targetUserId)
-        .single()
+        .maybeSingle()
       isFollowing = !!followingData
 
       // 타겟이 현재 사용자를 팔로우하는지
@@ -279,18 +315,24 @@ export class SupabaseUserFollowRepository implements IUserFollowRepository {
         .select('id')
         .eq('follower_id', targetUserId)
         .eq('following_id', currentUserId)
-        .single()
+        .maybeSingle()
       isFollowedBy = !!followedByData
     }
+
+    // 교회 정보 추출
+    const church = profile.church as unknown as { id: string; name: string; code: string } | null
 
     return {
       id: profile.id,
       nickname: profile.nickname,
       avatarUrl: profile.avatar_url,
-      followersCount: profile.followers_count ?? 0,
-      followingCount: profile.following_count ?? 0,
+      followersCount,
+      followingCount,
       isFollowing,
       isFollowedBy,
+      churchId: church?.id,
+      churchName: church?.name,
+      churchCode: church?.code,
     }
   }
 

@@ -94,9 +94,9 @@ export default function ChurchSearchPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
+    <div className="min-h-screen bg-gradient-to-b from-background to-background">
       {/* 헤더 */}
-      <header className="sticky top-0 z-10 bg-white/80 backdrop-blur-md border-b">
+      <header className="sticky top-0 z-10 bg-background/80 backdrop-blur-md border-b">
         <div className="flex items-center gap-3 p-4 max-w-2xl mx-auto">
           <Button variant="ghost" size="icon" onClick={() => router.back()}>
             <ChevronLeft className="w-5 h-5" />
@@ -207,7 +207,7 @@ export default function ChurchSearchPage() {
 
             {/* 검색 안내 (검색 전) */}
             {searchQuery.length < 2 && !isSearching && (
-              <div className="bg-slate-50 rounded-lg p-4 mt-4">
+              <div className="bg-muted rounded-lg p-4 mt-4">
                 <p className="text-sm text-muted-foreground text-center">
                   💡 <span className="font-medium">검색 팁</span>
                 </p>
@@ -315,7 +315,7 @@ function ChurchCard({ church, isCurrent, onJoin, onGoTo, isJoining }: ChurchCard
               {church.denomination && (
                 <span className="truncate">{church.denomination}</span>
               )}
-              <span className="text-xs bg-slate-100 px-2 py-0.5 rounded">
+              <span className="text-xs bg-muted px-2 py-0.5 rounded">
                 {church.code}
               </span>
             </div>

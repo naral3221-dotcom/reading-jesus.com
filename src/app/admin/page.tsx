@@ -62,6 +62,8 @@ export default function AdminDashboardPage() {
           churchesResult,
           commentsResult,
           guestCommentsResult,
+          churchQtPostsResult,
+          publicMeditationsResult,
           notificationsResult,
           qtPostsResult,
           reportsResult,
@@ -73,6 +75,8 @@ export default function AdminDashboardPage() {
           supabase.from('churches').select('id', { count: 'exact', head: true }),
           supabase.from('comments').select('id', { count: 'exact', head: true }),
           supabase.from('guest_comments').select('id', { count: 'exact', head: true }),
+          supabase.from('church_qt_posts').select('id', { count: 'exact', head: true }),
+          supabase.from('public_meditations').select('id', { count: 'exact', head: true }),
           supabase.from('notifications').select('id', { count: 'exact', head: true }),
           supabase.from('qt_posts').select('id', { count: 'exact', head: true }),
           supabase.from('reports').select('id', { count: 'exact', head: true }),
@@ -122,7 +126,7 @@ export default function AdminDashboardPage() {
           totalUsers: usersResult.count || 0,
           totalGroups: groupsResult.count || 0,
           totalChurches: churchesResult.count || 0,
-          totalPosts: (commentsResult.count || 0) + (guestCommentsResult.count || 0),
+          totalPosts: (commentsResult.count || 0) + (guestCommentsResult.count || 0) + (churchQtPostsResult.count || 0) + (publicMeditationsResult.count || 0),
           todayActiveUsers: 0, // 추후 구현
           todayPosts: todayCommentsCount || 0,
           weeklyGrowth: 0, // 추후 구현

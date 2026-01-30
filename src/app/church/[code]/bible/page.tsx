@@ -544,7 +544,7 @@ export default function ChurchBiblePage() {
                             className={`cursor-pointer transition-colors ${hasReadings ? 'hover:bg-accent' : 'opacity-50'
                                 } ${isComplete ? 'border-accent bg-accent/10 dark:bg-accent/20' : ''}`}
                         >
-                            <CardContent className="p-3 text-center">
+                            <CardContent className="p-3 sm:p-3 text-center">
                                 <p className="text-sm font-medium truncate">{book}</p>
                                 {hasReadings && (
                                     <p className={`text-xs mt-1 ${isComplete ? 'text-accent' : 'text-muted-foreground'}`}>
@@ -662,7 +662,7 @@ export default function ChurchBiblePage() {
                                             onTouchStart={() => handleLongPressStart(plan.day)}
                                             onTouchEnd={handleLongPressEnd}
                                         >
-                                            <CardContent className="p-3 flex items-center justify-between">
+                                            <CardContent className="p-3 sm:p-3 flex items-center justify-between">
                                                 <div className="flex items-center gap-3 flex-1">
                                                     <div
                                                         className={`w-10 h-10 rounded-full flex items-center justify-center transition-colors ${isChecked
@@ -881,7 +881,7 @@ export default function ChurchBiblePage() {
                                                                         onTouchStart={() => handleLongPressStart(plan.day)}
                                                                         onTouchEnd={handleLongPressEnd}
                                                                     >
-                                                                        <CardContent className="p-2 flex items-center justify-between">
+                                                                        <CardContent className="p-3 sm:p-3 flex items-center justify-between">
                                                                             <div className="flex items-center gap-2 flex-1">
                                                                                 <div
                                                                                     className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors text-xs ${isChecked

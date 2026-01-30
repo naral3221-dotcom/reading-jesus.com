@@ -66,7 +66,7 @@ export function MultiPlanReadingCard({
     <>
       <Card className={cn(
         "border-2 transition-all",
-        reading.is_checked && "border-accent/30 bg-accent/10/50"
+        reading.is_checked && "border-success/30 bg-success/5"
       )}>
         <CardContent className="p-4 space-y-3">
           {/* 플랜 헤더 */}
@@ -81,7 +81,7 @@ export function MultiPlanReadingCard({
               </div>
             </div>
             {reading.is_checked && (
-              <span className="px-2 py-1 text-xs font-medium bg-accent/10 text-accent rounded-full">
+              <span className="px-2 py-1 text-xs font-medium bg-success/10 text-success rounded-full">
                 완료
               </span>
             )}
@@ -138,7 +138,7 @@ export function MultiPlanReadingCard({
               size="sm"
               className={cn(
                 "flex-1",
-                reading.is_checked && "bg-accent/10 text-accent hover:bg-accent/20"
+                reading.is_checked && "bg-success/10 text-success hover:bg-success/20"
               )}
               onClick={handleCheckClick}
               disabled={isChecking}
@@ -150,7 +150,7 @@ export function MultiPlanReadingCard({
                   className={cn(
                     "w-4 h-4 mr-1 rounded-full border-2 flex items-center justify-center transition-all",
                     reading.is_checked
-                      ? "bg-accent border-accent"
+                      ? "bg-success border-success"
                       : "border-current",
                     checkAnimation && "scale-110"
                   )}
@@ -239,7 +239,7 @@ export function MultiPlanReadingList({
         </span>
         <span className={cn(
           "font-medium",
-          completedReadings.length === readings.length ? "text-accent" : "text-muted-foreground"
+          completedReadings.length === readings.length ? "text-success" : "text-muted-foreground"
         )}>
           {completedReadings.length}/{readings.length} 완료
         </span>

@@ -4,10 +4,11 @@
  * FeedDetailModal - 피드 상세 보기 모달
  *
  * 피드 카드 클릭 시 표시되는 상세 모달입니다.
- * 전체 내용 보기 + 댓글 섹션을 포함합니다.
+ * QT 타입: QTFeedCard와 동일한 캐러셀 스타일 UI
+ * 묵상 타입: 기존 스타일 유지
  */
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import {
   Dialog,
   DialogContent,
@@ -16,17 +17,65 @@ import {
 } from '@/components/ui/dialog'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
-import { Heart, MessageCircle, X, Lock, BookOpen, PenLine, Users, User, ChevronLeft } from 'lucide-react'
+import {
+  Heart,
+  MessageCircle,
+  X,
+  Lock,
+  BookOpen,
+  PenLine,
+  Users,
+  User,
+  ChevronLeft,
+  ChevronRight,
+  Sparkles,
+  Loader2,
+} from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatRelativeTime, getInitials, getAvatarColor } from '@/lib/date-utils'
 import { CommentSection } from '@/components/comment'
-import { QTContentRenderer } from '@/components/church/QTContentRenderer'
-import QTViewer from '@/components/qt/QTViewer'
-import { findReadingByDay } from '@/components/church/ReadingDayPicker'
+import { RichViewerWithEmbed } from '@/components/ui/rich-editor'
 import { getQTByDate } from '@/lib/qt-content'
+import readingPlan from '@/data/reading_plan.json'
 import type { UnifiedFeedItem, FeedSource } from './UnifiedFeedCard'
 import type { MeditationType } from '@/domain/entities/PublicMeditationComment'
-import type { QTDailyContent } from '@/types'
+import type { QTDailyContent, ReadingPlan } from '@/types'
+
+// Day 번호로 성경 정보 가져오기
+const getPlanByDay = (day: number | null | undefined): ReadingPlan | null => {
+  if (!day) return null;
+  return (readingPlan as ReadingPlan[]).find(p => p.day === day) ?? null;
+};
+
+// 성경 범위를 "출애굽기 7-12장" 형식으로 포맷
+const formatBibleTitle = (plan: ReadingPlan | null): string => {
+  if (!plan) return '';
+  const { book, range } = plan;
+  return `${book} ${range}장`;
+};
+
+// 답변 문자열을 배열로 파싱 (JSON 또는 단일 문자열)
+function parseAnswers(answer: string | null | undefined): string[] {
+  if (!answer) return [];
+  try {
+    const parsed = JSON.parse(answer);
+    if (Array.isArray(parsed)) return parsed;
+    return [answer];
+  } catch {
+    return [answer];
+  }
+}
+
+// 캐러셀 카드 타입
+type CarouselCardType = 'verses' | 'guide' | 'sentence-qa' | 'review';
+
+interface CarouselCard {
+  type: CarouselCardType;
+  title: string;
+  icon: string;
+  gradient: string;
+  textColor: string;
+}
 
 interface FeedDetailModalProps {
   open: boolean
@@ -47,15 +96,203 @@ export function FeedDetailModal({
 }: FeedDetailModalProps) {
   // QT 원문 데이터 상태
   const [qtContent, setQtContent] = useState<QTDailyContent | null>(null)
+  const [loadingQT, setLoadingQT] = useState(false)
+  const [currentSlide, setCurrentSlide] = useState(0)
+  const carouselRef = useRef<HTMLDivElement>(null)
 
   // QT 날짜가 있으면 원문 데이터 로드
   useEffect(() => {
     if (item?.type === 'qt' && item.qtDate) {
-      getQTByDate(item.qtDate).then(setQtContent)
+      setLoadingQT(true)
+      getQTByDate(item.qtDate)
+        .then(setQtContent)
+        .finally(() => setLoadingQT(false))
     } else {
       setQtContent(null)
     }
   }, [item?.type, item?.qtDate])
+
+  // QT 타입일 때 성경 정보 가져오기
+  const planInfo = useMemo(() => {
+    if (!item?.dayNumber) return null;
+    return getPlanByDay(item.dayNumber);
+  }, [item?.dayNumber]);
+
+  // 성경 타이틀 (출애굽기 7-12장)
+  const bibleTitle = useMemo(() => {
+    if (planInfo) return formatBibleTitle(planInfo);
+    if (item?.bibleRange) return item.bibleRange;
+    return null;
+  }, [planInfo, item?.bibleRange]);
+
+  // QT 날짜 포맷 (1월 27일 화요일)
+  const formattedQtDate = useMemo(() => {
+    if (!item?.qtDate) return null;
+    const date = new Date(item.qtDate);
+    const days = ['일', '월', '화', '수', '목', '금', '토'];
+    return `${date.getMonth() + 1}월 ${date.getDate()}일 (${days[date.getDay()]}요일)`;
+  }, [item?.qtDate]);
+
+  // 묵상 질문들과 답변들
+  const meditationQuestions = qtContent?.meditation?.meditationQuestions || [];
+  const answers = useMemo(() => parseAnswers(item?.meditationAnswer), [item?.meditationAnswer]);
+
+  // 캐러셀 카드 목록 생성
+  const carouselCards = useMemo(() => {
+    if (item?.type !== 'qt') return [];
+    const cards: CarouselCard[] = [];
+
+    // 오늘의 말씀
+    if (qtContent?.verses && qtContent.verses.length > 0) {
+      cards.push({
+        type: 'verses',
+        title: '오늘의 말씀',
+        icon: '📖',
+        gradient: 'from-amber-50 to-orange-50 dark:from-amber-950/40 dark:to-orange-950/40',
+        textColor: 'text-amber-700 dark:text-amber-300',
+      });
+    }
+
+    // 묵상 길잡이
+    if (qtContent?.meditation?.meditationGuide) {
+      cards.push({
+        type: 'guide',
+        title: '묵상 길잡이',
+        icon: '💭',
+        gradient: 'from-purple-50 to-pink-50 dark:from-purple-950/40 dark:to-pink-950/40',
+        textColor: 'text-purple-700 dark:text-purple-300',
+      });
+    }
+
+    // 한 문장 + Q&A (합쳐서 하나의 카드)
+    if (item?.mySentence || answers.length > 0) {
+      cards.push({
+        type: 'sentence-qa',
+        title: '나의 묵상',
+        icon: '✨',
+        gradient: 'from-slate-50 to-zinc-50 dark:from-slate-950/40 dark:to-zinc-950/40',
+        textColor: 'text-slate-700 dark:text-slate-300',
+      });
+    }
+
+    // 하루 점검
+    if (item?.dayReview) {
+      cards.push({
+        type: 'review',
+        title: '하루 점검',
+        icon: '✦',
+        gradient: 'from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40',
+        textColor: 'text-violet-700 dark:text-violet-300',
+      });
+    }
+
+    return cards;
+  }, [qtContent, item?.type, item?.mySentence, answers.length, item?.dayReview]);
+
+  // 캐러셀 스크롤 핸들러
+  const scrollToSlide = useCallback((index: number) => {
+    if (carouselRef.current) {
+      const slideWidth = carouselRef.current.offsetWidth;
+      carouselRef.current.scrollTo({
+        left: slideWidth * index,
+        behavior: 'smooth',
+      });
+      setCurrentSlide(index);
+    }
+  }, []);
+
+  // 스크롤 이벤트로 현재 슬라이드 감지
+  const handleScroll = useCallback(() => {
+    if (carouselRef.current) {
+      const slideWidth = carouselRef.current.offsetWidth;
+      const scrollLeft = carouselRef.current.scrollLeft;
+      const newSlide = Math.round(scrollLeft / slideWidth);
+      if (newSlide !== currentSlide) {
+        setCurrentSlide(newSlide);
+      }
+    }
+  }, [currentSlide]);
+
+  // 카드 내용 렌더링
+  const renderCardContent = (card: CarouselCard) => {
+    switch (card.type) {
+      case 'verses':
+        return (
+          <div className="space-y-2 max-h-[240px] overflow-y-auto pr-2">
+            <p className="text-xs text-muted-foreground mb-2">{qtContent?.verseReference}</p>
+            {qtContent?.verses?.map((verse) => (
+              <div key={verse.verse} className="flex gap-2">
+                <span className="text-[11px] font-bold text-primary shrink-0 w-5">{verse.verse}</span>
+                <p className="text-[13px] text-foreground/90 leading-relaxed">{verse.content}</p>
+              </div>
+            ))}
+          </div>
+        );
+
+      case 'guide':
+        return (
+          <div className="space-y-3 max-h-[240px] overflow-y-auto pr-2">
+            <p className="text-[13px] text-foreground/90 leading-relaxed whitespace-pre-wrap">
+              {qtContent?.meditation?.meditationGuide}
+            </p>
+            {qtContent?.meditation?.jesusConnection && (
+              <div className="p-2.5 bg-red-50/80 dark:bg-red-950/30 rounded-lg border border-red-100 dark:border-red-900/50">
+                <div className="flex items-center gap-1.5 mb-1">
+                  <Heart className="w-3 h-3 text-red-500" />
+                  <span className="text-[10px] font-semibold text-red-700 dark:text-red-400">예수님 연결</span>
+                </div>
+                <p className="text-[12px] text-foreground/80">{qtContent.meditation.jesusConnection}</p>
+              </div>
+            )}
+          </div>
+        );
+
+      case 'sentence-qa':
+        return (
+          <div className="space-y-4 max-h-[240px] overflow-y-auto pr-2">
+            {item?.mySentence && (
+              <div>
+                <p className="text-[10px] font-medium text-muted-foreground mb-1.5 tracking-wide">
+                  ✦ 내 말로 한 문장
+                </p>
+                <blockquote className="text-[15px] text-foreground leading-relaxed font-medium pl-3 border-l-2 border-primary/40">
+                  "{item.mySentence}"
+                </blockquote>
+              </div>
+            )}
+            {answers.length > 0 && (
+              <div className="space-y-2">
+                {answers.map((answer, index) => {
+                  const question = meditationQuestions[index] || (index === 0 ? item?.meditationQuestion : null);
+                  return (
+                    <div key={index}>
+                      {question && (
+                        <p className="text-[12px] text-muted-foreground mb-1">
+                          <span className="font-medium text-foreground/70">Q.</span> {question}
+                        </p>
+                      )}
+                      <p className="text-[13px] text-foreground/90 leading-relaxed pl-3">
+                        → {answer}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </div>
+        );
+
+      case 'review':
+        return (
+          <p className="text-[14px] text-foreground leading-[1.8] whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2">
+            {item?.dayReview}
+          </p>
+        );
+
+      default:
+        return null;
+    }
+  };
 
   if (!item) return null
 
@@ -205,58 +442,171 @@ export function FeedDetailModal({
 
           {/* 내용 */}
           <div className="space-y-4">
-            {/* QT 타입인 경우 */}
+            {/* QT 타입인 경우 - 캐러셀 스타일 */}
             {item.type === 'qt' && (
               <>
-                {/* QT 원문 정보 표시 */}
-                {qtContent && (
-                  <QTViewer qt={qtContent} />
-                )}
+                {/* QT 헤더 (통독일정) */}
+                <div className="bg-muted/20 rounded-xl p-4 border border-border/40">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      {/* 날짜 */}
+                      {formattedQtDate && (
+                        <p className="text-xs text-muted-foreground font-medium mb-1">
+                          {formattedQtDate}
+                        </p>
+                      )}
+                      {/* QT 제목 */}
+                      {qtContent?.title && (
+                        <h2 className="text-base font-bold text-foreground mb-1.5 line-clamp-2">
+                          {qtContent.title}
+                        </h2>
+                      )}
+                      {/* 통독 범위 */}
+                      {bibleTitle && (
+                        <p className="text-xs text-muted-foreground flex items-center gap-1">
+                          <BookOpen className="w-3.5 h-3.5 text-primary" />
+                          통독: {bibleTitle}
+                        </p>
+                      )}
+                    </div>
 
-                {/* QT 날짜/통독 범위 헤더 (QT 원문이 없는 경우만) */}
-                {!qtContent && (
-                  <div className="bg-gradient-to-r from-muted to-muted/50 rounded-xl p-4 border">
-                    <p className="text-sm text-accent-foreground font-medium">
-                      {item.qtDate}
-                    </p>
-                    {item.dayNumber && (
-                      <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
-                        <BookOpen className="w-4 h-4" />
-                        {item.dayNumber}일차
-                        {(() => {
-                          const reading = findReadingByDay(item.dayNumber);
-                          return reading ? ` · ${reading.reading}` : '';
-                        })()}
-                      </p>
+                    {/* ONE WORD 배지 */}
+                    {qtContent?.meditation?.oneWord && (
+                      <div className="shrink-0 bg-card rounded-lg px-2.5 py-1.5 shadow-sm border border-border text-right">
+                        <div className="flex items-center gap-1 justify-end mb-0.5">
+                          <Sparkles className="w-2.5 h-2.5 text-accent-warm" />
+                          <p className="text-[9px] text-accent-warm font-bold uppercase tracking-wide">ONE WORD</p>
+                        </div>
+                        <p className="text-sm font-bold text-foreground">{qtContent.meditation.oneWord}</p>
+                      </div>
                     )}
+                  </div>
+                </div>
+
+                {/* 가로 캐러셀 */}
+                {loadingQT ? (
+                  <div className="flex items-center justify-center py-12">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                  </div>
+                ) : carouselCards.length > 0 ? (
+                  <div className="relative -mx-4">
+                    {/* 캐러셀 컨테이너 */}
+                    <div
+                      ref={carouselRef}
+                      className="flex overflow-x-auto snap-x snap-mandatory scrollbar-hide"
+                      onScroll={handleScroll}
+                      style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                    >
+                      {carouselCards.map((card, index) => (
+                        <div
+                          key={card.type}
+                          className="flex-shrink-0 w-full snap-center px-4 py-2"
+                        >
+                          <div className={cn(
+                            "rounded-2xl p-4 min-h-[280px] bg-gradient-to-br shadow-sm border border-border/40",
+                            card.gradient
+                          )}>
+                            {/* 카드 헤더 */}
+                            <div className="flex items-center gap-2 mb-3">
+                              <span className="text-xl">{card.icon}</span>
+                              <h3 className={cn("text-sm font-bold", card.textColor)}>{card.title}</h3>
+                              <span className="ml-auto text-[10px] text-muted-foreground bg-background/50 px-2 py-0.5 rounded-full">
+                                {index + 1} / {carouselCards.length}
+                              </span>
+                            </div>
+                            {/* 카드 내용 */}
+                            <div>
+                              {renderCardContent(card)}
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* 좌우 화살표 (데스크톱) */}
+                    {carouselCards.length > 1 && (
+                      <div className="hidden md:block">
+                        {currentSlide > 0 && (
+                          <button
+                            onClick={() => scrollToSlide(currentSlide - 1)}
+                            className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 rounded-full shadow-lg flex items-center justify-center hover:bg-background transition-colors"
+                          >
+                            <ChevronLeft className="w-5 h-5 text-foreground" />
+                          </button>
+                        )}
+                        {currentSlide < carouselCards.length - 1 && (
+                          <button
+                            onClick={() => scrollToSlide(currentSlide + 1)}
+                            className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 bg-background/90 rounded-full shadow-lg flex items-center justify-center hover:bg-background transition-colors"
+                          >
+                            <ChevronRight className="w-5 h-5 text-foreground" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+
+                    {/* 도트 인디케이터 */}
+                    {carouselCards.length > 1 && (
+                      <div className="flex justify-center gap-1.5 pb-2 pt-1">
+                        {carouselCards.map((_, index) => (
+                          <button
+                            key={index}
+                            onClick={() => scrollToSlide(index)}
+                            className={cn(
+                              "w-1.5 h-1.5 rounded-full transition-all",
+                              index === currentSlide
+                                ? "bg-primary w-4"
+                                : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                            )}
+                          />
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="px-4 py-8 text-center text-muted-foreground text-sm">
+                    아직 작성된 묵상이 없습니다.
                   </div>
                 )}
 
-                {/* 나의 QT 기록 섹션 헤더 */}
-                <div className="pt-2">
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-3 flex items-center gap-2">
-                    <PenLine className="w-4 h-4" />
-                    나의 QT 기록
-                  </h4>
-                </div>
+                {/* 하단 고정: 감사와 적용 + 나의 기도 */}
+                {(item.gratitude || item.myPrayer) && (
+                  <div className="space-y-3">
+                    {/* 감사와 적용 */}
+                    {item.gratitude && (
+                      <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 p-4 shadow-sm border border-emerald-100/50 dark:border-emerald-900/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">💚</span>
+                          <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">감사와 적용</h4>
+                        </div>
+                        <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">
+                          {item.gratitude}
+                        </p>
+                      </div>
+                    )}
 
-                {/* QT 콘텐츠 - QTContentRenderer 사용 */}
-                <QTContentRenderer
-                  data={{
-                    mySentence: item.mySentence,
-                    meditationAnswer: item.meditationAnswer,
-                    gratitude: item.gratitude,
-                    myPrayer: item.myPrayer,
-                    dayReview: item.dayReview,
-                  }}
-                  qtContent={qtContent}
-                />
+                    {/* 나의 기도 */}
+                    {item.myPrayer && (
+                      <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-950/40 dark:to-indigo-950/40 p-4 shadow-sm border border-sky-100/50 dark:border-sky-900/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg">🙏</span>
+                          <h4 className="text-sm font-bold text-sky-700 dark:text-sky-300">나의 기도</h4>
+                        </div>
+                        <p className="text-base text-foreground whitespace-pre-wrap italic leading-relaxed">
+                          {item.myPrayer}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
               </>
             )}
 
             {/* 묵상 타입인 경우 (일반 묵상 내용) */}
             {item.type === 'meditation' && item.content && (
-              <p className="text-sm whitespace-pre-wrap">{item.content}</p>
+              <div className="bg-muted/30 rounded-xl p-4 border">
+                <RichViewerWithEmbed content={item.content} className="text-sm" />
+              </div>
             )}
           </div>
 

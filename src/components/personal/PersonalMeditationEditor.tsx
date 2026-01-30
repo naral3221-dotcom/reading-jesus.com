@@ -13,8 +13,8 @@ import {
   DialogDescription,
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import { Label } from '@/components/ui/label'
+import { VisibilitySelector } from '@/components/ui/visibility-selector'
 import { useToast } from '@/components/ui/toast'
 import { Loader2 } from 'lucide-react'
 
@@ -24,7 +24,7 @@ import { QTMeditationForm } from './QTMeditationForm'
 import { MemoMeditationForm } from './MemoMeditationForm'
 
 import { useCreatePersonalMeditation, useUpdatePersonalMeditation } from '@/presentation/hooks/queries/usePublicMeditation'
-import type { MeditationType, PublicMeditationProps } from '@/domain/entities/PublicMeditation'
+import type { MeditationType, PublicMeditationProps, ContentVisibility } from '@/domain/entities/PublicMeditation'
 
 interface PersonalMeditationEditorProps {
   open: boolean
@@ -58,7 +58,9 @@ export function PersonalMeditationEditor({
   const [meditationType, setMeditationType] = useState<MeditationType>(
     existingMeditation?.meditationType ?? 'free'
   )
-  const [isPublic, setIsPublic] = useState(false)
+  const [visibility, setVisibility] = useState<ContentVisibility>(
+    existingMeditation?.visibility ?? 'private'
+  )
 
   // 자유/메모 형식 상태
   const [title, setTitle] = useState(existingMeditation?.title ?? '')
@@ -133,7 +135,7 @@ export function PersonalMeditationEditor({
           projectId,
           dayNumber,
           meditationType,
-          isPublic,
+          visibility,
           title: meditationType === 'free' ? title : undefined,
           content: meditationType !== 'qt' ? content : undefined,
           bibleReference,
@@ -147,7 +149,7 @@ export function PersonalMeditationEditor({
 
         toast({
           title: '묵상이 저장되었습니다',
-          description: isPublic ? '커뮤니티에도 공유됩니다' : undefined,
+          description: visibility === 'public' ? '커뮤니티에도 공유됩니다' : undefined,
         })
       }
 
@@ -232,24 +234,12 @@ export function PersonalMeditationEditor({
             />
           )}
 
-          {/* 공개 설정 (생성 모드에서만) */}
-          {!isEditMode && (
-            <div className="flex items-center justify-between p-4 bg-muted rounded-lg">
-              <div className="space-y-0.5">
-                <Label htmlFor="is-public" className="cursor-pointer">
-                  커뮤니티에 공유하기
-                </Label>
-                <p className="text-xs text-muted-foreground">
-                  다른 사용자들과 묵상을 나눕니다
-                </p>
-              </div>
-              <Switch
-                id="is-public"
-                checked={isPublic}
-                onCheckedChange={setIsPublic}
-              />
-            </div>
-          )}
+          {/* 공개 범위 설정 */}
+          <VisibilitySelector
+            value={visibility}
+            onChange={setVisibility}
+            allowedOptions={['private', 'public']}
+          />
         </div>
 
         {/* 저장 버튼 */}

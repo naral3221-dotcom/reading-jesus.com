@@ -4,7 +4,7 @@
  */
 
 import type { IPublicMeditationRepository, CreatePublicMeditationInput } from '@/domain/repositories/IPublicMeditationRepository'
-import type { PublicMeditationProps, MeditationType } from '@/domain/entities/PublicMeditation'
+import type { PublicMeditationProps, MeditationType, ContentVisibility } from '@/domain/entities/PublicMeditation'
 
 export interface CreatePersonalMeditationInput {
   userId: string
@@ -23,7 +23,7 @@ export interface CreatePersonalMeditationInput {
   myPrayer?: string | null
   dayReview?: string | null
   // 공개 설정
-  isPublic?: boolean
+  visibility?: ContentVisibility
 }
 
 export interface CreatePersonalMeditationOutput {
@@ -64,6 +64,7 @@ export class CreatePersonalMeditation {
         content: this.buildContent(input),
         bibleReference: input.bibleReference ?? null,
         isAnonymous: false,
+        visibility: input.visibility ?? 'private',
         // QT 필드
         oneWord: input.oneWord ?? null,
         meditationQuestion: input.meditationQuestion ?? null,

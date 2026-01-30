@@ -36,27 +36,27 @@ export function DashboardStats({
         {/* 통계 카드들 */}
         <div className="grid grid-cols-3 gap-3">
           {/* 읽은 성경 */}
-          <div className="text-center p-3 bg-muted/50 rounded-xl">
-            <div className="w-8 h-8 mx-auto mb-1.5 rounded-full bg-muted flex items-center justify-center">
-              <BookOpen className="w-4 h-4 text-foreground" />
+          <div className="text-center p-3 bg-primary/5 rounded-xl">
+            <div className="w-8 h-8 mx-auto mb-1.5 rounded-full bg-primary/10 flex items-center justify-center">
+              <BookOpen className="w-4 h-4 text-primary" />
             </div>
             <p className="text-lg font-bold text-foreground">{readChapters}</p>
             <p className="text-[10px] text-muted-foreground">읽은 장</p>
           </div>
 
           {/* 작성한 QT */}
-          <div className="text-center p-3 bg-muted/50 rounded-xl">
-            <div className="w-8 h-8 mx-auto mb-1.5 rounded-full bg-muted flex items-center justify-center">
-              <PenLine className="w-4 h-4 text-foreground" />
+          <div className="text-center p-3 bg-accent-cool/5 rounded-xl">
+            <div className="w-8 h-8 mx-auto mb-1.5 rounded-full bg-accent-cool/10 flex items-center justify-center">
+              <PenLine className="w-4 h-4 text-accent-cool" />
             </div>
             <p className="text-lg font-bold text-foreground">{writtenQTs}</p>
             <p className="text-[10px] text-muted-foreground">작성한 QT</p>
           </div>
 
           {/* 연속 읽기 */}
-          <div className="text-center p-3 bg-muted/50 rounded-xl">
-            <div className="w-8 h-8 mx-auto mb-1.5 rounded-full bg-muted flex items-center justify-center">
-              <Flame className="w-4 h-4 text-foreground" />
+          <div className="text-center p-3 bg-accent-warm/5 rounded-xl">
+            <div className="w-8 h-8 mx-auto mb-1.5 rounded-full bg-accent-warm/10 flex items-center justify-center">
+              <Flame className="w-4 h-4 text-accent-warm" />
             </div>
             <p className="text-lg font-bold text-foreground">{streakDays}</p>
             <p className="text-[10px] text-muted-foreground">연속 읽기</p>

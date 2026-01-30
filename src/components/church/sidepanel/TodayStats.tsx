@@ -24,19 +24,19 @@ export function TodayStats({ churchId }: TodayStatsProps) {
       label: '오늘 묵상',
       value: stats?.todayMeditations ?? 0,
       icon: <MessageCircle className="w-4 h-4" />,
-      color: 'text-foreground bg-muted',
+      color: 'text-primary bg-primary/10',
     },
     {
       label: '오늘 QT',
       value: stats?.todayQT ?? 0,
       icon: <FileEdit className="w-4 h-4" />,
-      color: 'text-foreground bg-muted',
+      color: 'text-accent-cool bg-accent-cool/10',
     },
     {
       label: '주간 참여자',
       value: stats?.activeMembers ?? 0,
       icon: <Users className="w-4 h-4" />,
-      color: 'text-foreground bg-muted',
+      color: 'text-accent-warm bg-accent-warm/10',
     },
   ];
 

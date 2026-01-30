@@ -4,10 +4,11 @@
  * Unified Feed React Query Hooks
  *
  * 통합 피드 조회를 위한 React Query 훅들.
+ * 커서 기반 무한 스크롤 지원
  */
 
 import { useQuery, useInfiniteQuery } from '@tanstack/react-query'
-import { GetUnifiedFeed, type UnifiedFeedTab } from '@/application/use-cases/unified-feed'
+import { GetUnifiedFeed, type UnifiedFeedTab, type FeedContentTypeFilter } from '@/application/use-cases/unified-feed'
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client'
 import { useAuthInitialized } from '@/presentation/providers/QueryProvider'
 import { useCurrentUser } from './useUser'
@@ -24,34 +25,32 @@ const ITEMS_PER_PAGE = 20
 
 interface UseUnifiedFeedOptions {
   tab: UnifiedFeedTab
+  typeFilter?: FeedContentTypeFilter
   enabled?: boolean
 }
 
 /**
- * 통합 피드 조회 훅 (일반 페이지네이션)
+ * 통합 피드 조회 훅 (일반 조회 - 첫 페이지만)
  */
-export function useUnifiedFeed({ tab, enabled = true }: UseUnifiedFeedOptions) {
+export function useUnifiedFeed({ tab, typeFilter = 'all', enabled = true }: UseUnifiedFeedOptions) {
   const authInitialized = useAuthInitialized()
   const { data: userData } = useCurrentUser()
   const { data: userGroups } = useUserGroups(userData?.user?.id ?? null)
 
   const user = userData?.user
-  // userGroups는 GroupWithMemberCount[] 형태: { group: Group, memberCount: number }[]
   const groupIds = userGroups?.map(g => g.group.id) || []
   const churchId = user?.churchId ?? null
-
-  // 팔로잉 ID는 별도로 조회해야 함 (현재는 빈 배열로 시작)
   const followingUserIds: string[] = []
 
   return useQuery({
-    queryKey: unifiedFeedKeys.list(tab),
+    queryKey: [...unifiedFeedKeys.list(tab), typeFilter],
     queryFn: async () => {
       const getUnifiedFeed = new GetUnifiedFeed(() => getSupabaseBrowserClient())
       return getUnifiedFeed.execute({
         tab,
+        typeFilter,
         currentUserId: user?.id,
         limit: ITEMS_PER_PAGE,
-        offset: 0,
         groupIds,
         churchId,
         followingUserIds,
@@ -63,39 +62,55 @@ export function useUnifiedFeed({ tab, enabled = true }: UseUnifiedFeedOptions) {
 }
 
 /**
- * 통합 피드 무한 스크롤 조회 훅
+ * 통합 피드 무한 스크롤 조회 훅 (커서 기반)
  */
-export function useUnifiedFeedInfinite({ tab, enabled = true }: UseUnifiedFeedOptions) {
+export function useUnifiedFeedInfinite({ tab, typeFilter = 'all', enabled = true }: UseUnifiedFeedOptions) {
   const authInitialized = useAuthInitialized()
   const { data: userData } = useCurrentUser()
   const { data: userGroups } = useUserGroups(userData?.user?.id ?? null)
 
   const user = userData?.user
-  // userGroups는 GroupWithMemberCount[] 형태: { group: Group, memberCount: number }[]
   const groupIds = userGroups?.map(g => g.group.id) || []
   const churchId = user?.churchId ?? null
-
-  // 팔로잉 ID는 별도로 조회해야 함
   const followingUserIds: string[] = []
 
   return useInfiniteQuery({
-    queryKey: unifiedFeedKeys.infinite(tab),
-    queryFn: async ({ pageParam = 0 }) => {
-      const getUnifiedFeed = new GetUnifiedFeed(() => getSupabaseBrowserClient())
-      return getUnifiedFeed.execute({
+    queryKey: [...unifiedFeedKeys.infinite(tab), typeFilter],
+    queryFn: async ({ pageParam }) => {
+      console.log('[useUnifiedFeedInfinite] 쿼리 시작:', {
         tab,
+        typeFilter,
         currentUserId: user?.id,
-        limit: ITEMS_PER_PAGE,
-        offset: pageParam,
+        pageParam,
         groupIds,
         churchId,
         followingUserIds,
       })
+
+      const getUnifiedFeed = new GetUnifiedFeed(() => getSupabaseBrowserClient())
+      const result = await getUnifiedFeed.execute({
+        tab,
+        typeFilter,
+        currentUserId: user?.id,
+        limit: ITEMS_PER_PAGE,
+        cursor: pageParam, // 커서 기반
+        groupIds,
+        churchId,
+        followingUserIds,
+      })
+
+      console.log('[useUnifiedFeedInfinite] 쿼리 결과:', {
+        itemsCount: result.items.length,
+        hasMore: result.hasMore,
+        error: result.error,
+      })
+
+      return result
     },
-    initialPageParam: 0,
-    getNextPageParam: (lastPage, allPages) => {
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (lastPage) => {
       if (!lastPage.hasMore) return undefined
-      return allPages.length * ITEMS_PER_PAGE
+      return lastPage.nextCursor // 다음 페이지 커서
     },
     staleTime: 1000 * 60, // 1분
     enabled: authInitialized && enabled,

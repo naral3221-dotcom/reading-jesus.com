@@ -48,7 +48,7 @@ export function BibleContent({ churchCode }: BibleContentProps) {
   }
 
   return (
-    <div className="min-h-full bg-gradient-to-br from-slate-50 via-background to-muted/30">
+    <div className="min-h-full bg-gradient-to-br from-background via-background to-muted/30">
       {/* 헤더 */}
       <header className="bg-gradient-to-r from-muted/50 via-background to-muted/30 sticky top-0 z-10 border-b border-border/60">
         <div className="px-4 py-4">

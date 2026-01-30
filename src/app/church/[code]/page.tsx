@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -48,12 +48,14 @@ import type { Profile } from '@/types';
 import { ChurchLayout } from '@/components/church/ChurchLayout';
 import { QTContentRenderer } from '@/components/church/QTContentRenderer';
 import { EditPostDialog, EditPostData } from '@/components/church/EditPostDialog';
-import { FeedItem } from '@/components/church/FeedCard';
+import { FeedCard, FeedItem } from '@/components/church/FeedCard';
 import { QTCardSlider } from '@/components/church/QTCardSlider';
 import { ShortsViewer } from '@/components/church/ShortsViewer';
 import { Pencil } from 'lucide-react';
 import { findDayByDate, findReadingByDay } from '@/components/church/ReadingDayPicker';
 import NoticeBanner from '@/components/church/NoticeBanner';
+import { VisibilitySelector } from '@/components/ui/visibility-selector';
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 
 // RichEditor는 클라이언트에서만 로드 (SSR 비활성화)
 const RichEditor = dynamic(
@@ -172,9 +174,36 @@ function setLastGuestName(name: string) {
   }
 }
 
+// GuestComment → FeedItem 변환 헬퍼
+function guestCommentToFeedItem(comment: GuestComment): FeedItem {
+  return {
+    id: comment.id,
+    type: comment.source === 'qt_post' ? 'qt' : 'meditation',
+    authorName: comment.guest_name,
+    isAnonymous: comment.is_anonymous,
+    createdAt: comment.created_at,
+    dayNumber: comment.day_number,
+    bibleRange: comment.bible_range,
+    content: comment.content,
+    qtDate: comment.qtDate ?? undefined,
+    mySentence: comment.mySentence,
+    meditationAnswer: comment.meditationAnswer,
+    meditationQuestion: comment.meditationQuestion,
+    gratitude: comment.gratitude,
+    myPrayer: comment.myPrayer,
+    dayReview: comment.dayReview,
+    likesCount: comment.likes_count,
+    repliesCount: comment.replies_count,
+    isLiked: false,
+    userId: comment.linked_user_id,
+    sourceType: 'church',
+  };
+}
+
 export default function ChurchPublicPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { toast } = useToast();
 
   const churchCode = params.code as string;
@@ -193,6 +222,7 @@ export default function ChurchPublicPage() {
   const [guestName, setGuestName] = useState('');
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [visibility, setVisibility] = useState<ContentVisibility>('public');
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
 
   // 일정 상태
@@ -695,6 +725,7 @@ export default function ChurchPublicPage() {
         bible_range: string | null;
         day_number: number | null;
         is_anonymous: boolean;
+        visibility: ContentVisibility;
         linked_user_id?: string;
         linked_at?: string;
       } = {
@@ -705,6 +736,7 @@ export default function ChurchPublicPage() {
         bible_range: bibleRange,
         day_number: dayNumber,
         is_anonymous: isAnonymous,
+        visibility: visibility,
       };
 
       // 등록 교인인 경우 연결 정보 추가
@@ -847,8 +879,8 @@ export default function ChurchPublicPage() {
     }
   };
 
-  // 댓글 무한 스크롤 계산 (QT는 슬라이더에서 표시하므로 피드에서 제외)
-  const feedComments = comments.filter(c => c.source !== 'qt_post');
+  // 댓글 무한 스크롤 계산 (QT도 피드에 포함)
+  const feedComments = comments;
   const displayedComments = feedComments.slice(0, displayCount);
   const hasMoreComments = displayCount < feedComments.length;
 
@@ -1365,9 +1397,9 @@ export default function ChurchPublicPage() {
   // 로딩 상태
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 via-background to-coral-50/30">
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-background to-accent-warm/10">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-lg shadow-slate-500/20">
+          <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-lg shadow-primary/20">
             <BookOpen className="w-8 h-8 text-white animate-pulse" />
           </div>
           <Loader2 className="w-6 h-6 animate-spin text-primary" />
@@ -1379,7 +1411,7 @@ export default function ChurchPublicPage() {
   // 교회를 찾을 수 없음
   if (!church) {
     return (
-      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-slate-50 via-background to-coral-50/30 p-4">
+      <div className="min-h-screen flex flex-col items-center justify-center bg-gradient-to-br from-background via-background to-accent-warm/10 p-4">
         <div className="w-20 h-20 rounded-2xl bg-muted/50 flex items-center justify-center mb-6">
           <AlertCircle className="w-10 h-10 text-muted-foreground" />
         </div>
@@ -1393,7 +1425,7 @@ export default function ChurchPublicPage() {
 
   return (
     <ChurchLayout churchCode={churchCode} churchId={church.id}>
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-background to-coral-50/30 pb-20 lg:pb-4">
+    <div className="min-h-screen bg-gradient-to-br from-background via-background to-accent-warm/10 pb-20 lg:pb-4">
       {/* 헤더 - 밝은 아이보리/화이트 계열 */}
       <header className="bg-gradient-to-r from-muted/80 via-white to-muted/60 sticky top-0 z-10 shadow-sm border-b border-border/50">
         <div className="max-w-2xl mx-auto px-4 py-4">
@@ -1402,15 +1434,15 @@ export default function ChurchPublicPage() {
             <button
               type="button"
               onClick={() => setChurchInfoDialogOpen(true)}
-              className="flex items-center gap-3 hover:bg-slate-100/50 rounded-xl p-1.5 -m-1.5 transition-colors group"
+              className="flex items-center gap-3 hover:bg-muted/50 rounded-xl p-1.5 -m-1.5 transition-colors group"
             >
-              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
+              <div className="w-11 h-11 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center shadow-md group-hover:shadow-lg transition-shadow">
                 <Church className="w-6 h-6 text-white" />
               </div>
               <div className="text-left">
-                <h1 className="font-bold text-lg text-slate-800 group-hover:text-primary transition-colors">{church.name}</h1>
+                <h1 className="font-bold text-lg text-foreground group-hover:text-primary transition-colors">{church.name}</h1>
                 {church.address && (
-                  <p className="text-xs text-slate-500 truncate max-w-[180px]">{church.address}</p>
+                  <p className="text-xs text-muted-foreground truncate max-w-[180px]">{church.address}</p>
                 )}
               </div>
             </button>
@@ -1439,7 +1471,7 @@ export default function ChurchPublicPage() {
                   variant="ghost"
                   size="sm"
                   asChild
-                  className="gap-1 text-slate-600 hover:text-slate-800 hover:bg-slate-100"
+                  className="gap-1 text-muted-foreground hover:text-foreground hover:bg-muted"
                 >
                   <a href="/login">
                     <LogIn className="w-4 h-4" />
@@ -1455,8 +1487,8 @@ export default function ChurchPublicPage() {
       <main className="max-w-2xl mx-auto px-4 py-6 space-y-6">
         {/* 날짜 선택 - 슬레이트 강조 */}
         <Card className="overflow-hidden border-border/60 shadow-soft">
-          <div className="bg-gradient-to-r from-slate-100 via-slate-50 to-coral-50/50 px-4 py-1.5">
-            <p className="text-[10px] font-medium text-slate-600 text-center tracking-wider uppercase">Today&apos;s Reading</p>
+          <div className="bg-gradient-to-r from-muted via-muted to-accent-warm/20 px-4 py-1.5">
+            <p className="text-[10px] font-medium text-muted-foreground text-center tracking-wider uppercase">Today&apos;s Reading</p>
           </div>
           <CardHeader className="pb-3 pt-4">
             <div className="flex items-center justify-between gap-2">
@@ -1464,7 +1496,7 @@ export default function ChurchPublicPage() {
                 variant="ghost"
                 onClick={handlePrevDate}
                 disabled={!canGoPrev}
-                className="min-w-[44px] min-h-[44px] p-0 shrink-0 rounded-xl hover:bg-slate-100 text-slate-600 disabled:text-muted-foreground"
+                className="min-w-[44px] min-h-[44px] p-0 shrink-0 rounded-xl hover:bg-muted text-muted-foreground disabled:text-muted-foreground"
               >
                 <ChevronLeft className="w-6 h-6" />
               </Button>
@@ -1473,17 +1505,17 @@ export default function ChurchPublicPage() {
                 {currentSchedule ? (
                   <>
                     <div className="flex items-center justify-center gap-2 mb-2">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100 text-slate-700 rounded-full text-sm font-medium">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-muted text-foreground rounded-full text-sm font-medium">
                         <Calendar className="w-3.5 h-3.5" />
                         {formatDate(selectedDate)}
                       </span>
                     </div>
-                    <CardTitle className="text-xl font-bold text-slate-800">{currentSchedule.reading}</CardTitle>
+                    <CardTitle className="text-xl font-bold text-foreground">{currentSchedule.reading}</CardTitle>
                     {currentSchedule.is_supplement_week && (
                       <span className="inline-block mt-2 px-2 py-0.5 bg-primary/10 text-primary text-xs rounded-full font-medium">보충 주간</span>
                     )}
                     {currentSchedule.memory_verse && (
-                      <p className="text-xs text-slate-700 mt-2 bg-slate-50 px-3 py-1.5 rounded-lg inline-block font-medium">
+                      <p className="text-xs text-foreground mt-2 bg-muted px-3 py-1.5 rounded-lg inline-block font-medium">
                         📖 암송: {currentSchedule.memory_verse}
                       </p>
                     )}
@@ -1499,7 +1531,7 @@ export default function ChurchPublicPage() {
                 variant="ghost"
                 onClick={handleNextDate}
                 disabled={!canGoNext}
-                className="min-w-[44px] min-h-[44px] p-0 shrink-0 rounded-xl hover:bg-slate-100 text-slate-600 disabled:text-muted-foreground"
+                className="min-w-[44px] min-h-[44px] p-0 shrink-0 rounded-xl hover:bg-muted text-muted-foreground disabled:text-muted-foreground"
               >
                 <ChevronRight className="w-6 h-6" />
               </Button>
@@ -1513,8 +1545,8 @@ export default function ChurchPublicPage() {
         {/* 작성 폼 - 슬레이트 + 코랄 강조 */}
         {hasWriteAccess ? (
           <Card className="border-border/60 shadow-soft overflow-hidden">
-            <CardHeader className="bg-gradient-to-r from-slate-50 to-coral-50/50 border-b border-slate-100">
-              <CardTitle className="text-base flex items-center gap-2 text-slate-700">
+            <CardHeader className="bg-gradient-to-r from-muted to-accent-warm/20 border-b border-border">
+              <CardTitle className="text-base flex items-center gap-2 text-foreground">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center shadow-sm">
                   <BookOpen className="w-4 h-4 text-white" />
                 </div>
@@ -1525,13 +1557,13 @@ export default function ChurchPublicPage() {
               <form onSubmit={handleSubmit} className="space-y-5">
                 {/* 이름 입력 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">이름</label>
+                  <label className="text-sm font-medium text-foreground">이름</label>
                   {isRegisteredMember && userProfile ? (
                     <div className="flex items-center gap-2">
                       <Input
                         value={userProfile.nickname}
                         disabled
-                        className="bg-slate-50 border-border"
+                        className="bg-muted border-border"
                       />
                       <span className="text-xs text-primary bg-primary/10 px-2 py-1 rounded-full whitespace-nowrap font-medium">
                         등록 교인
@@ -1550,7 +1582,7 @@ export default function ChurchPublicPage() {
 
                 {/* 내용 입력 */}
                 <div className="space-y-2">
-                  <label className="text-sm font-medium text-slate-700">묵상 내용</label>
+                  <label className="text-sm font-medium text-foreground">묵상 내용</label>
                   <RichEditor
                     content={content}
                     onChange={(html) => setContent(html)}
@@ -1577,6 +1609,16 @@ export default function ChurchPublicPage() {
                   </div>
                 )}
 
+                {/* 공개 범위 선택 */}
+                <div className="space-y-2">
+                  <VisibilitySelector
+                    value={visibility}
+                    onChange={setVisibility}
+                    allowedOptions={['private', 'church', 'public']}
+                    variant="inline"
+                  />
+                </div>
+
                 {/* 나눔 등록 버튼 - 코랄 그라데이션 */}
                 <Button
                   type="submit"
@@ -1596,7 +1638,7 @@ export default function ChurchPublicPage() {
                 </Button>
 
                 {/* QT 작성 안내 - 개선된 버전 */}
-                <div className="pt-3 border-t border-slate-100 space-y-2">
+                <div className="pt-3 border-t border-border space-y-2">
                   <div className="text-xs text-center text-muted-foreground mb-2">
                     더 자세한 묵상을 남기고 싶다면?
                   </div>
@@ -1634,12 +1676,12 @@ export default function ChurchPublicPage() {
             </CardContent>
           </Card>
         ) : (
-          <Card className="border-dashed border-border/60 bg-slate-50/30">
+          <Card className="border-dashed border-border/60 bg-muted/30">
             <CardContent className="py-10 text-center">
-              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-slate-100 flex items-center justify-center">
-                <Lock className="w-8 h-8 text-slate-400" />
+              <div className="w-16 h-16 mx-auto mb-4 rounded-2xl bg-muted flex items-center justify-center">
+                <Lock className="w-8 h-8 text-muted-foreground" />
               </div>
-              <p className="font-medium text-slate-700">
+              <p className="font-medium text-foreground">
                 묵상을 작성하려면 QR 코드를 스캔해주세요
               </p>
               <p className="text-xs text-muted-foreground mt-2">
@@ -1666,10 +1708,10 @@ export default function ChurchPublicPage() {
         {/* 게시글 목록 - 인스타 피드 스타일 */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+            <h2 className="font-semibold text-sm text-foreground flex items-center gap-2">
               <MessageCircle className="w-4 h-4" />
               {currentSchedule?.reading || '오늘'} 묵상 나눔
-              <span className="text-slate-600 bg-slate-100 px-2 py-0.5 rounded-full text-xs font-medium">{feedComments.length}</span>
+              <span className="text-muted-foreground bg-muted px-2 py-0.5 rounded-full text-xs font-medium">{feedComments.length}</span>
             </h2>
             {feedComments.length > COMMENTS_PER_PAGE && (
               <span className="text-xs text-muted-foreground">
@@ -1682,21 +1724,21 @@ export default function ChurchPublicPage() {
           {commentsLoading ? (
             <div className="space-y-4">
               {[1, 2, 3].map((i) => (
-                <Card key={i} className="border-slate-100">
+                <Card key={i} className="border-border">
                   <CardContent className="pt-4">
                     <div className="flex items-center gap-3 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-slate-100 animate-pulse" />
+                      <div className="w-10 h-10 rounded-xl bg-muted animate-pulse" />
                       <div className="flex-1 space-y-2">
-                        <div className="h-4 w-24 bg-slate-100 rounded animate-pulse" />
-                        <div className="h-3 w-16 bg-slate-50 rounded animate-pulse" />
+                        <div className="h-4 w-24 bg-muted rounded animate-pulse" />
+                        <div className="h-3 w-16 bg-muted rounded animate-pulse" />
                       </div>
                     </div>
                     <div className="space-y-2">
-                      <div className="h-4 w-full bg-slate-50 rounded animate-pulse" />
-                      <div className="h-4 w-3/4 bg-slate-50 rounded animate-pulse" />
+                      <div className="h-4 w-full bg-muted rounded animate-pulse" />
+                      <div className="h-4 w-3/4 bg-muted rounded animate-pulse" />
                     </div>
-                    <div className="mt-4 pt-3 border-t border-slate-100">
-                      <div className="h-8 w-20 bg-slate-50 rounded-full animate-pulse" />
+                    <div className="mt-4 pt-3 border-t border-border">
+                      <div className="h-8 w-20 bg-muted rounded-full animate-pulse" />
                     </div>
                   </CardContent>
                 </Card>
@@ -1721,12 +1763,12 @@ export default function ChurchPublicPage() {
             </Card>
           ) : feedComments.length === 0 ? (
             /* 빈 상태 - 슬레이트 스타일 */
-            <Card className="border-dashed border-border bg-gradient-to-br from-slate-50/50 to-coral-50/30">
+            <Card className="border-dashed border-border bg-gradient-to-br from-muted/50 to-accent-warm/20">
               <CardContent className="py-12 text-center">
-                <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-slate-100 to-slate-50 flex items-center justify-center shadow-inner">
-                  <MessageCircle className="w-10 h-10 text-slate-400" />
+                <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-muted to-background flex items-center justify-center shadow-inner">
+                  <MessageCircle className="w-10 h-10 text-muted-foreground" />
                 </div>
-                <p className="font-bold text-lg mb-2 text-slate-700">
+                <p className="font-bold text-lg mb-2 text-foreground">
                   아직 작성된 묵상이 없습니다
                 </p>
                 <p className="text-sm text-muted-foreground">
@@ -1742,12 +1784,37 @@ export default function ChurchPublicPage() {
           ) : (
             <>
               {displayedComments.map((comment) => {
+                // ========== QT 포스트: FeedCard 컴포넌트 사용 ==========
+                if (comment.source === 'qt_post') {
+                  const feedItem = guestCommentToFeedItem(comment);
+                  feedItem.isLiked = likedComments.has(comment.id);
+
+                  return (
+                    <div key={comment.id} className="space-y-0">
+                      <FeedCard
+                        item={feedItem}
+                        currentUserId={currentUser?.id}
+                        onLike={() => handleLike(comment.id)}
+                        onComment={() => startReply(comment.id, 'qt_post')}
+                        onEdit={canDeleteComment(comment) ? () => handleOpenEdit(comment) : undefined}
+                        onDelete={canDeleteComment(comment) ? () => {
+                          setDeleteCommentId(comment.id);
+                          setDeleteCommentSource('qt_post');
+                          setDeleteConfirmOpen(true);
+                        } : undefined}
+                        onAuthorClick={(authorId) => router.push(`/profile/${authorId}`)}
+                      />
+                    </div>
+                  );
+                }
+
+                // ========== 일반 묵상: 기존 Card 스타일 유지 ==========
                 const displayName = comment.is_anonymous ? '익명' : comment.guest_name;
-                const avatarColor = comment.is_anonymous ? 'bg-slate-400' : getAvatarColor(comment.guest_name);
+                const avatarColor = comment.is_anonymous ? 'bg-muted-foreground' : getAvatarColor(comment.guest_name);
                 const initials = comment.is_anonymous ? '?' : getInitials(comment.guest_name);
 
                 return (
-                  <Card key={comment.id} className="transition-all duration-200 hover:shadow-soft border-slate-100 hover:border-border">
+                  <Card key={comment.id} className="transition-all duration-200 hover:shadow-soft border-border hover:border-border">
                     <CardContent className="pt-4">
                       {/* 작성자 정보 */}
                       <div className="flex items-center gap-3 mb-3">
@@ -1756,16 +1823,11 @@ export default function ChurchPublicPage() {
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-slate-800 truncate">
+                            <p className="text-sm font-semibold text-foreground truncate">
                               {displayName}
                             </p>
-                            {comment.source === 'qt_post' && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted text-foreground text-xs rounded-full font-medium">
-                                QT
-                              </span>
-                            )}
                             {comment.is_anonymous && (
-                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 text-xs rounded-full">
+                              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground text-xs rounded-full">
                                 <Lock className="w-3 h-3" />
                                 익명
                               </span>
@@ -1779,26 +1841,22 @@ export default function ChurchPublicPage() {
 
                       {/* 성경 범위 */}
                       {comment.bible_range && (
-                        <span className="text-xs text-slate-700 bg-slate-100 px-2.5 py-1 rounded-full inline-block mb-3 font-medium">
+                        <span className="text-xs text-foreground bg-muted px-2.5 py-1 rounded-full inline-block mb-3 font-medium">
                           📖 {comment.bible_range}
                         </span>
                       )}
 
-                      {/* 내용 - QT인 경우 박스 스타일, 일반 묵상은 기존 스타일 */}
-                      {comment.source === 'qt_post' ? (
-                        <QTContentRenderer data={comment} />
-                      ) : (
-                        <div className="bg-slate-50/70 rounded-xl p-4 -mx-1">
-                          {comment.content.startsWith('<') ? (
-                            <RichViewerWithEmbed content={comment.content} className="text-sm text-slate-800" />
-                          ) : (
-                            <p className="text-sm whitespace-pre-wrap text-slate-800">{comment.content}</p>
-                          )}
-                        </div>
-                      )}
+                      {/* 묵상 내용 */}
+                      <div className="bg-muted/70 rounded-xl p-4 -mx-1">
+                        {comment.content.startsWith('<') ? (
+                          <RichViewerWithEmbed content={comment.content} className="text-sm text-foreground" />
+                        ) : (
+                          <p className="text-sm whitespace-pre-wrap text-foreground">{comment.content}</p>
+                        )}
+                      </div>
 
-                      {/* 좋아요 버튼 & 답글 & 삭제 버튼 */}
-                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-slate-100">
+                      {/* 좋아요 버튼 & 삭제 버튼 */}
+                      <div className="flex items-center justify-between mt-4 pt-3 border-t border-border">
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -1806,7 +1864,7 @@ export default function ChurchPublicPage() {
                             className={`flex items-center gap-2 min-w-[44px] min-h-[44px] px-4 py-2 rounded-full text-sm transition-all active:scale-95 ${
                               likedComments.has(comment.id)
                                 ? 'bg-gradient-to-r from-coral-50 to-red-50 dark:from-coral-950 dark:to-red-950 text-primary shadow-sm'
-                                : 'bg-slate-50 text-slate-700 hover:bg-slate-100 active:bg-slate-100'
+                                : 'bg-muted text-foreground hover:bg-muted active:bg-muted'
                             }`}
                           >
                             <Heart
@@ -1817,34 +1875,14 @@ export default function ChurchPublicPage() {
                             <span className="font-semibold">{comment.likes_count || 0}</span>
                           </button>
 
-                          {/* 답글 버튼 */}
-                          {hasWriteAccess && (
-                            <button
-                              type="button"
-                              onClick={() => startReply(comment.id, comment.source || 'guest_comment')}
-                              className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm bg-slate-50 text-slate-600 hover:bg-slate-100 transition-colors"
-                            >
-                              <Reply className="w-4 h-4" />
-                              답글
-                            </button>
-                          )}
-
-                          {/* 답글 펼치기/접기 (답글이 있을 때만) */}
-                          {(comment.replies_count || 0) > 0 && (
-                            <button
-                              type="button"
-                              onClick={() => toggleReplies(comment.id, comment.source || 'guest_comment')}
-                              className="flex items-center gap-1 px-2 py-1 rounded-full text-xs text-muted-foreground hover:text-slate-700 hover:bg-slate-50 transition-colors"
-                            >
-                              <MessageCircle className="w-3.5 h-3.5" />
-                              <span>{comment.replies_count}</span>
-                              {expandedReplies.has(comment.id) ? (
-                                <ChevronUp className="w-3.5 h-3.5" />
-                              ) : (
-                                <ChevronDown className="w-3.5 h-3.5" />
-                              )}
-                            </button>
-                          )}
+                          {/* 댓글 버튼 (댓글 수 표시) */}
+                          <button
+                            type="button"
+                            className="flex items-center gap-1.5 px-3 py-2 rounded-full text-sm bg-muted text-muted-foreground"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span>{comment.replies_count || 0}</span>
+                          </button>
                         </div>
 
                         {/* 본인 글인 경우 수정/삭제 버튼 표시 */}
@@ -1853,7 +1891,7 @@ export default function ChurchPublicPage() {
                             <button
                               type="button"
                               onClick={() => handleOpenEdit(comment)}
-                              className="flex items-center gap-1 px-3 py-2 rounded-full text-xs text-muted-foreground hover:text-slate-700 hover:bg-slate-50 transition-colors"
+                              className="flex items-center gap-1 px-3 py-2 rounded-full text-xs text-muted-foreground hover:text-foreground hover:bg-muted transition-colors"
                             >
                               <Pencil className="w-4 h-4" />
                               수정
@@ -1862,7 +1900,7 @@ export default function ChurchPublicPage() {
                               type="button"
                               onClick={() => {
                                 setDeleteCommentId(comment.id);
-                                setDeleteCommentSource(comment.source || 'guest_comment');
+                                setDeleteCommentSource('guest_comment');
                                 setDeleteConfirmOpen(true);
                               }}
                               className="flex items-center gap-1 px-3 py-2 rounded-full text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
@@ -1873,117 +1911,6 @@ export default function ChurchPublicPage() {
                           </div>
                         )}
                       </div>
-
-                      {/* 답글 목록 */}
-                      {expandedReplies.has(comment.id) && (
-                        <div className="mt-3 pt-3 border-t border-slate-100 space-y-3">
-                          {loadingReplies.has(comment.id) ? (
-                            <div className="flex items-center justify-center py-4">
-                              <Loader2 className="w-5 h-5 animate-spin text-primary" />
-                            </div>
-                          ) : (
-                            <>
-                              {(repliesMap[comment.id] || []).map((reply) => {
-                                const replyDisplayName = reply.is_anonymous ? '익명' : reply.guest_name;
-                                const replyAvatarColor = reply.is_anonymous ? 'bg-slate-400' : getAvatarColor(reply.guest_name || '');
-                                const replyInitials = reply.is_anonymous ? '?' : getInitials(reply.guest_name || '');
-
-                                return (
-                                  <div key={reply.id} className="flex gap-2 pl-2 group">
-                                    <div className={`w-8 h-8 rounded-lg ${replyAvatarColor} flex items-center justify-center shrink-0`}>
-                                      <span className="text-white font-semibold text-xs">{replyInitials}</span>
-                                    </div>
-                                    <div className="flex-1 min-w-0">
-                                      <div className="flex items-center justify-between gap-2 mb-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="text-sm font-medium text-slate-700">{replyDisplayName}</span>
-                                          <span className="text-xs text-muted-foreground">{formatRelativeTime(reply.created_at)}</span>
-                                        </div>
-                                        {/* 본인 답글 삭제 버튼 */}
-                                        {canDeleteReply(reply) && (
-                                          <button
-                                            type="button"
-                                            onClick={() => {
-                                              setDeleteReplyId(reply.id);
-                                              setDeleteReplyCommentId(comment.id);
-                                              setDeleteReplySource(comment.source || 'guest_comment');
-                                              setDeleteReplyConfirmOpen(true);
-                                            }}
-                                            className="opacity-0 group-hover:opacity-100 flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-all"
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </button>
-                                        )}
-                                      </div>
-                                      <p className="text-sm text-slate-700 bg-slate-50/70 rounded-lg px-3 py-2">
-                                        {reply.content}
-                                      </p>
-                                    </div>
-                                  </div>
-                                );
-                              })}
-
-                              {(repliesMap[comment.id] || []).length === 0 && !loadingReplies.has(comment.id) && (
-                                <p className="text-sm text-muted-foreground text-center py-2">
-                                  아직 답글이 없습니다
-                                </p>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      )}
-
-                      {/* 답글 작성 폼 */}
-                      {replyingToId === comment.id && (
-                        <div className="mt-3 pt-3 border-t border-slate-100">
-                          <div className="space-y-3">
-                            {/* 비등록 사용자 이름 입력 */}
-                            {!isRegisteredMember && (
-                              <Input
-                                value={replyGuestName}
-                                onChange={(e) => setReplyGuestName(e.target.value)}
-                                placeholder="이름"
-                                maxLength={20}
-                                className="text-sm border-border focus:border-primary"
-                              />
-                            )}
-                            <div className="flex gap-2">
-                              <Input
-                                value={replyContent}
-                                onChange={(e) => setReplyContent(e.target.value)}
-                                placeholder="답글을 입력하세요..."
-                                className="flex-1 text-sm border-border focus:border-primary"
-                                onKeyPress={(e) => {
-                                  if (e.key === 'Enter' && !e.shiftKey) {
-                                    e.preventDefault();
-                                    handleSubmitReply();
-                                  }
-                                }}
-                              />
-                              <Button
-                                size="sm"
-                                onClick={handleSubmitReply}
-                                disabled={replySubmitting || !replyContent.trim() || (!isRegisteredMember && !replyGuestName.trim())}
-                                className="bg-primary hover:bg-primary"
-                              >
-                                {replySubmitting ? (
-                                  <Loader2 className="w-4 h-4 animate-spin" />
-                                ) : (
-                                  <Send className="w-4 h-4" />
-                                )}
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={cancelReply}
-                                className="text-muted-foreground"
-                              >
-                                취소
-                              </Button>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </CardContent>
                   </Card>
                 );
@@ -2005,8 +1932,8 @@ export default function ChurchPublicPage() {
       </main>
 
       {/* 푸터 - 슬레이트 스타일 */}
-      <footer className="bg-gradient-to-r from-slate-50 via-background to-coral-50/50 border-t border-slate-100 py-5 text-center">
-        <p className="text-xs text-slate-600 font-medium">
+      <footer className="bg-gradient-to-r from-muted via-background to-accent-warm/20 border-t border-border py-5 text-center">
+        <p className="text-xs text-muted-foreground font-medium">
           ✝️ Powered by 리딩지저스 · {church.code}
         </p>
       </footer>
@@ -2016,7 +1943,7 @@ export default function ChurchPublicPage() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-slate-600 to-slate-700 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-primary-dark flex items-center justify-center">
                 <Church className="w-5 h-5 text-white" />
               </div>
               {church.name}
@@ -2028,39 +1955,39 @@ export default function ChurchPublicPage() {
 
           <div className="space-y-4 py-4">
             {/* 교회 상세 정보 */}
-            <div className="bg-slate-50 rounded-xl p-4 space-y-3">
+            <div className="bg-muted rounded-xl p-4 space-y-3">
               <div className="flex items-start gap-3">
-                <MapPin className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+                <MapPin className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs text-slate-500 mb-0.5">주소</p>
-                  <p className="text-sm text-slate-700">{church.address || '주소 정보 없음'}</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">주소</p>
+                  <p className="text-sm text-foreground">{church.address || '주소 정보 없음'}</p>
                 </div>
               </div>
 
               {church.pastor_name && (
                 <div className="flex items-start gap-3">
-                  <User className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+                  <User className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-xs text-slate-500 mb-0.5">담임 목사</p>
-                    <p className="text-sm text-slate-700">{church.pastor_name} 목사님</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">담임 목사</p>
+                    <p className="text-sm text-foreground">{church.pastor_name} 목사님</p>
                   </div>
                 </div>
               )}
 
               {church.denomination && (
                 <div className="flex items-start gap-3">
-                  <Church className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+                  <Church className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                   <div>
-                    <p className="text-xs text-slate-500 mb-0.5">교단</p>
-                    <p className="text-sm text-slate-700">{church.denomination}</p>
+                    <p className="text-xs text-muted-foreground mb-0.5">교단</p>
+                    <p className="text-sm text-foreground">{church.denomination}</p>
                   </div>
                 </div>
               )}
 
               <div className="flex items-start gap-3">
-                <BookOpen className="w-4 h-4 text-slate-500 mt-0.5 shrink-0" />
+                <BookOpen className="w-4 h-4 text-muted-foreground mt-0.5 shrink-0" />
                 <div>
-                  <p className="text-xs text-slate-500 mb-0.5">교회 코드</p>
+                  <p className="text-xs text-muted-foreground mb-0.5">교회 코드</p>
                   <p className="text-sm font-mono text-primary font-semibold">{church.code}</p>
                 </div>
               </div>
@@ -2071,18 +1998,18 @@ export default function ChurchPublicPage() {
               <p className="text-xs text-muted-foreground mb-3">교회 관리자이신가요?</p>
               <a
                 href={`/church/${churchCode}/admin/login`}
-                className="flex items-center justify-between w-full p-3 bg-gradient-to-r from-slate-100 to-slate-50 hover:from-coral-50 hover:to-muted rounded-xl transition-colors group"
+                className="flex items-center justify-between w-full p-3 bg-gradient-to-r from-muted to-background hover:from-coral-50 hover:to-muted rounded-xl transition-colors group"
               >
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-coral-500 to-coral-600 flex items-center justify-center shadow-sm group-hover:shadow-md transition-shadow">
                     <Settings className="w-5 h-5 text-white" />
                   </div>
                   <div>
-                    <p className="text-sm font-semibold text-slate-800 group-hover:text-primary transition-colors">관리자 페이지</p>
-                    <p className="text-xs text-slate-500">교회 설정 및 컨텐츠 관리</p>
+                    <p className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">관리자 페이지</p>
+                    <p className="text-xs text-muted-foreground">교회 설정 및 컨텐츠 관리</p>
                   </div>
                 </div>
-                <ExternalLink className="w-4 h-4 text-slate-400 group-hover:text-primary transition-colors" />
+                <ExternalLink className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
               </a>
             </div>
           </div>

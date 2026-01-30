@@ -216,27 +216,28 @@ export function getInitials(name: string): string {
 
 /**
  * 이름 기반 아바타 색상 생성 (일관된 색상 반환)
+ * 모든 색상은 흰색 텍스트와 충분한 대비(WCAG AA)를 보장합니다.
  */
 export function getAvatarColor(name: string): string {
-  // 미니멀 테마에 맞는 뉴트럴 그레이스케일 팔레트
+  // 흰색 텍스트와 충분한 대비를 보장하는 진한 색상 팔레트 (500-700 레벨)
   const colors = [
-    'bg-slate-400',
-    'bg-slate-500',
     'bg-slate-600',
-    'bg-gray-400',
-    'bg-gray-500',
-    'bg-gray-600',
-    'bg-zinc-400',
-    'bg-zinc-500',
-    'bg-zinc-600',
-    'bg-neutral-400',
-    'bg-neutral-500',
-    'bg-neutral-600',
-    'bg-stone-400',
-    'bg-stone-500',
-    'bg-stone-600',
     'bg-slate-700',
+    'bg-gray-600',
+    'bg-gray-700',
+    'bg-zinc-600',
+    'bg-zinc-700',
+    'bg-neutral-600',
+    'bg-neutral-700',
+    'bg-stone-600',
+    'bg-stone-700',
+    'bg-primary',
   ];
+
+  // 빈 이름 처리 - 기본 색상 반환
+  if (!name || name.trim().length === 0) {
+    return 'bg-slate-600';
+  }
 
   // 이름의 문자 코드 합으로 색상 결정
   let hash = 0;

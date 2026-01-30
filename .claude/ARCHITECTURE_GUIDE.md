@@ -246,39 +246,59 @@ export * from './useChurchNotice';
 
 ## 기존 훅 목록 (재사용 우선!)
 
+> 📁 전체 훅: `src/presentation/hooks/queries/index.ts`
+
 ### 교회 관련
 | 훅 | 파일 | 용도 |
 |----|------|------|
-| `useChurch` | useChurch.ts | 교회 정보 조회 |
+| `useChurchById` | useChurch.ts | ID로 교회 조회 |
 | `useChurchByCode` | useChurch.ts | 코드로 교회 조회 |
-| `useChurchMembers` | useChurch.ts | 교회 멤버 목록 |
+| `useSearchChurches` | useChurch.ts | 교회 검색 |
+| `useJoinChurch` | useChurch.ts | 교회 가입 |
 | `useChurchGroups` | useGroup.ts | 교회 소그룹 목록 |
 | `useChurchNotices` | useChurchNotice.ts | 교회 공지사항 |
 | `useChurchQTPosts` | useChurchQTPost.ts | 교회 QT 나눔 |
+| `useTodayStats` | useChurchStats.ts | 오늘 통계 |
+| `useChurchReadingProgress` | useChurchStats.ts | 읽기 진도 |
 
 ### 사용자 관련
 | 훅 | 파일 | 용도 |
 |----|------|------|
 | `useCurrentUser` | useUser.ts | 현재 로그인 사용자 |
-| `useUserProfile` | useUser.ts | 사용자 프로필 |
+| `useUpdateProfile` | useUser.ts | 프로필 업데이트 |
+| `useUploadAvatar` | useUser.ts | 아바타 업로드 |
 | `useUserBadges` | useBadge.ts | 사용자 배지 목록 |
 | `useUserPlans` | useUserPlans.ts | 사용자 통독 플랜 |
-
-### 통계/활동 관련
-| 훅 | 파일 | 용도 |
-|----|------|------|
-| `useTodayStats` | useChurchStats.ts | 오늘 통계 |
-| `useChurchReadingProgress` | useChurchStats.ts | 읽기 진도 |
-| `useUserActivityStats` | useChurchStats.ts | 사용자 활동 통계 |
-| `useWeeklyReadingSchedule` | useReadingSchedule.ts | 주간 통독 일정 |
+| `useDashboardStats` | useDashboardStats.ts | 대시보드 통계 |
 
 ### 소그룹 관련
 | 훅 | 파일 | 용도 |
 |----|------|------|
-| `useGroup` | useGroup.ts | 그룹 정보 |
+| `useGroupById` | useGroup.ts | 그룹 정보 |
 | `useGroupMembers` | useGroup.ts | 그룹 멤버 |
+| `useUserGroups` | useGroup.ts | 사용자 그룹 목록 |
+| `useJoinGroup` / `useLeaveGroup` | useGroup.ts | 그룹 가입/탈퇴 |
 | `useGroupNotices` | useGroupNotice.ts | 그룹 공지 |
 | `useGroupMeetings` | useGroupMeeting.ts | 그룹 모임 |
+
+### 피드/묵상 관련
+| 훅 | 파일 | 용도 |
+|----|------|------|
+| `useUnifiedFeed` | useUnifiedFeed.ts | 통합 피드 조회 |
+| `useUnifiedFeedInfinite` | useUnifiedFeed.ts | 통합 피드 무한스크롤 |
+| `usePublicFeedInfinite` | usePublicFeed.ts | 공개 피드 무한스크롤 |
+| `useUnifiedMeditations` | useUnifiedMeditation.ts | 통합 묵상 조회 |
+| `useUserMeditations` | useUnifiedMeditation.ts | 사용자 묵상 목록 |
+| `useCreateUnifiedMeditation` | useUnifiedMeditation.ts | 묵상 작성 |
+| `useToggleUnifiedMeditationLike` | useUnifiedMeditation.ts | 묵상 좋아요 |
+
+### 팔로우 관련
+| 훅 | 파일 | 용도 |
+|----|------|------|
+| `useFollowers` | useUserFollow.ts | 팔로워 목록 |
+| `useFollowing` | useUserFollow.ts | 팔로잉 목록 |
+| `useIsFollowing` | useUserFollow.ts | 팔로우 여부 확인 |
+| `useToggleFollow` | useUserFollow.ts | 팔로우 토글 |
 
 ### 격려/알림 관련
 | 훅 | 파일 | 용도 |
@@ -286,6 +306,32 @@ export * from './useChurchNotice';
 | `useSendEncouragement` | useEncouragement.ts | 격려 전송 |
 | `useReceivedEncouragements` | useEncouragement.ts | 받은 격려 목록 |
 | `useNotifications` | useNotification.ts | 알림 목록 |
+| `useUnreadNotificationCount` | useNotification.ts | 읽지 않은 알림 수 |
+
+### QT/성경 읽기 관련
+| 훅 | 파일 | 용도 |
+|----|------|------|
+| `useTodayQT` | useQT.ts | 오늘의 QT |
+| `useDailyQT` | useQT.ts | 날짜별 QT |
+| `useReadingChecks` | useReadingCheck.ts | 읽기 체크 목록 |
+| `useToggleReadingCheck` | useReadingCheck.ts | 읽기 체크 토글 |
+| `useReadingProgress` | useReadingCheck.ts | 읽기 진도율 |
+| `useWeeklyReadingSchedule` | useReadingSchedule.ts | 주간 통독 일정 |
+
+### 개인 프로젝트 관련
+| 훅 | 파일 | 용도 |
+|----|------|------|
+| `useUserProjects` | usePersonalProject.ts | 사용자 프로젝트 목록 |
+| `useCreateProject` | usePersonalProject.ts | 프로젝트 생성 |
+| `useToggleProjectCheck` | usePersonalProject.ts | 프로젝트 체크 토글 |
+
+### 관리자 관련
+| 훅 | 파일 | 용도 |
+|----|------|------|
+| `useChurchAdminLogin` | useChurchAdmin.ts | 교회 관리자 로그인 |
+| `useChurchAdmins` | useChurchAdmin.ts | 교회 관리자 목록 |
+| `useSystemStats` | useSystemAdmin.ts | 시스템 통계 |
+| `useAdminChurches` | useSystemAdmin.ts | 관리자용 교회 목록 |
 
 ---
 
@@ -386,16 +432,46 @@ import { ErrorState } from '@/components/ui/error-state';
 아직 아키텍처를 따르지 않는 파일들:
 
 ```
+✅ 완료:
+- app/page.tsx (2026-01-25 마이그레이션 완료)
+- app/(main)/bible-reader/page.tsx (2026-01-25 마이그레이션 완료)
+
 ⚠️ 대규모 리팩토링 필요:
-- components/mypage/UnifiedMyPage.tsx (1221줄, 10곳 Supabase 직접 호출)
+- components/mypage/UnifiedMyPage.tsx (1221줄, 27곳 Supabase 직접 호출)
 
 ⏳ 점진적 개선 필요:
-- app/page.tsx
-- app/(main)/bible-reader/page.tsx
 - app/(main)/search/page.tsx
-- app/admin/**/*.tsx
+- app/admin/**/*.tsx (9개 파일)
+  - admins/page.tsx
+  - churches/page.tsx
+  - database/page.tsx
+  - groups/page.tsx
+  - layout.tsx
+  - moderation/page.tsx
+  - page.tsx
+  - reset-password/page.tsx
+  - users/page.tsx
 ```
 
 ---
 
-*최종 업데이트: 2026-01-21*
+## 구현된 아키텍처 현황 (2026-01-26)
+
+### Entity (23개)
+`src/domain/entities/` - Church, ChurchAdmin, ChurchNotice, ChurchQTPost, Comment, CommentReply, Group, GroupNotice, GuestComment, Notification, PersonalProject, Prayer, PublicMeditation, PublicMeditationComment, QT, ReadingCheck, SystemAdmin, UnifiedMeditation, UnifiedReadingCheck, User, UserDailyReading, UserFollow
+
+### Repository Interface (23개)
+`src/domain/repositories/` - 모든 Entity에 대응하는 Interface 구현 완료
+
+### Repository 구현체 (23개)
+`src/infrastructure/repositories/` - 모든 Interface에 대응하는 Supabase 구현체 완료
+
+### Use Cases (90개+)
+`src/application/use-cases/` - church, church-admin, church-notice, church-qt-post, comment, comment-reply, draft, group, group-notice, guest-comment, main-page, notification, personal-project, prayer, public-feed, public-meditation, qt, reading-check, system-admin, unified-feed, unified-meditation, unified-reading-check, user, user-daily-reading, user-follow
+
+### React Query Hooks (35개 파일)
+`src/presentation/hooks/queries/` - 모든 주요 기능에 대한 훅 구현 완료
+
+---
+
+*최종 업데이트: 2026-01-26*

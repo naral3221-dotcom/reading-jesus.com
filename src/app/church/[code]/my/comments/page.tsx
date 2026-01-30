@@ -625,6 +625,7 @@ export default function ChurchMyCommentsPage() {
                   onComment={handleComment}
                   onEdit={handleOpenEdit}
                   onDelete={handleOpenDeleteConfirm}
+                  onAuthorClick={(authorId) => router.push(`/profile/${authorId}`)}
                 />
               </div>
             ))}

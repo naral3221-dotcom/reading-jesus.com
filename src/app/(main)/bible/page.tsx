@@ -166,7 +166,7 @@ export default function BiblePage() {
   };
 
   const renderBookList = (books: string[]) => (
-    <div className="grid grid-cols-3 gap-2">
+    <div className="grid grid-cols-3 gap-3 px-1">
       {books.map((book) => {
         const days = bookDays[book] || [];
         const hasReadings = days.length > 0;
@@ -180,7 +180,7 @@ export default function BiblePage() {
                 hasReadings ? 'hover:bg-accent' : 'opacity-50'
               } ${isComplete ? 'border-accent bg-accent/10 dark:bg-accent/20' : ''}`}
             >
-              <CardContent className="p-3 text-center">
+              <CardContent className="p-3 sm:p-3 text-center">
                 <p className="text-sm font-medium truncate">{book}</p>
                 {hasReadings && (
                   <p className={`text-xs mt-1 ${isComplete ? 'text-accent' : 'text-muted-foreground'}`}>
@@ -210,7 +210,7 @@ export default function BiblePage() {
   };
 
   return (
-    <div className="flex flex-col p-4">
+    <div className="flex flex-col p-4 max-w-2xl mx-auto w-full">
       {/* Header */}
       <div className="py-4 relative">
         <h1 className="text-xl font-bold">성경 전체 보기</h1>
@@ -241,8 +241,8 @@ export default function BiblePage() {
           <TabsTrigger value="new">신약</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="schedule" className="mt-4">
-          <div className="mb-3 space-y-2">
+        <TabsContent value="schedule" className="mt-4 px-1">
+          <div className="mb-4 space-y-2">
             {/* 오늘 Day 표시 */}
             {activeGroup && (
               <div className="text-center bg-primary/10 rounded-lg py-2">
@@ -265,7 +265,7 @@ export default function BiblePage() {
             )}
           </div>
 
-          <div className="space-y-2">
+          <div className="space-y-3">
             {filteredPlan.map((plan) => {
               const dayIsChecked = isChecked(plan.day);
               const checkedAt = checkedDays.get(plan.day);
@@ -289,7 +289,7 @@ export default function BiblePage() {
                   onTouchStart={() => activeGroup && handleLongPressStart(plan.day)}
                   onTouchEnd={handleLongPressEnd}
                 >
-                  <CardContent className="p-3 flex items-center justify-between">
+                  <CardContent className="p-3 sm:p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3 flex-1">
                       {/* 체크 표시 또는 Day 번호 */}
                       <div
@@ -331,7 +331,7 @@ export default function BiblePage() {
                       </Link>
                     </div>
                     {/* QT 보기 버튼 */}
-                    <Link href={`/qt/${plan.day}`}>
+                    <Link href={`/qt/${plan.date}`}>
                       <button
                         type="button"
                         className="p-2 hover:bg-accent rounded-md transition-colors"
@@ -379,11 +379,11 @@ export default function BiblePage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="old" className="mt-4">
+        <TabsContent value="old" className="mt-4 px-1">
           {renderBookList(oldTestament)}
         </TabsContent>
 
-        <TabsContent value="new" className="mt-4">
+        <TabsContent value="new" className="mt-4 px-1">
           {renderBookList(newTestament)}
         </TabsContent>
       </Tabs>

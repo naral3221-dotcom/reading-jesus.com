@@ -9,6 +9,9 @@ const config: Config = {
   ],
   theme: {
   	extend: {
+  		fontFamily: {
+  			'logo': ['var(--font-julian-script)', 'cursive'],
+  		},
   		colors: {
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
@@ -22,7 +25,10 @@ const config: Config = {
   			},
   			primary: {
   				DEFAULT: 'hsl(var(--primary))',
-  				foreground: 'hsl(var(--primary-foreground))'
+  				foreground: 'hsl(var(--primary-foreground))',
+  				light: 'hsl(var(--primary-light))',
+  				dark: 'hsl(var(--primary-dark))',
+  				subtle: 'hsl(var(--primary-subtle))',
   			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
@@ -34,8 +40,13 @@ const config: Config = {
   			},
   			accent: {
   				DEFAULT: 'hsl(var(--accent))',
-  				foreground: 'hsl(var(--accent-foreground))'
+  				foreground: 'hsl(var(--accent-foreground))',
+  				warm: 'hsl(var(--accent-warm))',
+  				cool: 'hsl(var(--accent-cool))',
   			},
+  			// Semantic Colors
+  			success: 'hsl(var(--success))',
+  			warning: 'hsl(var(--warning))',
   			destructive: {
   				DEFAULT: 'hsl(var(--destructive))',
   				foreground: 'hsl(var(--destructive-foreground))'
@@ -149,8 +160,14 @@ const config: Config = {
   		boxShadow: {
   			'soft': '0 2px 20px -4px rgba(0, 0, 0, 0.08), 0 4px 12px -2px rgba(0, 0, 0, 0.04)',
   			'soft-lg': '0 4px 30px -4px rgba(0, 0, 0, 0.1), 0 8px 20px -4px rgba(0, 0, 0, 0.06)',
-  			'glow': '0 0 20px rgba(224, 122, 95, 0.2)',
-  			'glow-sage': '0 0 20px rgba(129, 178, 154, 0.2)',
+  			// Glow 효과 - 브랜드 컬러 기반
+  			'glow': '0 0 20px rgba(212, 165, 116, 0.25)',
+  			'glow-primary': '0 0 20px rgba(122, 143, 110, 0.25)',
+  			'glow-sage': '0 0 20px rgba(122, 143, 110, 0.25)',
+  			'glow-warm': '0 0 20px rgba(212, 165, 116, 0.25)',
+  			// 사이드바 그림자 - 라이트/다크 모드 대응
+  			'sidebar': '4px 0 24px rgba(0, 0, 0, 0.04)',
+  			'sidebar-dark': '4px 0 24px rgba(0, 0, 0, 0.2)',
   		},
   		animation: {
   			'pulse-soft': 'pulse-soft 2s ease-in-out infinite',

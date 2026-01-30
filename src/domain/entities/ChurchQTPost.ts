@@ -4,6 +4,8 @@
  * 교회 QT 나눔 도메인 엔티티. 비즈니스 규칙과 검증 로직을 포함합니다.
  */
 
+import type { ContentVisibility } from './PublicMeditation'
+
 export interface ChurchQTPostProps {
   id: string
   churchId: string
@@ -17,6 +19,7 @@ export interface ChurchQTPostProps {
   dayReview: string | null
   userId: string | null
   isAnonymous: boolean
+  visibility: ContentVisibility
   isPinned: boolean
   likesCount: number
   repliesCount: number
@@ -36,6 +39,7 @@ export interface CreateChurchQTPostInput {
   dayReview?: string | null
   userId?: string | null
   isAnonymous?: boolean
+  visibility?: ContentVisibility
 }
 
 export interface UpdateChurchQTPostInput {
@@ -46,6 +50,7 @@ export interface UpdateChurchQTPostInput {
   myPrayer?: string | null
   dayReview?: string | null
   isAnonymous?: boolean
+  visibility?: ContentVisibility
   qtDate?: string
   dayNumber?: number | null
 }
@@ -150,6 +155,10 @@ export class ChurchQTPost {
 
   get isAnonymous(): boolean {
     return this.props.isAnonymous
+  }
+
+  get visibility(): ContentVisibility {
+    return this.props.visibility
   }
 
   get isPinned(): boolean {

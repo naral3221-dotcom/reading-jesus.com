@@ -181,7 +181,7 @@ export function CommentSection({
           )}
         >
           <Avatar className="w-8 h-8">
-            <AvatarImage src={comment.authorAvatarUrl ?? undefined} />
+            <AvatarImage src={comment.isAnonymous ? undefined : (comment.authorAvatarUrl ?? undefined)} />
             <AvatarFallback className="text-xs">
               {comment.isAnonymous ? '?' : (comment.authorNickname?.[0] ?? <User className="w-4 h-4" />)}
             </AvatarFallback>
@@ -438,7 +438,7 @@ function ReplyList({
             className={cn('shrink-0', !reply.isAnonymous && 'cursor-pointer')}
           >
             <Avatar className="w-6 h-6">
-              <AvatarImage src={reply.authorAvatarUrl ?? undefined} />
+              <AvatarImage src={reply.isAnonymous ? undefined : (reply.authorAvatarUrl ?? undefined)} />
               <AvatarFallback className="text-[10px]">
                 {reply.isAnonymous ? '?' : (reply.authorNickname?.[0] ?? <User className="w-3 h-3" />)}
               </AvatarFallback>

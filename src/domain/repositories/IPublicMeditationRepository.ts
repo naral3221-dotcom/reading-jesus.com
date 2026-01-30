@@ -3,7 +3,7 @@
  * 공개 묵상 Repository 인터페이스
  */
 
-import type { PublicMeditationProps, PublicMeditationReplyProps, MeditationType } from '../entities/PublicMeditation'
+import type { PublicMeditationProps, PublicMeditationReplyProps, MeditationType, ContentVisibility } from '../entities/PublicMeditation'
 
 export interface GetPublicMeditationsOptions {
   limit?: number
@@ -15,6 +15,8 @@ export interface GetPublicMeditationsOptions {
   projectId?: string
   dayNumber?: number
   meditationType?: MeditationType
+  // 공개 범위 필터
+  visibility?: ContentVisibility[]
 }
 
 export interface CreatePublicMeditationInput {
@@ -23,6 +25,7 @@ export interface CreatePublicMeditationInput {
   content: string
   bibleReference?: string | null
   isAnonymous?: boolean
+  visibility?: ContentVisibility
   // 개인 프로젝트 관련 (신규)
   projectId?: string | null
   dayNumber?: number | null
@@ -41,6 +44,7 @@ export interface UpdatePublicMeditationInput {
   content?: string
   bibleReference?: string | null
   isAnonymous?: boolean
+  visibility?: ContentVisibility
   // QT 형식 전용 (신규)
   oneWord?: string | null
   meditationQuestion?: string | null
@@ -67,6 +71,13 @@ export interface IPublicMeditationRepository {
   findByUserId(userId: string, options?: { limit?: number; offset?: number; currentUserId?: string }): Promise<PublicMeditationProps[]>
   findByFollowing(followingUserIds: string[], options?: { limit?: number; offset?: number; currentUserId?: string }): Promise<PublicMeditationProps[]>
   count(options?: { userId?: string; followingUserIds?: string[] }): Promise<number>
+
+  // 인기 묵상 조회 (좋아요 순)
+  findPopular(options?: {
+    limit?: number
+    currentUserId?: string
+    daysAgo?: number // 최근 N일 이내
+  }): Promise<PublicMeditationProps[]>
 
   // 개인 프로젝트 관련 조회 (신규)
   findByProjectId(projectId: string, options?: {

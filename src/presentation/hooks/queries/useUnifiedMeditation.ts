@@ -360,3 +360,110 @@ export function useUnifiedMeditationCount(
     staleTime: 1000 * 60, // 1분
   })
 }
+
+// ============================================
+// 그룹 통합 피드 전용 훅 (교회/메인 페이지 공용)
+// ============================================
+
+/**
+ * 그룹 통합 피드 조회 훅
+ *
+ * 그룹의 묵상(free)과 QT(qt)를 모두 조회합니다.
+ * 교회 그룹 페이지와 메인 그룹 페이지에서 동일하게 사용.
+ *
+ * @param groupId - 그룹 ID
+ * @param options.viewMode - 'feed' (전체 피드) 또는 'day' (일자별)
+ * @param options.currentDay - 일자별 모드일 때 현재 일차
+ * @param options.contentTypeFilter - 'all' | 'free' | 'qt'
+ * @param options.userId - 좋아요 상태 확인용
+ */
+export function useGroupUnifiedFeed(
+  groupId: string | null,
+  options?: {
+    viewMode?: 'feed' | 'day'
+    currentDay?: number
+    contentTypeFilter?: 'all' | 'free' | 'qt'
+    userId?: string | null
+    limit?: number
+    enabled?: boolean
+  }
+) {
+  const {
+    viewMode = 'feed',
+    currentDay,
+    contentTypeFilter = 'all',
+    userId,
+    limit = 50,
+    enabled = true,
+  } = options ?? {}
+
+  // 'all'이면 contentType을 null로 (모든 타입 조회)
+  const contentType: ContentType | null =
+    contentTypeFilter === 'all' ? null : contentTypeFilter
+
+  // 'feed' 모드면 dayNumber를 null로 (모든 날짜 조회)
+  // currentDay가 undefined인 경우에도 null로 처리
+  const dayNumber = viewMode === 'day' && currentDay !== undefined ? currentDay : null
+
+  // 일자별 모드인데 currentDay가 없으면 비활성화
+  const isEnabled = enabled && (viewMode === 'feed' || currentDay !== undefined)
+
+  return useUnifiedMeditations('group', groupId, {
+    dayNumber,
+    contentType,
+    userId,
+    filter: 'all',
+    limit,
+    enabled: isEnabled,
+  })
+}
+
+/**
+ * 교회 통합 피드 조회 훅
+ *
+ * 교회의 묵상(free)과 QT(qt)를 모두 조회합니다.
+ *
+ * @param churchId - 교회 ID
+ * @param options.viewMode - 'feed' (전체 피드) 또는 'day' (일자별)
+ * @param options.currentDay - 일자별 모드일 때 현재 일차
+ * @param options.contentTypeFilter - 'all' | 'free' | 'qt'
+ * @param options.userId - 좋아요 상태 확인용
+ */
+export function useChurchUnifiedFeed(
+  churchId: string | null,
+  options?: {
+    viewMode?: 'feed' | 'day'
+    currentDay?: number
+    contentTypeFilter?: 'all' | 'free' | 'qt'
+    userId?: string | null
+    limit?: number
+    enabled?: boolean
+  }
+) {
+  const {
+    viewMode = 'feed',
+    currentDay,
+    contentTypeFilter = 'all',
+    userId,
+    limit = 50,
+    enabled = true,
+  } = options ?? {}
+
+  const contentType: ContentType | null =
+    contentTypeFilter === 'all' ? null : contentTypeFilter
+
+  // currentDay가 undefined인 경우에도 null로 처리
+  const dayNumber = viewMode === 'day' && currentDay !== undefined ? currentDay : null
+
+  // 일자별 모드인데 currentDay가 없으면 비활성화
+  const isEnabled = enabled && (viewMode === 'feed' || currentDay !== undefined)
+
+  return useUnifiedMeditations('church', churchId, {
+    dayNumber,
+    contentType,
+    userId,
+    filter: 'all',
+    limit,
+    enabled: isEnabled,
+  })
+}

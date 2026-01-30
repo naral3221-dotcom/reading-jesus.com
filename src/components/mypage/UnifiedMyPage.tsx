@@ -29,6 +29,7 @@ import {
   ArrowLeft,
   ChevronRight,
   Church,
+  LayoutGrid,
   Loader2,
   LogIn,
   LogOut,
@@ -55,6 +56,7 @@ import { ChurchInfoSection } from './ChurchInfoSection';
 import { PersonalProjectsSection } from './PersonalProjectsSection';
 import { GroupSelectorSection } from './GroupSelectorSection';
 import { IntegratedMenuSection } from './IntegratedMenuSection';
+import { ProfileMyPage } from './ProfileMyPage';
 
 import type {
   Church as ChurchType,
@@ -62,6 +64,8 @@ import type {
   Group,
   MyPageStats,
   PersonalProjectWithStats,
+  IntegratedStats,
+  ActivityStats,
 } from '@/types';
 import type { User as AuthUser } from '@supabase/supabase-js';
 
@@ -99,6 +103,9 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
     currentStreak: 0,
     commentCount: 0,
   });
+
+  // 통합 통계 (메인 컨텍스트용)
+  const [integratedStats, setIntegratedStats] = useState<IntegratedStats | null>(null);
 
   // 개인 프로젝트 (메인 컨텍스트)
   const [personalProjects, setPersonalProjects] = useState<
@@ -322,7 +329,10 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
     profile: { church_id: string | null; nickname?: string; avatar_url?: string | null } | null
   ) => {
     const supabase = getSupabaseBrowserClient();
-    // 교회 정보 가져오기
+    const activities: ActivityStats[] = [];
+    let userChurchData: ChurchType | null = null;
+
+    // 1. 교회 정보 및 교회 활동 통계 가져오기
     if (profile?.church_id) {
       const { data: church } = await supabase
         .from('churches')
@@ -332,68 +342,102 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
         .single();
 
       if (church) {
+        userChurchData = church;
         setUserChurch(church);
+
+        // 교회 읽기 체크 가져오기
+        const { data: churchChecks } = await supabase
+          .from('church_reading_checks')
+          .select('day_number')
+          .eq('user_id', user.id)
+          .eq('church_id', church.id);
+
+        if (churchChecks && churchChecks.length > 0) {
+          const totalDays = 365; // 리딩지저스 기본
+          const completedDays = churchChecks.length;
+          const checkedDayNumbers = churchChecks.map(c => c.day_number);
+
+          // 스트릭 계산
+          const startDate = church.schedule_start_date || '2026-01-01';
+          const currentDay = calculateCurrentDay(startDate);
+          const churchStreak = calculateStreak(checkedDayNumbers, currentDay);
+
+          activities.push({
+            sourceType: 'church',
+            sourceId: church.id,
+            sourceName: church.name,
+            completedDays,
+            totalDays,
+            progressPercentage: Math.round((completedDays / totalDays) * 100),
+            currentStreak: churchStreak,
+          });
+        }
       }
     }
 
-    // 그룹 멤버십 가져오기
+    // 2. 그룹 멤버십 및 그룹 활동 통계 가져오기
     const { data: memberships } = await supabase
       .from('group_members')
-      .select('group_id, groups(name, start_date)')
+      .select('group_id, groups(id, name, start_date, reading_plan_type)')
       .eq('user_id', user.id)
       .order('joined_at', { ascending: false });
 
-    const membership =
-      memberships && memberships.length > 0 ? memberships[0] : null;
-
-    // 읽기 체크 통계 가져오기
-    let completedDays = 0;
-    let currentStreak = 0;
-
-    if (membership?.group_id) {
-      const { data: checks } = await supabase
-        .from('daily_checks')
-        .select('day_number, checked_at')
-        .eq('user_id', user.id)
-        .eq('group_id', membership.group_id)
-        .eq('is_read', true)
-        .order('day_number', { ascending: false });
-
-      completedDays = checks?.length || 0;
-
-      // 연속 일수 계산
-      if (checks && checks.length > 0) {
+    if (memberships && memberships.length > 0) {
+      for (const membership of memberships) {
         const groupData = membership.groups as unknown as {
+          id: string;
+          name: string;
           start_date: string;
+          reading_plan_type: string;
         } | null;
 
-        if (groupData?.start_date) {
+        if (!groupData) continue;
+
+        const { data: checks } = await supabase
+          .from('daily_checks')
+          .select('day_number')
+          .eq('user_id', user.id)
+          .eq('group_id', membership.group_id)
+          .eq('is_read', true);
+
+        if (checks && checks.length > 0) {
+          const planDays = groupData.reading_plan_type === '365' ? 365 :
+            groupData.reading_plan_type === '180' ? 180 :
+            groupData.reading_plan_type === '90' ? 90 : 365;
+
+          const completedDays = checks.length;
+          const checkedDayNumbers = checks.map(c => c.day_number);
+
+          // 그룹 스트릭 계산
           const startDate = new Date(groupData.start_date);
           const today = new Date();
           const diffTime = today.getTime() - startDate.getTime();
           const currentDay = Math.floor(diffTime / (1000 * 60 * 60 * 24)) + 1;
 
-          const checkedDays = new Set(checks.map((c) => c.day_number));
-
+          let groupStreak = 0;
+          const checkedSet = new Set(checkedDayNumbers);
           for (let day = currentDay; day >= 1; day--) {
-            if (checkedDays.has(day)) {
-              currentStreak++;
+            if (checkedSet.has(day)) {
+              groupStreak++;
             } else {
               break;
             }
           }
+
+          activities.push({
+            sourceType: 'group',
+            sourceId: groupData.id,
+            sourceName: groupData.name,
+            completedDays,
+            totalDays: planDays,
+            progressPercentage: Math.round((completedDays / planDays) * 100),
+            currentStreak: groupStreak,
+          });
         }
       }
     }
 
-    setStats({
-      totalDays: 365,
-      completedDays,
-      progressPercentage: Math.round((completedDays / 365) * 100),
-      currentStreak,
-    });
-
-    // 개인 프로젝트 가져오기
+    // 3. 개인 프로젝트 가져오기
     const { data: projects } = await supabase
       .from('personal_reading_projects')
       .select('*')
@@ -424,6 +468,32 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
           const today = new Date();
           const currentDay = Math.max(1, differenceInDays(today, startDate) + 1);
 
+          // 개인 프로젝트 스트릭 계산
+          let projectStreak = 0;
+          if (checks && checks.length > 0) {
+            const checkedSet = new Set(checks.map(c => c.day_number));
+            for (let day = currentDay; day >= 1; day--) {
+              if (checkedSet.has(day)) {
+                projectStreak++;
+              } else {
+                break;
+              }
+            }
+          }
+
+          // 통합 통계에 추가
+          if (completedDays > 0) {
+            activities.push({
+              sourceType: 'personal',
+              sourceId: project.id,
+              sourceName: project.name,
+              completedDays,
+              totalDays: planDays,
+              progressPercentage: Math.round((completedDays / planDays) * 100),
+              currentStreak: projectStreak,
+            });
+          }
+
           return {
             ...project,
             completedDays,
@@ -435,6 +505,36 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
       );
       setPersonalProjects(projectsWithStats);
     }
+
+    // 4. 통합 통계 계산
+    const totalCompletedDays = activities.reduce((sum, a) => sum + a.completedDays, 0);
+    const maxStreak = activities.length > 0
+      ? Math.max(...activities.map(a => a.currentStreak))
+      : 0;
+
+    const integrated: IntegratedStats = {
+      totalCompletedDays,
+      totalStreak: maxStreak,
+      activities,
+      hasChurchActivity: activities.some(a => a.sourceType === 'church'),
+      hasGroupActivity: activities.some(a => a.sourceType === 'group'),
+      hasPersonalActivity: activities.some(a => a.sourceType === 'personal'),
+    };
+
+    setIntegratedStats(integrated);
+
+    // 기존 stats도 업데이트 (ProfileMyPage 호환용)
+    // 교회 > 그룹 > 개인 우선순위로 대표 통계 선정
+    const primaryActivity = activities.find(a => a.sourceType === 'church')
+      || activities.find(a => a.sourceType === 'group')
+      || activities.find(a => a.sourceType === 'personal');
+
+    setStats({
+      totalDays: primaryActivity?.totalDays || 365,
+      completedDays: totalCompletedDays,
+      progressPercentage: primaryActivity?.progressPercentage || 0,
+      currentStreak: maxStreak,
+    });
   };
 
   useEffect(() => {
@@ -718,7 +818,7 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
     return (
       <div
         className={cn(
-          'flex flex-col p-4 space-y-4',
+          'flex flex-col p-4 space-y-4 max-w-2xl mx-auto w-full',
           isChurchContext && 'min-h-screen bg-background pb-20 lg:pb-4 lg:ml-20'
         )}
       >
@@ -799,136 +899,75 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
     );
   }
 
+  // 묵상 수 계산 (ProfileMyPage용)
+  const meditationCount = stats.commentCount || 0;
+
   return (
     <div
       className={cn(
-        'flex flex-col p-4 space-y-4',
-        isChurchContext && 'min-h-screen bg-background pb-20 lg:pb-4 lg:ml-20'
+        'flex flex-col min-h-screen',
+        isChurchContext && 'pb-20 lg:pb-4 lg:ml-20'
       )}
     >
-      {/* 헤더 */}
-      {isChurchContext ? (
-        <header className="sticky top-0 z-40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-b -mx-4 -mt-4 mb-4">
-          <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() =>
-                  router.push(`/church/${churchContext?.churchCode}`)
-                }
-              >
-                <ArrowLeft className="w-5 h-5" />
-              </Button>
-              <h1 className="text-lg font-semibold">마이페이지</h1>
-            </div>
-            {currentUser && (
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => router.push('/mypage/settings')}
-              >
-                <Settings className="w-5 h-5" />
-              </Button>
-            )}
-          </div>
-        </header>
-      ) : (
-        <div className="flex justify-end">
-          <HelpButton helpContent={helpContent.mypage} />
-        </div>
-      )}
-
-      {/* 프로필 섹션 */}
-      <ProfileSection
+      {/* 인스타그램 스타일 프로필 마이페이지 */}
+      <ProfileMyPage
+        userId={currentUser?.id || ''}
         nickname={displayName}
-        avatar={userProfile?.avatar_url || null}
+        avatarUrl={userProfile?.avatar_url || null}
         isAnonymous={isAnonymous}
-        isChurchContext={isChurchContext}
-        isRegisteredMember={isRegisteredMember}
-        groupName={groups[0]?.name}
-        groupCount={groups.length}
-      />
-
-      {/* 교회 정보 섹션 */}
-      {isChurchContext && churchContext ? (
-        <ChurchInfoSection
-          isChurchContext={true}
-          currentChurch={churchContext.church}
-          isRegisteredMember={isRegisteredMember}
-          isLoggedIn={!!currentUser}
-          onRegisterMember={() => setRegisterDialogOpen(true)}
-          onLeaveChurch={() => setLeaveChurchDialogOpen(true)}
-        />
-      ) : (
-        <ChurchInfoSection
-          userChurch={userChurch}
-          onSearchChurch={() => setChurchDialogOpen(true)}
-          onLeaveChurch={() => setLeaveChurchDialogOpen(true)}
-        />
-      )}
-
-      {/* 그룹 선택 (메인 컨텍스트, 다중 그룹) */}
-      {!isChurchContext && groups.length > 1 && (
-        <GroupSelectorSection
-          groups={groups}
-          activeGroup={activeGroup}
-          onGroupChange={handleGroupChange}
-        />
-      )}
-
-      {/* 스트릭 배지 */}
-      {stats.currentStreak > 0 && (
-        <StreakHeader streak={stats.currentStreak} className="justify-center" />
-      )}
-
-      {/* 통계 */}
-      <StatsSection
         stats={stats}
-        completedLabel={isChurchContext ? '읽은 날' : '완료한 날'}
-      />
-
-      {/* 진행 바 */}
-      <ProgressSection
-        completedDays={stats.completedDays}
-        totalDays={stats.totalDays}
-        progressPercentage={stats.progressPercentage}
-      />
-
-      {/* 개인 프로젝트 (양쪽 컨텍스트 모두) */}
-      <PersonalProjectsSection
-        projects={personalProjects}
-        churchCode={isChurchContext ? churchContext?.churchCode : undefined}
-      />
-
-      {/* 통합 메뉴 */}
-      <IntegratedMenuSection
-        isChurchContext={isChurchContext}
-        churchCode={churchContext?.churchCode}
-        commentCount={stats.commentCount}
-      />
-
-      {/* 로그인/로그아웃 버튼 */}
-      <Button
-        variant="outline"
-        className="w-full text-destructive hover:text-destructive hover:bg-destructive/10"
-        onClick={() => setLogoutDialogOpen(true)}
+        meditationCount={meditationCount}
+        integratedStats={integratedStats}
+        churchContext={churchContext}
+        isRegisteredMember={isRegisteredMember}
+        onLogout={() => setLogoutDialogOpen(true)}
       >
-        <LogOut className="w-4 h-4 mr-2" />
-        로그아웃
-      </Button>
+        {/* 교회 정보 섹션 */}
+        {isChurchContext && churchContext ? (
+          <ChurchInfoSection
+            isChurchContext={true}
+            currentChurch={churchContext.church}
+            isRegisteredMember={isRegisteredMember}
+            isLoggedIn={!!currentUser}
+            onRegisterMember={() => setRegisterDialogOpen(true)}
+            onLeaveChurch={() => setLeaveChurchDialogOpen(true)}
+          />
+        ) : (
+          <ChurchInfoSection
+            userChurch={userChurch}
+            onSearchChurch={() => setChurchDialogOpen(true)}
+            onLeaveChurch={() => setLeaveChurchDialogOpen(true)}
+            churchActivity={integratedStats?.activities.find(a => a.sourceType === 'church')}
+          />
+        )}
 
-      {/* 앱 마이페이지로 이동 (교회 컨텍스트) */}
-      {isChurchContext && currentUser && (
-        <Button
-          variant="ghost"
-          className="w-full text-muted-foreground"
-          onClick={() => router.push('/mypage')}
-        >
-          앱 마이페이지로 이동
-          <ChevronRight className="w-4 h-4 ml-1" />
-        </Button>
-      )}
+        {/* 그룹 선택 (메인 컨텍스트, 다중 그룹) */}
+        {!isChurchContext && groups.length > 1 && (
+          <GroupSelectorSection
+            groups={groups}
+            activeGroup={activeGroup}
+            onGroupChange={handleGroupChange}
+          />
+        )}
+
+        {/* 개인 프로젝트 */}
+        <PersonalProjectsSection
+          projects={personalProjects}
+          churchCode={isChurchContext ? churchContext?.churchCode : undefined}
+        />
+
+        {/* 메인으로 돌아가기 (교회 컨텍스트) */}
+        {isChurchContext && currentUser && (
+          <Button
+            variant="outline"
+            className="w-full border-primary/30 text-primary"
+            onClick={() => router.push('/home')}
+          >
+            <LayoutGrid className="w-4 h-4 mr-2" />
+            메인으로 돌아가기
+          </Button>
+        )}
+      </ProfileMyPage>
 
       {/* ========== 다이얼로그들 ========== */}
 

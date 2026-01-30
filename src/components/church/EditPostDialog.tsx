@@ -22,6 +22,8 @@ import { Loader2, Lock, BookOpen, PenLine } from 'lucide-react';
 import { FeedItem, FeedItemType } from './FeedCard';
 import { ReadingDayPicker } from './ReadingDayPicker';
 import { QTMeditationForm } from '@/components/personal/QTMeditationForm';
+import { VisibilitySelector } from '@/components/ui/visibility-selector';
+import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 import dynamic from 'next/dynamic';
 
 const RichEditor = dynamic(
@@ -40,6 +42,7 @@ export interface EditPostData {
   id: string;
   type: FeedItemType;
   isAnonymous: boolean;
+  visibility?: ContentVisibility;
   dayNumber?: number | null;
   // 묵상용
   content?: string;
@@ -54,6 +57,7 @@ export interface EditPostData {
 export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDialogProps) {
   const [saving, setSaving] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
+  const [visibility, setVisibility] = useState<ContentVisibility>('church');
   const [dayNumber, setDayNumber] = useState<number | null>(null);
 
   // 묵상 필드
@@ -70,6 +74,7 @@ export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDia
   useEffect(() => {
     if (item) {
       setIsAnonymous(item.isAnonymous);
+      setVisibility((item.visibility as ContentVisibility) || 'church');
       setDayNumber(item.dayNumber || null);
 
       if (item.type === 'meditation') {
@@ -94,6 +99,7 @@ export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDia
         id: item.id,
         type: item.type,
         isAnonymous,
+        visibility,
         dayNumber,
       };
 
@@ -131,17 +137,26 @@ export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDia
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* 익명 설정 */}
-          <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
-            <Checkbox
-              id="anonymous"
-              checked={isAnonymous}
-              onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+          {/* 공개 범위 설정 */}
+          <div className="space-y-3">
+            <VisibilitySelector
+              value={visibility}
+              onChange={setVisibility}
+              allowedOptions={['private', 'church', 'public']}
+              variant="inline"
             />
-            <Label htmlFor="anonymous" className="flex items-center gap-2 cursor-pointer">
-              <Lock className="w-4 h-4" />
-              익명으로 게시
-            </Label>
+            {/* 익명 설정 */}
+            <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
+              <Checkbox
+                id="anonymous"
+                checked={isAnonymous}
+                onCheckedChange={(checked) => setIsAnonymous(checked === true)}
+              />
+              <Label htmlFor="anonymous" className="flex items-center gap-2 cursor-pointer">
+                <Lock className="w-4 h-4" />
+                익명으로 게시
+              </Label>
+            </div>
           </div>
 
           {/* 통독일정 (묵상만 해당) */}

@@ -4,7 +4,7 @@
  * hwpx에서 추출한 QT 데이터를 로드하고 관리합니다.
  *
  * ## 아키텍처 참고
- * - 이 파일: JSON 직접 import + 유틸리티 함수 (qtToMarkdown, createQTWritingTemplate)
+ * - 이 파일: JSON 동적 로딩 + 유틸리티 함수 (qtToMarkdown, createQTWritingTemplate)
  * - SupabaseQTRepository: Domain Layer의 QT 엔티티를 반환하는 Repository
  * - React Query 훅 (useQT): SupabaseQTRepository를 사용하여 캐싱된 데이터 제공
  *
@@ -17,23 +17,116 @@
 
 import { QTDailyContent } from '@/types';
 import { getTodayDateString } from '@/lib/date-utils';
-import qtJanuary2026 from '../../data/qt-january-2026.json';
 
-// QT 데이터를 직접 import하여 사용 (fetch 대신)
-const qtDataCache: QTDailyContent[] = qtJanuary2026 as QTDailyContent[];
+// 월별 QT 데이터 캐시 (Map<"year-month", QTDailyContent[]>)
+const qtDataCache: Map<string, QTDailyContent[]> = new Map();
+
+// 월 이름 매핑
+const MONTH_NAMES = [
+  'january', 'february', 'march', 'april', 'may', 'june',
+  'july', 'august', 'september', 'october', 'november', 'december'
+];
+
+// 사용 가능한 QT 월 정보
+export interface QTMonthInfo {
+  year: number;
+  month: number;
+  monthName: string;
+  displayName: string;
+  available: boolean;
+}
 
 /**
- * QT 데이터 로드 (1월 2026년)
+ * 사용 가능한 QT 월 목록 반환
+ * 추후 API로 확장 가능
  */
-export async function loadQTData(): Promise<QTDailyContent[]> {
-  return qtDataCache;
+export function getAvailableQTMonths(): QTMonthInfo[] {
+  // 현재 하드코딩 - 추후 동적으로 확장 가능
+  return [
+    { year: 2026, month: 1, monthName: 'january', displayName: '2026년 1월', available: true },
+    { year: 2026, month: 2, monthName: 'february', displayName: '2026년 2월', available: true },
+  ];
+}
+
+/**
+ * 특정 년/월의 QT 데이터가 사용 가능한지 확인
+ */
+export function isQTMonthAvailable(year: number, month: number): boolean {
+  const months = getAvailableQTMonths();
+  return months.some(m => m.year === year && m.month === month && m.available);
+}
+
+/**
+ * QT 데이터 로드 (동적 월별 로딩)
+ * @param year - 년도 (기본: 현재 년도)
+ * @param month - 월 (기본: 현재 월)
+ */
+export async function loadQTData(year?: number, month?: number): Promise<QTDailyContent[]> {
+  const now = new Date();
+  const targetYear = year ?? now.getFullYear();
+  const targetMonth = month ?? (now.getMonth() + 1);
+  const cacheKey = `${targetYear}-${targetMonth}`;
+
+  // 캐시 확인
+  if (qtDataCache.has(cacheKey)) {
+    return qtDataCache.get(cacheKey)!;
+  }
+
+  // 사용 가능한 월인지 확인
+  if (!isQTMonthAvailable(targetYear, targetMonth)) {
+    console.warn(`QT data not available for ${targetYear}-${targetMonth}`);
+    return [];
+  }
+
+  try {
+    const monthName = MONTH_NAMES[targetMonth - 1];
+    const response = await fetch(`/data/qt-${monthName}-${targetYear}.json`);
+
+    if (!response.ok) {
+      console.error(`Failed to load QT data: ${response.status}`);
+      return [];
+    }
+
+    const data: QTDailyContent[] = await response.json();
+    qtDataCache.set(cacheKey, data);
+    return data;
+  } catch (error) {
+    console.error('Error loading QT data:', error);
+    return [];
+  }
+}
+
+/**
+ * 모든 사용 가능한 월의 QT 데이터 로드
+ */
+export async function loadAllQTData(): Promise<QTDailyContent[]> {
+  const months = getAvailableQTMonths().filter(m => m.available);
+  const allData: QTDailyContent[] = [];
+
+  for (const monthInfo of months) {
+    const data = await loadQTData(monthInfo.year, monthInfo.month);
+    allData.push(...data);
+  }
+
+  return allData;
 }
 
 /**
  * 특정 날짜의 QT 컨텐츠 가져오기
+ * 날짜에서 년/월을 파싱하여 적절한 데이터 로드
  */
 export async function getQTByDate(date: string): Promise<QTDailyContent | null> {
-  const data = await loadQTData();
+  // YYYY-MM-DD 형식에서 년월 파싱
+  const [yearStr, monthStr] = date.split('-');
+  const year = parseInt(yearStr, 10);
+  const month = parseInt(monthStr, 10);
+
+  if (isNaN(year) || isNaN(month)) {
+    console.error(`Invalid date format: ${date}`);
+    return null;
+  }
+
+  const data = await loadQTData(year, month);
   return data.find(qt => qt.date === date) || null;
 }
 
@@ -41,7 +134,7 @@ export async function getQTByDate(date: string): Promise<QTDailyContent | null> 
  * 특정 월의 QT 컨텐츠 목록 가져오기
  */
 export async function getQTByMonth(year: number, month: number): Promise<QTDailyContent[]> {
-  const data = await loadQTData();
+  const data = await loadQTData(year, month);
   return data.filter(qt => qt.year === year && qt.month === month);
 }
 
@@ -55,13 +148,39 @@ export async function getTodayQT(): Promise<QTDailyContent | null> {
 
 /**
  * 날짜 범위의 QT 컨텐츠 가져오기
+ * 범위가 여러 월에 걸칠 수 있으므로 모든 데이터 로드
  */
 export async function getQTByDateRange(
   startDate: string,
   endDate: string
 ): Promise<QTDailyContent[]> {
-  const data = await loadQTData();
+  const data = await loadAllQTData();
   return data.filter(qt => qt.date >= startDate && qt.date <= endDate);
+}
+
+/**
+ * 현재 날짜 기준으로 기본 선택할 월 정보 반환
+ * 해당 월 데이터가 없으면 가장 최신 월로 fallback
+ */
+export function getDefaultQTMonth(): { year: number; month: number } {
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth() + 1;
+
+  // 현재 월 데이터가 있으면 반환
+  if (isQTMonthAvailable(currentYear, currentMonth)) {
+    return { year: currentYear, month: currentMonth };
+  }
+
+  // 없으면 가장 최신 월로 fallback
+  const months = getAvailableQTMonths().filter(m => m.available);
+  if (months.length > 0) {
+    const latest = months[months.length - 1];
+    return { year: latest.year, month: latest.month };
+  }
+
+  // fallback
+  return { year: 2026, month: 1 };
 }
 
 /**
