@@ -106,11 +106,11 @@ export class SupabaseChurchQTPostRepository implements IChurchQTPostRepository {
   }
 
   async findByChurchId(params: ChurchQTPostSearchParams): Promise<ChurchQTPost[]> {
+    // RLS 정책이 멤버십을 체크하므로 코드 레벨 visibility 필터 불필요
     let query = this.supabase
       .from('church_qt_posts')
       .select('*')
       .eq('church_id', params.churchId)
-      .in('visibility', ['church', 'public'])
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
 

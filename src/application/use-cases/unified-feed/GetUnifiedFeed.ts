@@ -335,7 +335,7 @@ export class GetUnifiedFeed {
       }
     }
 
-    // 2. 교회 QT 묵상 (qt 필터일 때만)
+    // 2. 교회 QT 묵상 (qt 필터일 때만) - public만 조회
     if (shouldFetchQT) {
       let churchQuery = supabase
         .from('church_qt_posts')
@@ -343,6 +343,7 @@ export class GetUnifiedFeed {
           *,
           church:churches(name, code)
         `)
+        .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .limit(fetchLimit)
 
@@ -412,7 +413,7 @@ export class GetUnifiedFeed {
       }
     }
 
-    // 4. 교회 내 짧은 묵상 - guest_comments (meditation 필터일 때만)
+    // 4. 교회 내 짧은 묵상 - guest_comments (meditation 필터일 때만) - public만 조회
     if (shouldFetchMeditation) {
       let guestQuery = supabase
         .from('guest_comments')
@@ -420,6 +421,7 @@ export class GetUnifiedFeed {
           *,
           church:churches(name, code)
         `)
+        .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .limit(fetchLimit)
 
@@ -555,7 +557,7 @@ export class GetUnifiedFeed {
       }
     }
 
-    // 2. 팔로잉 사용자의 교회 QT 묵상 (qt 필터일 때만)
+    // 2. 팔로잉 사용자의 교회 QT 묵상 (qt 필터일 때만) - public만 조회
     if (shouldFetchQT) {
       let churchQuery = supabase
         .from('church_qt_posts')
@@ -564,6 +566,7 @@ export class GetUnifiedFeed {
           church:churches(name, code)
         `)
         .in('user_id', followingUserIds)
+        .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .limit(fetchLimit)
 
@@ -745,7 +748,7 @@ export class GetUnifiedFeed {
     const shouldFetchQT = typeFilter === 'all' || typeFilter === 'qt'
     const shouldFetchMeditation = typeFilter === 'all' || typeFilter === 'meditation'
 
-    // 1. 교회 QT 묵상 (qt 필터일 때만)
+    // 1. 교회 QT 묵상 (qt 필터일 때만) - church/public visibility만 조회
     if (shouldFetchQT) {
       let qtQuery = supabase
         .from('church_qt_posts')
@@ -754,6 +757,7 @@ export class GetUnifiedFeed {
           church:churches(name, code)
         `)
         .eq('church_id', churchId)
+        .in('visibility', ['church', 'public'])
         .order('created_at', { ascending: false })
         .limit(fetchLimit)
 
@@ -784,7 +788,7 @@ export class GetUnifiedFeed {
       }
     }
 
-    // 2. 교회 짧은 묵상 - guest_comments (meditation 필터일 때만)
+    // 2. 교회 짧은 묵상 - guest_comments (meditation 필터일 때만) - church/public visibility만 조회
     if (shouldFetchMeditation) {
       let guestQuery = supabase
         .from('guest_comments')
@@ -793,6 +797,7 @@ export class GetUnifiedFeed {
           church:churches(name, code)
         `)
         .eq('church_id', churchId)
+        .in('visibility', ['church', 'public'])
         .order('created_at', { ascending: false })
         .limit(fetchLimit)
 
