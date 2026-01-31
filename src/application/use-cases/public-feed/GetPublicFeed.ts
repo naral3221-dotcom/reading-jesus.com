@@ -39,7 +39,7 @@ export class GetPublicFeed {
     const shouldFetchMeditation = !filters.type || filters.type === 'all' || filters.type === 'meditation'
     const shouldFetchQt = !filters.type || filters.type === 'all' || filters.type === 'qt'
 
-    // 1. guest_comments 쿼리 (묵상)
+    // 1. guest_comments 쿼리 (묵상) - public만 조회
     if (shouldFetchMeditation) {
       let guestQuery = supabase
         .from('guest_comments')
@@ -55,9 +55,11 @@ export class GetPublicFeed {
           replies_count,
           church_id,
           linked_user_id,
+          visibility,
           churches!inner(id, code, name),
           profiles:linked_user_id(avatar_url)
         `)
+        .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .limit(limit)
 
@@ -98,7 +100,7 @@ export class GetPublicFeed {
       }
     }
 
-    // 2. church_qt_posts 쿼리 (QT)
+    // 2. church_qt_posts 쿼리 (QT) - public만 조회
     if (shouldFetchQt) {
       let qtQuery = supabase
         .from('church_qt_posts')
@@ -118,9 +120,11 @@ export class GetPublicFeed {
           day_number,
           church_id,
           user_id,
+          visibility,
           churches!inner(id, code, name),
           profiles:user_id(avatar_url)
         `)
+        .eq('visibility', 'public')
         .order('created_at', { ascending: false })
         .limit(limit)
 

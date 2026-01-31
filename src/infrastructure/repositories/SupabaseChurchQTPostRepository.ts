@@ -110,6 +110,7 @@ export class SupabaseChurchQTPostRepository implements IChurchQTPostRepository {
       .from('church_qt_posts')
       .select('*')
       .eq('church_id', params.churchId)
+      .in('visibility', ['church', 'public'])
       .order('is_pinned', { ascending: false })
       .order('created_at', { ascending: false })
 
@@ -182,6 +183,7 @@ export class SupabaseChurchQTPostRepository implements IChurchQTPostRepository {
           day_review: input.dayReview ?? null,
           user_id: input.userId ?? null,
           is_anonymous: input.isAnonymous ?? false,
+          visibility: input.visibility ?? 'church',
           is_pinned: false,
           likes_count: 0,
           replies_count: 0,
@@ -209,6 +211,7 @@ export class SupabaseChurchQTPostRepository implements IChurchQTPostRepository {
     if (input.myPrayer !== undefined) updateData.my_prayer = input.myPrayer
     if (input.dayReview !== undefined) updateData.day_review = input.dayReview
     if (input.isAnonymous !== undefined) updateData.is_anonymous = input.isAnonymous
+    if (input.visibility !== undefined) updateData.visibility = input.visibility
     if (input.qtDate !== undefined) updateData.qt_date = input.qtDate
     if (input.dayNumber !== undefined) updateData.day_number = input.dayNumber
 

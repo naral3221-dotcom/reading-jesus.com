@@ -1401,4 +1401,52 @@ After:  /qt/2026-01-24
 
 ---
 
-*마지막 업데이트: 2026-01-31 (QT 월별 선택 시스템 구현 - 2월 QT 조회 가능, 월 선택 UI 추가)*
+---
+
+## 🔴 긴급 버그 수정: QT/묵상 글 노출 문제 ✅ 완료 (2026-01-31)
+
+### 문제
+사용자가 작성한 QT/묵상 글이 피드, 마이페이지, 교회 페이지에서 보이지 않음
+
+### 원인 분석 (3가지 핵심 문제)
+
+| 문제 | 위치 | 설명 |
+|------|------|------|
+| GetPublicFeed visibility 필터 누락 | `GetPublicFeed.ts` | 공개 피드에서 `.eq('visibility', 'public')` 조건 없음 |
+| RLS 정책 DROP 명칭 불일치 | `20260129000001` | `unified_meditations_select` 정책이 삭제되지 않아 `USING(true)` 유지 |
+| guest_comments RLS 미업데이트 | 마이그레이션 누락 | visibility 컬럼 추가 후 정책 업데이트 안 됨 |
+
+### 해결 내용
+
+#### 1. RLS 정책 재정비 마이그레이션
+**파일**: `supabase/migrations/20260131000001_fix_visibility_rls_policies.sql`
+
+- `unified_meditations`: 모든 기존 SELECT 정책 DROP 후 visibility 기반 재생성
+- `guest_comments`: visibility 기반 SELECT 정책 추가
+- `church_qt_posts`: visibility 기반 SELECT 정책 재정비
+- visibility 인덱스 추가 (성능 최적화)
+- 레거시 데이터 visibility 기본값 설정 (NULL → 'church')
+
+#### 2. GetPublicFeed.ts 수정
+- `guest_comments` 쿼리: `.eq('visibility', 'public')` 추가
+- `church_qt_posts` 쿼리: `.eq('visibility', 'public')` 추가
+- `visibility` 필드 select에 포함
+
+#### 3. SupabaseChurchQTPostRepository.ts 수정
+- `findByChurchId()`: `.in('visibility', ['church', 'public'])` 필터 추가
+- `save()`: `visibility: input.visibility ?? 'church'` 추가
+- `update()`: `if (input.visibility !== undefined) updateData.visibility = input.visibility` 추가
+
+### 수정 파일 목록
+1. `supabase/migrations/20260131000001_fix_visibility_rls_policies.sql` (신규)
+2. `src/application/use-cases/public-feed/GetPublicFeed.ts`
+3. `src/infrastructure/repositories/SupabaseChurchQTPostRepository.ts`
+
+### 배포 순서
+1. Supabase 마이그레이션 실행 (SQL Editor 또는 `supabase db push`)
+2. 코드 배포 (Vercel)
+3. 피드 정상 동작 확인
+
+---
+
+*마지막 업데이트: 2026-01-31 (긴급 버그 수정 - QT/묵상 visibility 필터 및 RLS 정책 재정비)*
