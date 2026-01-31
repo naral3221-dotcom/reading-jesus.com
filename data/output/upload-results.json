@@ -1,0 +1,219 @@
+{
+  "timestamp": "2026-01-27T16:19:42.318Z",
+  "bucket": "meditations",
+  "total": 42,
+  "success": 42,
+  "failed": 0,
+  "results": [
+    {
+      "filename": "2026-01-12-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-12-meditation.wav"
+    },
+    {
+      "filename": "2026-01-13-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-13-meditation.wav"
+    },
+    {
+      "filename": "2026-01-14-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-14-meditation.wav"
+    },
+    {
+      "filename": "2026-01-15-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-15-meditation.wav"
+    },
+    {
+      "filename": "2026-01-16-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-16-meditation.wav"
+    },
+    {
+      "filename": "2026-01-17-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-17-meditation.wav"
+    },
+    {
+      "filename": "2026-01-19-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-19-meditation.wav"
+    },
+    {
+      "filename": "2026-01-20-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-20-meditation.wav"
+    },
+    {
+      "filename": "2026-01-21-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-21-meditation.wav"
+    },
+    {
+      "filename": "2026-01-22-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-22-meditation.wav"
+    },
+    {
+      "filename": "2026-01-23-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-23-meditation.wav"
+    },
+    {
+      "filename": "2026-01-24-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-24-meditation.wav"
+    },
+    {
+      "filename": "2026-01-26-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-26-meditation.wav"
+    },
+    {
+      "filename": "2026-01-27-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-27-meditation.wav"
+    },
+    {
+      "filename": "2026-01-28-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-28-meditation.wav"
+    },
+    {
+      "filename": "2026-01-29-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-29-meditation.wav"
+    },
+    {
+      "filename": "2026-01-30-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-30-meditation.wav"
+    },
+    {
+      "filename": "2026-01-31-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-01-31-meditation.wav"
+    },
+    {
+      "filename": "2026-02-02-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-02-meditation.wav"
+    },
+    {
+      "filename": "2026-02-03-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-03-meditation.wav"
+    },
+    {
+      "filename": "2026-02-04-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-04-meditation.wav"
+    },
+    {
+      "filename": "2026-02-05-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-05-meditation.wav"
+    },
+    {
+      "filename": "2026-02-06-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-06-meditation.wav"
+    },
+    {
+      "filename": "2026-02-07-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-07-meditation.wav"
+    },
+    {
+      "filename": "2026-02-09-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-09-meditation.wav"
+    },
+    {
+      "filename": "2026-02-10-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-10-meditation.wav"
+    },
+    {
+      "filename": "2026-02-11-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-11-meditation.wav"
+    },
+    {
+      "filename": "2026-02-12-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-12-meditation.wav"
+    },
+    {
+      "filename": "2026-02-13-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-13-meditation.wav"
+    },
+    {
+      "filename": "2026-02-14-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-14-meditation.wav"
+    },
+    {
+      "filename": "2026-02-16-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-16-meditation.wav"
+    },
+    {
+      "filename": "2026-02-17-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-17-meditation.wav"
+    },
+    {
+      "filename": "2026-02-18-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-18-meditation.wav"
+    },
+    {
+      "filename": "2026-02-19-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-19-meditation.wav"
+    },
+    {
+      "filename": "2026-02-20-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-20-meditation.wav"
+    },
+    {
+      "filename": "2026-02-21-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-21-meditation.wav"
+    },
+    {
+      "filename": "2026-02-23-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-23-meditation.wav"
+    },
+    {
+      "filename": "2026-02-24-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-24-meditation.wav"
+    },
+    {
+      "filename": "2026-02-25-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-25-meditation.wav"
+    },
+    {
+      "filename": "2026-02-26-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-26-meditation.wav"
+    },
+    {
+      "filename": "2026-02-27-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-27-meditation.wav"
+    },
+    {
+      "filename": "2026-02-28-meditation.wav",
+      "success": true,
+      "url": "https://jfxbkjohppqmyjyhzolx.supabase.co/storage/v1/object/public/meditations/2026-02-28-meditation.wav"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+[
+  {
+    "voice": "Aoede",
+    "description": "Breezy, 산뜻함",
+    "filename": "sample-aoede.wav",
+    "success": true
+  },
+  {
+    "voice": "Leda",
+    "description": "Youthful, 젊고 밝음",
+    "filename": "sample-leda.wav",
+    "success": true
+  },
+  {
+    "voice": "Achernar",
+    "description": "Soft, 부드러움",
+    "filename": "sample-achernar.wav",
+    "success": true
+  },
+  {
+    "voice": "Enceladus",
+    "description": "Breathy, 숨결 있음",
+    "filename": "sample-enceladus.wav",
+    "success": true
+  },
+  {
+    "voice": "Kore",
+    "description": "Firm, 단정함",
+    "filename": "sample-kore.wav",
+    "success": true
+  },
+  {
+    "voice": "Sulafat",
+    "description": "Warm, 따뜻함",
+    "filename": "sample-sulafat.wav",
+    "success": true
+  }
+]
