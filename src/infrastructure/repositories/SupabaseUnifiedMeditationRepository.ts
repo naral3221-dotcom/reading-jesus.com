@@ -98,7 +98,7 @@ export class SupabaseUnifiedMeditationRepository implements IUnifiedMeditationRe
       myPrayer: row.my_prayer,
       dayReview: row.day_review,
       isAnonymous: row.is_anonymous,
-      visibility: row.visibility ?? (row.source_type === 'church' ? 'church' : 'group'),
+      visibility: row.visibility ?? 'public',  // 기본값 public으로 변경
       isPinned: row.is_pinned,
       likesCount: row.likes_count,
       repliesCount: row.replies_count,

@@ -11,7 +11,7 @@ import {
   formatBibleVerseShort,
   type BibleVerseValue,
 } from '@/components/bible/BibleVerseSelector';
-import { VisibilitySelector, type ContentVisibility } from '@/components/ui/visibility-selector';
+// VisibilitySelector 제거됨 - 모든 글은 public으로 고정
 import { useCreatePublicMeditation } from '@/presentation/hooks/queries/usePublicMeditation';
 import { cn } from '@/lib/utils';
 import { useToast } from '@/components/ui/toast';
@@ -34,7 +34,7 @@ export function InlineMeditationForm({
   const [content, setContent] = React.useState('');
   const [bibleVerse, setBibleVerse] = React.useState<BibleVerseValue | null>(null);
   const [isAnonymous, setIsAnonymous] = React.useState(false);
-  const [visibility, setVisibility] = React.useState<ContentVisibility>('public');
+  // visibility는 항상 'public'으로 고정
   const [isExpanded, setIsExpanded] = React.useState(false);
 
   const { toast } = useToast();
@@ -57,14 +57,13 @@ export function InlineMeditationForm({
         content: content.trim(),
         bibleReference: bibleVerse ? formatBibleVerseShort(bibleVerse) : undefined,
         isAnonymous,
-        visibility,
+        visibility: 'public',  // 항상 public으로 고정
       });
 
       // 성공 후 초기화
       setContent('');
       setBibleVerse(null);
       setIsAnonymous(false);
-      setVisibility('public');
       setIsExpanded(false);
       toast({ title: '묵상이 나눠졌습니다', variant: 'success' });
       onSuccess?.();
@@ -123,14 +122,6 @@ export function InlineMeditationForm({
       {/* 확장 영역: 성경 구절 선택 + 옵션 */}
       {isExpanded && (
         <div className="space-y-4 pt-2 border-t border-border/50">
-          {/* 공개 범위 선택 */}
-          <VisibilitySelector
-            value={visibility}
-            onChange={setVisibility}
-            allowedOptions={['private', 'public']}
-            variant="inline"
-          />
-
           {/* 성경 구절 선택 */}
           <div className="space-y-2">
             <Label className="text-sm text-muted-foreground">

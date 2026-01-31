@@ -54,8 +54,7 @@ import { ShortsViewer } from '@/components/church/ShortsViewer';
 import { Pencil } from 'lucide-react';
 import { findDayByDate, findReadingByDay } from '@/components/church/ReadingDayPicker';
 import NoticeBanner from '@/components/church/NoticeBanner';
-import { VisibilitySelector } from '@/components/ui/visibility-selector';
-import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
+// visibility는 항상 'public'으로 고정 (선택 UI 제거됨)
 
 // RichEditor는 클라이언트에서만 로드 (SSR 비활성화)
 const RichEditor = dynamic(
@@ -222,7 +221,7 @@ export default function ChurchPublicPage() {
   const [guestName, setGuestName] = useState('');
   const [content, setContent] = useState('');
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [visibility, setVisibility] = useState<ContentVisibility>('public');
+  // visibility는 항상 'public'으로 고정
   const [selectedDate, setSelectedDate] = useState<string>(getTodayDateString());
 
   // 일정 상태
@@ -725,7 +724,7 @@ export default function ChurchPublicPage() {
         bible_range: string | null;
         day_number: number | null;
         is_anonymous: boolean;
-        visibility: ContentVisibility;
+        visibility: string;
         linked_user_id?: string;
         linked_at?: string;
       } = {
@@ -736,7 +735,7 @@ export default function ChurchPublicPage() {
         bible_range: bibleRange,
         day_number: dayNumber,
         is_anonymous: isAnonymous,
-        visibility: visibility,
+        visibility: 'public',  // 항상 public으로 고정
       };
 
       // 등록 교인인 경우 연결 정보 추가
@@ -1608,16 +1607,6 @@ export default function ChurchPublicPage() {
                     </label>
                   </div>
                 )}
-
-                {/* 공개 범위 선택 */}
-                <div className="space-y-2">
-                  <VisibilitySelector
-                    value={visibility}
-                    onChange={setVisibility}
-                    allowedOptions={['private', 'church', 'public']}
-                    variant="inline"
-                  />
-                </div>
 
                 {/* 나눔 등록 버튼 - 코랄 그라데이션 */}
                 <Button

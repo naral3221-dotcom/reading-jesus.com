@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/dialog'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { VisibilitySelector } from '@/components/ui/visibility-selector'
+// VisibilitySelector 제거됨 - 모든 글은 public으로 고정
 import { useToast } from '@/components/ui/toast'
 import { Loader2 } from 'lucide-react'
 
@@ -58,9 +58,8 @@ export function PersonalMeditationEditor({
   const [meditationType, setMeditationType] = useState<MeditationType>(
     existingMeditation?.meditationType ?? 'free'
   )
-  const [visibility, setVisibility] = useState<ContentVisibility>(
-    existingMeditation?.visibility ?? 'private'
-  )
+  // visibility는 항상 'public'으로 고정
+  const visibility: ContentVisibility = 'public'
 
   // 자유/메모 형식 상태
   const [title, setTitle] = useState(existingMeditation?.title ?? '')
@@ -233,13 +232,6 @@ export function PersonalMeditationEditor({
               onBibleReferenceChange={setBibleReference}
             />
           )}
-
-          {/* 공개 범위 설정 */}
-          <VisibilitySelector
-            value={visibility}
-            onChange={setVisibility}
-            allowedOptions={['private', 'public']}
-          />
         </div>
 
         {/* 저장 버튼 */}

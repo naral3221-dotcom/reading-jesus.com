@@ -20,8 +20,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ReadingDayPicker } from '@/components/church/ReadingDayPicker';
-import { VisibilitySelector } from '@/components/ui/visibility-selector';
-import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
+// VisibilitySelector 제거됨 - 모든 글은 public으로 고정
+type ContentVisibility = 'private' | 'group' | 'church' | 'public';
 
 // 선택된 구절 타입
 export interface SelectedVerse {
@@ -476,18 +476,6 @@ export function MeditationEditor({
             value={dayNumber}
             onChange={setDayNumber}
             placeholder="통독일정을 선택하세요"
-          />
-        </div>
-      )}
-
-      {/* 공개 범위 선택 */}
-      {showVisibility && (
-        <div className="mb-3">
-          <VisibilitySelector
-            value={visibility}
-            onChange={setVisibility}
-            allowedOptions={allowedVisibilityOptions}
-            variant="inline"
           />
         </div>
       )}

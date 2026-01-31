@@ -278,7 +278,7 @@ export class SupabasePublicMeditationRepository implements IPublicMeditationRepo
       content: content || '(내용 없음)',
       bibleReference: church ? `${church.name}` : null,
       isAnonymous: (data.is_anonymous as boolean) ?? false,
-      visibility: (data.visibility as ContentVisibility) ?? 'church',
+      visibility: (data.visibility as ContentVisibility) ?? 'public',  // 기본값 public으로 변경
       likesCount: (data.likes_count as number) ?? 0,
       repliesCount: (data.replies_count as number) ?? 0,
       createdAt: new Date(data.created_at as string),

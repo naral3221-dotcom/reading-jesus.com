@@ -22,8 +22,8 @@ import { Loader2, Lock, BookOpen, PenLine } from 'lucide-react';
 import { FeedItem, FeedItemType } from './FeedCard';
 import { ReadingDayPicker } from './ReadingDayPicker';
 import { QTMeditationForm } from '@/components/personal/QTMeditationForm';
-import { VisibilitySelector } from '@/components/ui/visibility-selector';
-import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
+// VisibilitySelector 제거됨 - 모든 글은 public으로 고정
+type ContentVisibility = 'private' | 'group' | 'church' | 'public';
 import dynamic from 'next/dynamic';
 
 const RichEditor = dynamic(
@@ -57,7 +57,7 @@ export interface EditPostData {
 export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDialogProps) {
   const [saving, setSaving] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [visibility, setVisibility] = useState<ContentVisibility>('church');
+  // visibility는 항상 'public'으로 고정
   const [dayNumber, setDayNumber] = useState<number | null>(null);
 
   // 묵상 필드
@@ -74,7 +74,7 @@ export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDia
   useEffect(() => {
     if (item) {
       setIsAnonymous(item.isAnonymous);
-      setVisibility((item.visibility as ContentVisibility) || 'church');
+      // visibility는 항상 'public'으로 고정
       setDayNumber(item.dayNumber || null);
 
       if (item.type === 'meditation') {
@@ -99,7 +99,7 @@ export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDia
         id: item.id,
         type: item.type,
         isAnonymous,
-        visibility,
+        visibility: 'public',  // 항상 public으로 고정
         dayNumber,
       };
 
@@ -137,15 +137,8 @@ export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDia
         </DialogHeader>
 
         <div className="space-y-4 py-4">
-          {/* 공개 범위 설정 */}
+          {/* 익명 설정 */}
           <div className="space-y-3">
-            <VisibilitySelector
-              value={visibility}
-              onChange={setVisibility}
-              allowedOptions={['private', 'church', 'public']}
-              variant="inline"
-            />
-            {/* 익명 설정 */}
             <div className="flex items-center space-x-2 p-3 bg-muted/50 rounded-lg">
               <Checkbox
                 id="anonymous"

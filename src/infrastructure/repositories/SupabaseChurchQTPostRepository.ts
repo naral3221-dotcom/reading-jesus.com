@@ -66,7 +66,7 @@ function mapRowToPostProps(row: ChurchQTPostRow): ChurchQTPostProps {
     dayReview: row.day_review,
     userId: row.user_id,
     isAnonymous: row.is_anonymous ?? false,
-    visibility: row.visibility ?? 'church',
+    visibility: row.visibility ?? 'public',  // 기본값 public으로 변경
     isPinned: row.is_pinned ?? false,
     likesCount: row.likes_count ?? 0,
     repliesCount: row.replies_count ?? 0,
@@ -183,7 +183,7 @@ export class SupabaseChurchQTPostRepository implements IChurchQTPostRepository {
           day_review: input.dayReview ?? null,
           user_id: input.userId ?? null,
           is_anonymous: input.isAnonymous ?? false,
-          visibility: input.visibility ?? 'church',
+          visibility: 'public',  // 모든 글 전체 공개
           is_pinned: false,
           likes_count: 0,
           replies_count: 0,
