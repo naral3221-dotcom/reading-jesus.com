@@ -164,39 +164,25 @@ export default function GroupDetailPage() {
   // 콘텐츠 타입 필터 상태
   const [contentTypeFilter, setContentTypeFilter] = useState<'all' | 'free' | 'qt'>('all');
 
-  // 그룹 묵상 피드 조회 (comments 테이블 직접 조회)
+  // 그룹 묵상 피드 조회 (unified_meditations에서 통합 조회)
   const { data: feedData, isLoading: commentsLoading } = useQuery({
     queryKey: [...commentKeys.all, 'groupFeed', groupId, contentTypeFilter],
     queryFn: async () => {
       if (!groupId) return [];
       const supabase = getSupabaseBrowserClient();
 
-      // comments 테이블에서 그룹 묵상 조회
+      // unified_meditations에서 그룹 묵상 조회
       let query = supabase
-        .from('comments')
-        .select(`
-          id,
-          user_id,
-          group_id,
-          day_number,
-          content,
-          is_anonymous,
-          is_pinned,
-          likes_count,
-          created_at,
-          profile:profiles!comments_user_id_fkey(
-            id,
-            nickname,
-            avatar_url
-          )
-        `)
-        .eq('group_id', groupId);
+        .from('unified_meditations')
+        .select('*')
+        .eq('source_type', 'group')
+        .eq('source_id', groupId);
 
-      // 콘텐츠 타입 필터 (qt 타입은 church_qt_posts에만 있으므로 free만 필터)
-      // comments 테이블은 기본적으로 free 타입의 묵상
+      // 콘텐츠 타입 필터
       if (contentTypeFilter === 'qt') {
-        // QT는 comments 테이블에 없으므로 빈 배열 반환
-        return [];
+        query = query.eq('content_type', 'qt');
+      } else if (contentTypeFilter === 'free') {
+        query = query.in('content_type', ['free', 'memo']);
       }
 
       const { data, error } = await query
@@ -209,33 +195,46 @@ export default function GroupDetailPage() {
         return [];
       }
 
+      // 프로필 조회 (별도 쿼리)
+      const userIds = Array.from(new Set((data || []).map(r => r.user_id).filter(Boolean)));
+      let profileMap = new Map<string, { nickname: string; avatar_url: string | null }>();
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nickname, avatar_url')
+          .in('id', userIds);
+        profiles?.forEach(p => profileMap.set(p.id, p));
+      }
+
       // UnifiedMeditationProps 형식으로 변환
       return (data || []).map(row => {
-        const profileData = Array.isArray(row.profile) ? row.profile[0] : row.profile;
+        const profileData = row.user_id ? profileMap.get(row.user_id) : null;
         return {
           id: row.id,
+          legacyId: row.legacy_id,
+          legacyTable: row.legacy_table,
           userId: row.user_id,
-          guestToken: null,
-          authorName: profileData?.nickname || '사용자',
+          guestToken: row.guest_token,
+          authorName: row.author_name || profileData?.nickname || '사용자',
           sourceType: 'group' as const,
-          sourceId: row.group_id,
-          contentType: 'free' as 'free' | 'qt',
+          sourceId: row.source_id,
+          contentType: row.content_type as 'free' | 'qt',
           dayNumber: row.day_number,
           content: row.content,
-          bibleRange: null,
-          qtDate: null,
-          mySentence: null,
-          meditationAnswer: null,
-          gratitude: null,
-          myPrayer: null,
-          dayReview: null,
+          bibleRange: row.bible_range,
+          qtDate: row.qt_date,
+          mySentence: row.my_sentence,
+          meditationAnswer: row.meditation_answer,
+          gratitude: row.gratitude,
+          myPrayer: row.my_prayer,
+          dayReview: row.day_review,
           isAnonymous: row.is_anonymous,
-          visibility: 'group' as const,
+          visibility: row.visibility || 'group',
           isPinned: row.is_pinned || false,
           likesCount: row.likes_count || 0,
-          repliesCount: 0,
+          repliesCount: row.replies_count || 0,
           createdAt: new Date(row.created_at),
-          updatedAt: null,
+          updatedAt: row.updated_at ? new Date(row.updated_at) : null,
           profile: profileData ? {
             nickname: profileData.nickname,
             avatarUrl: profileData.avatar_url,
@@ -502,13 +501,17 @@ export default function GroupDetailPage() {
     const commentId = deleteCommentDialog.commentId;
     if (!commentId) return;
 
+    // feedData에서 해당 항목 찾아서 legacy_id 가져오기
+    const item = feedData?.find(f => f.id === commentId);
+    const targetId = item?.legacyId || commentId;
+
     setDeletingComment(true);
     const supabase = getSupabaseBrowserClient();
 
     const { error } = await supabase
       .from('comments')
       .delete()
-      .eq('id', commentId);
+      .eq('id', targetId);
 
     if (error) {
       toast({

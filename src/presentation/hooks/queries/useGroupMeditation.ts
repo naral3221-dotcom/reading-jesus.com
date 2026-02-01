@@ -345,18 +345,51 @@ export function useGroupFeed(
 
       const supabase = getSupabaseBrowserClient()
 
+      // unified_meditations에서 그룹 피드 조회 (Phase 4 마이그레이션)
       const { data, error } = await supabase
-        .from('comments')
-        .select(`
-          *,
-          profile:profiles(nickname, avatar_url)
-        `)
-        .eq('group_id', groupId)
+        .from('unified_meditations')
+        .select('*')
+        .eq('source_type', 'group')
+        .eq('source_id', groupId)
         .order('created_at', { ascending: false })
         .limit(limit)
 
       if (error) throw new Error(error.message)
-      return data
+
+      // 프로필 정보를 별도 조회
+      const userIds = Array.from(new Set((data || []).map(d => d.user_id).filter(Boolean)))
+      let profileMap: Record<string, { nickname: string; avatar_url: string | null }> = {}
+
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, nickname, avatar_url')
+          .in('id', userIds as string[])
+
+        profileMap = (profiles || []).reduce((acc, p) => {
+          acc[p.id] = { nickname: p.nickname, avatar_url: p.avatar_url }
+          return acc
+        }, {} as Record<string, { nickname: string; avatar_url: string | null }>)
+      }
+
+      // 기존 형식에 맞게 데이터 변환
+      return (data || []).map(row => ({
+        id: row.legacy_id || row.id,
+        group_id: row.source_id,
+        user_id: row.user_id,
+        day_number: row.day_number,
+        content: row.content,
+        bible_range: row.bible_range,
+        is_public: row.visibility === 'public',
+        is_anonymous: row.is_anonymous,
+        likes_count: row.likes_count || 0,
+        replies_count: row.replies_count || 0,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+        profile: row.user_id ? profileMap[row.user_id] : null,
+        legacy_id: row.legacy_id,
+        legacy_table: row.legacy_table,
+      }))
     },
     enabled: options?.enabled !== false && !!groupId,
     staleTime: 1000 * 30, // 30초

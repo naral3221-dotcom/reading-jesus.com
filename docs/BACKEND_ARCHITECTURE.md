@@ -620,6 +620,9 @@ npx tsx scripts/final-analysis.ts
 | 2026-02-01 | **대규모 리팩토링 Phase 3**: 코드 명명 변경 (Comment → Meditation) - 63개 파일 수정 |
 | 2026-02-01 | **대규모 리팩토링 Phase 4**: GetUnifiedFeed 통합 전환 (4개 테이블 → 1개 테이블 쿼리) |
 | 2026-02-01 | **검증 완료**: 1차(데이터 무결성 100%), 2차(기능 테스트 8/8 통과), 3차(성능 평균 39.5ms) |
+| 2026-02-01 | **버그 수정**: SupabaseUnifiedMeditationRepository의 update/delete가 레거시 테이블 경유하도록 수정 (Dual-Write 패턴 준수) |
+| 2026-02-01 | **전체 READ 마이그레이션 완료**: 모든 페이지의 읽기 작업을 unified_meditations로 통합 (15개 파일) |
+| 2026-02-01 | **최종 검증**: 49개 백엔드 검사 모두 통과 |
 
 ---
 
@@ -641,3 +644,8 @@ npx tsx scripts/final-analysis.ts
 4. **트리거 동작 확인**
    - 새 글 작성 후 unified_meditations에 자동 생성되는지 확인
    - 문제 시 `scripts/backend-health-check.ts` 실행
+
+5. **Dual-Write 패턴 필수 준수** (2026-02-01 추가)
+   - **INSERT/UPDATE/DELETE는 반드시 레거시 테이블에 수행**
+   - `unified_meditations`를 직접 수정하면 데이터 불일치 발생
+   - Repository의 수정/삭제: `legacy_table`/`legacy_id` 조회 → 레거시 테이블 수정 → 트리거가 동기화

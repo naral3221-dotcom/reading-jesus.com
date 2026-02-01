@@ -27,11 +27,7 @@ export interface PlatformStats {
 /**
  * 플랫폼 전체 통계 조회 훅 (누적 나눔 수 + 오늘 작성자 수)
  *
- * 조회 대상 테이블:
- * - public_meditations: 공개 묵상
- * - church_qt_posts: 교회 QT
- * - guest_comments: 교회 짧은 묵상
- * - comments (is_public=true): 공개 그룹 묵상
+ * 조회 대상: unified_meditations (통합 테이블)
  */
 export function usePlatformStats() {
   return useQuery({
@@ -42,86 +38,24 @@ export function usePlatformStats() {
       const todayStart = `${today}T00:00:00`;
       const todayEnd = `${today}T23:59:59`;
 
-      // 병렬로 모든 쿼리 실행
-      const [
-        // 전체 카운트
-        publicMeditationsTotalResult,
-        churchQtTotalResult,
-        guestCommentsTotalResult,
-        groupCommentsTotalResult,
-        // 오늘 글 개수
-        todayPublicMeditationsResult,
-        todayChurchQtResult,
-        todayGuestCommentsResult,
-        todayGroupCommentsResult,
-      ] = await Promise.all([
-        // 1. 전체 공개 묵상 수
+      // unified_meditations에서 통합 조회 (병렬로 실행)
+      const [totalResult, todayResult] = await Promise.all([
+        // 1. 전체 나눔 수
         supabase
-          .from('public_meditations')
+          .from('unified_meditations')
           .select('*', { count: 'exact', head: true }),
 
-        // 2. 전체 교회 QT 수
+        // 2. 오늘 작성된 글 개수
         supabase
-          .from('church_qt_posts')
-          .select('*', { count: 'exact', head: true }),
-
-        // 3. 전체 교회 짧은 묵상 수 (guest_comments)
-        supabase
-          .from('guest_comments')
-          .select('*', { count: 'exact', head: true }),
-
-        // 4. 전체 공개 그룹 묵상 수 (comments with is_public=true)
-        supabase
-          .from('comments')
+          .from('unified_meditations')
           .select('*', { count: 'exact', head: true })
-          .eq('is_public', true),
-
-        // 5. 오늘 작성된 공개 묵상 개수
-        supabase
-          .from('public_meditations')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', todayStart)
-          .lte('created_at', todayEnd),
-
-        // 6. 오늘 작성된 교회 QT 개수
-        supabase
-          .from('church_qt_posts')
-          .select('*', { count: 'exact', head: true })
-          .eq('qt_date', today),
-
-        // 7. 오늘 작성된 교회 짧은 묵상 개수
-        supabase
-          .from('guest_comments')
-          .select('*', { count: 'exact', head: true })
-          .gte('created_at', todayStart)
-          .lte('created_at', todayEnd),
-
-        // 8. 오늘 작성된 공개 그룹 묵상 개수
-        supabase
-          .from('comments')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_public', true)
           .gte('created_at', todayStart)
           .lte('created_at', todayEnd),
       ]);
 
-      // 전체 나눔 수 계산 (모든 테이블 합산)
-      const totalPublicMeditations = publicMeditationsTotalResult.count || 0;
-      const totalChurchQt = churchQtTotalResult.count || 0;
-      const totalGuestComments = guestCommentsTotalResult.count || 0;
-      const totalGroupComments = groupCommentsTotalResult.count || 0;
-      const totalSharingCount = totalPublicMeditations + totalChurchQt + totalGuestComments + totalGroupComments;
-
-      // 오늘 작성된 글 개수 계산
-      const todayPublicMeditations = todayPublicMeditationsResult.count || 0;
-      const todayChurchQt = todayChurchQtResult.count || 0;
-      const todayGuestComments = todayGuestCommentsResult.count || 0;
-      const todayGroupComments = todayGroupCommentsResult.count || 0;
-      const todayPostsCount = todayPublicMeditations + todayChurchQt + todayGuestComments + todayGroupComments;
-
       return {
-        totalSharingCount,
-        todayPostsCount,
+        totalSharingCount: totalResult.count || 0,
+        todayPostsCount: todayResult.count || 0,
       };
     },
     staleTime: 1000 * 60 * 5, // 5분
@@ -131,6 +65,8 @@ export function usePlatformStats() {
 
 /**
  * 전체 누적 나눔 수만 조회하는 훅
+ *
+ * unified_meditations 단일 테이블에서 조회 (Phase 4 마이그레이션 완료)
  */
 export function useTotalSharingCount() {
   return useQuery({
@@ -138,33 +74,12 @@ export function useTotalSharingCount() {
     queryFn: async (): Promise<number> => {
       const supabase = getSupabaseBrowserClient();
 
-      const [
-        publicMeditationsResult,
-        churchQtResult,
-        guestCommentsResult,
-        groupCommentsResult,
-      ] = await Promise.all([
-        supabase
-          .from('public_meditations')
-          .select('*', { count: 'exact', head: true }),
-        supabase
-          .from('church_qt_posts')
-          .select('*', { count: 'exact', head: true }),
-        supabase
-          .from('guest_comments')
-          .select('*', { count: 'exact', head: true }),
-        supabase
-          .from('comments')
-          .select('*', { count: 'exact', head: true })
-          .eq('is_public', true),
-      ]);
+      // unified_meditations에서 전체 카운트 조회 (단일 쿼리)
+      const { count } = await supabase
+        .from('unified_meditations')
+        .select('*', { count: 'exact', head: true });
 
-      return (
-        (publicMeditationsResult.count || 0) +
-        (churchQtResult.count || 0) +
-        (guestCommentsResult.count || 0) +
-        (groupCommentsResult.count || 0)
-      );
+      return count || 0;
     },
     staleTime: 1000 * 60 * 10, // 10분
     refetchOnWindowFocus: false,
@@ -173,6 +88,8 @@ export function useTotalSharingCount() {
 
 /**
  * 오늘 작성자 수만 조회하는 훅
+ *
+ * unified_meditations 단일 테이블에서 조회 (Phase 4 마이그레이션 완료)
  */
 export function useTodayWritersCount() {
   return useQuery({
@@ -183,57 +100,21 @@ export function useTodayWritersCount() {
       const todayStart = `${today}T00:00:00`;
       const todayEnd = `${today}T23:59:59`;
 
-      const [
-        publicMeditationsResult,
-        churchQtResult,
-        guestCommentsResult,
-        groupCommentsResult,
-      ] = await Promise.all([
-        supabase
-          .from('public_meditations')
-          .select('user_id')
-          .gte('created_at', todayStart)
-          .lte('created_at', todayEnd),
-        supabase
-          .from('church_qt_posts')
-          .select('user_id')
-          .eq('qt_date', today),
-        supabase
-          .from('guest_comments')
-          .select('linked_user_id')
-          .gte('created_at', todayStart)
-          .lte('created_at', todayEnd),
-        supabase
-          .from('comments')
-          .select('user_id')
-          .eq('is_public', true)
-          .gte('created_at', todayStart)
-          .lte('created_at', todayEnd),
-      ]);
+      // unified_meditations에서 오늘 작성된 글의 user_id, guest_token 조회
+      const { data } = await supabase
+        .from('unified_meditations')
+        .select('user_id, guest_token')
+        .gte('created_at', todayStart)
+        .lte('created_at', todayEnd);
 
+      // 고유 작성자 수 계산 (로그인 유저 + 게스트)
       const uniqueWriters = new Set<string>();
 
-      publicMeditationsResult.data?.forEach((item) => {
+      data?.forEach((item) => {
         if (item.user_id) {
-          uniqueWriters.add(item.user_id);
-        }
-      });
-
-      churchQtResult.data?.forEach((item) => {
-        if (item.user_id) {
-          uniqueWriters.add(item.user_id);
-        }
-      });
-
-      guestCommentsResult.data?.forEach((item) => {
-        if (item.linked_user_id) {
-          uniqueWriters.add(item.linked_user_id);
-        }
-      });
-
-      groupCommentsResult.data?.forEach((item) => {
-        if (item.user_id) {
-          uniqueWriters.add(item.user_id);
+          uniqueWriters.add(`user_${item.user_id}`);
+        } else if (item.guest_token) {
+          uniqueWriters.add(`guest_${item.guest_token}`);
         }
       });
 

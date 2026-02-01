@@ -28,11 +28,11 @@ async function fetchDashboardStats(userId: string): Promise<DashboardStats> {
   // 대략적인 장 수 계산 (일평균 3장 가정)
   const readChapters = readDays * 3;
 
-  // 2. 작성한 QT 수
+  // 2. 작성한 QT 수 (unified_meditations에서 조회 - Phase 4 마이그레이션)
   const { count: qtCount, error: qtError } = await supabase
-    .from('guest_comments')
+    .from('unified_meditations')
     .select('*', { count: 'exact', head: true })
-    .eq('linked_user_id', userId);
+    .eq('user_id', userId);
 
   if (qtError) throw qtError;
 

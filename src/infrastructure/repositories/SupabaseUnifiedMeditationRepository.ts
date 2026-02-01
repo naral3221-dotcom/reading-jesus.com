@@ -389,6 +389,8 @@ export class SupabaseUnifiedMeditationRepository implements IUnifiedMeditationRe
 
   /**
    * 묵상 수정
+   *
+   * Dual-Write 패턴: legacy_table을 통해 레거시 테이블 수정 → 트리거가 unified 동기화
    */
   async update(
     id: string,
@@ -398,25 +400,101 @@ export class SupabaseUnifiedMeditationRepository implements IUnifiedMeditationRe
   ): Promise<UnifiedMeditationProps> {
     const supabase = getSupabaseBrowserClient()
 
-    // 권한 확인은 RLS에서 처리
+    // 1. unified_meditations에서 legacy 정보 조회
+    const { data: unified, error: fetchError } = await supabase
+      .from('unified_meditations')
+      .select('legacy_table, legacy_id, content_type')
+      .eq('id', id)
+      .single()
+
+    if (fetchError || !unified) {
+      throw new Error(`묵상 조회 실패: ${fetchError?.message || '데이터를 찾을 수 없습니다'}`)
+    }
+
+    // 2. legacy 테이블이 있으면 레거시 테이블 수정 (트리거가 자동 동기화)
+    if (unified.legacy_table && unified.legacy_id) {
+      const legacyTable = unified.legacy_table
+      const legacyId = unified.legacy_id
+
+      // 레거시 테이블별 업데이트 필드 구성
+      let updateData: Record<string, unknown> = {}
+
+      if (legacyTable === 'guest_comments') {
+        updateData = {
+          content: input.content,
+          bible_range: input.bibleRange,
+          is_anonymous: input.isAnonymous,
+        }
+      } else if (legacyTable === 'church_qt_posts') {
+        updateData = {
+          my_sentence: input.mySentence,
+          meditation_answer: input.meditationAnswer,
+          gratitude: input.gratitude,
+          my_prayer: input.myPrayer,
+          day_review: input.dayReview,
+          is_anonymous: input.isAnonymous,
+        }
+      } else if (legacyTable === 'comments') {
+        updateData = {
+          content: input.content,
+          bible_range: input.bibleRange,
+          is_anonymous: input.isAnonymous,
+        }
+      } else if (legacyTable === 'public_meditations') {
+        updateData = {
+          content: input.content,
+          bible_reference: input.bibleRange,
+          is_anonymous: input.isAnonymous,
+        }
+      }
+
+      // null/undefined 제거
+      Object.keys(updateData).forEach(key => {
+        if (updateData[key] === undefined) {
+          delete updateData[key]
+        }
+      })
+
+      if (Object.keys(updateData).length > 0) {
+        const { error: updateError } = await supabase
+          .from(legacyTable)
+          .update(updateData)
+          .eq('id', legacyId)
+
+        if (updateError) {
+          throw new Error(`묵상 수정 실패: ${updateError.message}`)
+        }
+      }
+    } else {
+      // legacy 정보가 없으면 unified 직접 수정 (새로운 데이터)
+      const { error: updateError } = await supabase
+        .from('unified_meditations')
+        .update({
+          content: input.content,
+          bible_range: input.bibleRange,
+          my_sentence: input.mySentence,
+          meditation_answer: input.meditationAnswer,
+          gratitude: input.gratitude,
+          my_prayer: input.myPrayer,
+          day_review: input.dayReview,
+          is_anonymous: input.isAnonymous,
+        })
+        .eq('id', id)
+
+      if (updateError) {
+        throw new Error(`묵상 수정 실패: ${updateError.message}`)
+      }
+    }
+
+    // 3. 업데이트된 데이터 조회하여 반환
     const { data, error } = await supabase
       .from('unified_meditations')
-      .update({
-        content: input.content,
-        bible_range: input.bibleRange,
-        my_sentence: input.mySentence,
-        meditation_answer: input.meditationAnswer,
-        gratitude: input.gratitude,
-        my_prayer: input.myPrayer,
-        day_review: input.dayReview,
-        is_anonymous: input.isAnonymous,
-      })
-      .eq('id', id)
       .select('*')
+      .eq('id', id)
       .single()
 
     if (error) {
-      throw new Error(`묵상 수정 실패: ${error.message}`)
+      throw new Error(`묵상 조회 실패: ${error.message}`)
     }
 
     return this.toMeditationProps(data as MeditationRow)
@@ -424,17 +502,43 @@ export class SupabaseUnifiedMeditationRepository implements IUnifiedMeditationRe
 
   /**
    * 묵상 삭제
+   *
+   * Dual-Write 패턴: legacy_table을 통해 레거시 테이블 삭제 → 트리거가 unified 동기화
    */
   async delete(id: string, userId: string | null, guestToken: string | null): Promise<void> {
     const supabase = getSupabaseBrowserClient()
 
-    const { error } = await supabase
+    // 1. unified_meditations에서 legacy 정보 조회
+    const { data: unified, error: fetchError } = await supabase
       .from('unified_meditations')
-      .delete()
+      .select('legacy_table, legacy_id')
       .eq('id', id)
+      .single()
 
-    if (error) {
-      throw new Error(`묵상 삭제 실패: ${error.message}`)
+    if (fetchError || !unified) {
+      throw new Error(`묵상 조회 실패: ${fetchError?.message || '데이터를 찾을 수 없습니다'}`)
+    }
+
+    // 2. legacy 테이블이 있으면 레거시 테이블에서 삭제 (트리거가 자동으로 unified도 삭제)
+    if (unified.legacy_table && unified.legacy_id) {
+      const { error: deleteError } = await supabase
+        .from(unified.legacy_table)
+        .delete()
+        .eq('id', unified.legacy_id)
+
+      if (deleteError) {
+        throw new Error(`묵상 삭제 실패: ${deleteError.message}`)
+      }
+    } else {
+      // legacy 정보가 없으면 unified 직접 삭제 (새로운 데이터)
+      const { error: deleteError } = await supabase
+        .from('unified_meditations')
+        .delete()
+        .eq('id', id)
+
+      if (deleteError) {
+        throw new Error(`묵상 삭제 실패: ${deleteError.message}`)
+      }
     }
   }
 

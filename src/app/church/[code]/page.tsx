@@ -120,6 +120,9 @@ interface GuestComment {
   myPrayer?: string | null;
   dayReview?: string | null;
   qtDate?: string | null; // QT 날짜
+  // 레거시 연결용 (unified_meditations에서 조회 시)
+  legacy_table?: string | null;
+  legacy_id?: string | null;
 }
 
 interface ChurchQTPost {
@@ -454,7 +457,7 @@ export default function ChurchPublicPage() {
     }
   }, []);
 
-  // 오늘 날짜의 QT 나눔 로드 (슬라이더용) - qt_date가 오늘인 모든 QT
+  // 오늘 날짜의 QT 나눔 로드 (슬라이더용) - unified_meditations에서 조회
   const loadTodayQtPosts = useCallback(async () => {
     if (!church) return;
 
@@ -462,36 +465,40 @@ export default function ChurchPublicPage() {
     const today = getTodayDateString();
 
     try {
-      // qt_date(QT 콘텐츠 날짜)가 오늘인 모든 QT 나눔 조회
+      // unified_meditations에서 오늘 날짜의 QT 조회
       const { data: qtData, error: qtError } = await supabase
-        .from('church_qt_posts')
-        .select('id, author_name, qt_date, my_sentence, meditation_answer, gratitude, my_prayer, day_review, is_anonymous, likes_count, created_at, user_id')
-        .eq('church_id', church.id)
+        .from('unified_meditations')
+        .select('*')
+        .eq('source_type', 'church')
+        .eq('source_id', church.id)
+        .eq('content_type', 'qt')
         .eq('qt_date', today)
         .order('created_at', { ascending: false });
 
       if (qtError) throw qtError;
 
-      // QT 게시글을 GuestComment 형식으로 변환
-      const qtComments: GuestComment[] = (qtData || []).map((qt: ChurchQTPost) => ({
-        id: qt.id,
-        guest_name: qt.author_name,
+      // unified_meditations 데이터를 GuestComment 형식으로 변환
+      const qtComments: GuestComment[] = (qtData || []).map(row => ({
+        id: row.id,
+        guest_name: row.author_name || '익명',
         content: '',
-        day_number: null,
-        bible_range: null,
-        is_anonymous: qt.is_anonymous || false,
-        created_at: qt.created_at,
-        likes_count: qt.likes_count || 0,
-        replies_count: 0,
-        linked_user_id: qt.user_id,
-        device_id: null,
+        day_number: row.day_number,
+        bible_range: row.bible_range,
+        is_anonymous: row.is_anonymous || false,
+        created_at: row.created_at,
+        likes_count: row.likes_count || 0,
+        replies_count: row.replies_count || 0,
+        linked_user_id: row.user_id,
+        device_id: row.guest_token,
         source: 'qt_post' as const,
-        mySentence: qt.my_sentence,
-        meditationAnswer: qt.meditation_answer,
-        gratitude: qt.gratitude,
-        myPrayer: qt.my_prayer,
-        dayReview: qt.day_review,
-        qtDate: qt.qt_date,
+        mySentence: row.my_sentence,
+        meditationAnswer: row.meditation_answer,
+        gratitude: row.gratitude,
+        myPrayer: row.my_prayer,
+        dayReview: row.day_review,
+        qtDate: row.qt_date,
+        legacy_table: row.legacy_table,
+        legacy_id: row.legacy_id,
       }));
 
       setTodayQtPosts(qtComments);
@@ -500,7 +507,7 @@ export default function ChurchPublicPage() {
     }
   }, [church]);
 
-  // 게시글 로드 (날짜 기준) - guest_comments + church_qt_posts 병합
+  // 게시글 로드 (날짜 기준) - unified_meditations에서 통합 조회
   const loadComments = useCallback(async () => {
     if (!church || !selectedDate) return;
 
@@ -516,72 +523,54 @@ export default function ChurchPublicPage() {
       // 선택된 날짜의 day_number 찾기 (reading_plan.json 기준)
       const currentDayNumber = findDayByDate(selectedDate);
 
-      // 1. guest_comments 로드 (기존 묵상 글) - 선택된 날짜의 day_number에 해당하는 것만
-      // replies_count는 아직 마이그레이션 안 된 경우를 대비해 제외
-      let guestQuery = supabase
-        .from('guest_comments')
-        .select('id, guest_name, content, day_number, bible_range, is_anonymous, created_at, likes_count, linked_user_id, device_id')
-        .eq('church_id', church.id)
+      // unified_meditations에서 교회 피드 조회 (단일 쿼리)
+      let query = supabase
+        .from('unified_meditations')
+        .select('*')
+        .eq('source_type', 'church')
+        .eq('source_id', church.id)
         .order('created_at', { ascending: false });
 
-      // day_number가 있으면 해당 일차로 필터링, 없으면 bible_range로 필터링 (fallback)
+      // day_number 또는 qt_date로 필터링
       if (currentDayNumber) {
-        guestQuery = guestQuery.eq('day_number', currentDayNumber);
+        // day_number가 있거나 qt_date가 선택된 날짜인 것
+        query = query.or(`day_number.eq.${currentDayNumber},qt_date.eq.${selectedDate}`);
       } else if (currentSchedule?.reading) {
-        guestQuery = guestQuery.eq('bible_range', currentSchedule.reading);
+        query = query.eq('bible_range', currentSchedule.reading);
       }
 
-      const { data: guestData, error: guestError } = await guestQuery;
+      const { data: unifiedData, error: unifiedError } = await query;
 
-      if (guestError) throw guestError;
+      if (unifiedError) throw unifiedError;
 
-      // guest_comments에 source 추가
-      const guestComments: GuestComment[] = (guestData || []).map(c => ({
-        ...c,
-        replies_count: 0, // 기본값 (나중에 별도 쿼리로 가져올 수 있음)
-        source: 'guest_comment' as const,
-      }));
-
-      // 2. church_qt_posts 로드 (QT 나눔 글) - 선택된 날짜의 QT만
-      // replies_count는 아직 마이그레이션 안 된 경우를 대비해 제외
-      const { data: qtData, error: qtError } = await supabase
-        .from('church_qt_posts')
-        .select('id, author_name, qt_date, my_sentence, meditation_answer, gratitude, my_prayer, day_review, is_anonymous, likes_count, created_at, user_id')
-        .eq('church_id', church.id)
-        .eq('qt_date', selectedDate) // 선택된 날짜의 QT만
-        .order('created_at', { ascending: false });
-
-      if (qtError) throw qtError;
-
-      // QT 게시글을 GuestComment 형식으로 변환 (원본 필드 유지)
-      const qtComments: GuestComment[] = (qtData || []).map((qt: ChurchQTPost) => {
+      // unified_meditations 데이터를 GuestComment 형식으로 변환
+      const allComments: GuestComment[] = (unifiedData || []).map(row => {
+        const isQT = row.content_type === 'qt';
         return {
-          id: qt.id,
-          guest_name: qt.author_name,
-          content: '', // QT는 원본 필드로 렌더링
-          day_number: null,
-          bible_range: currentSchedule?.reading || null,
-          is_anonymous: qt.is_anonymous || false,
-          created_at: qt.created_at,
-          likes_count: qt.likes_count || 0,
-          replies_count: 0, // 기본값 (나중에 별도 쿼리로 가져올 수 있음)
-          linked_user_id: qt.user_id,
-          device_id: null,
-          source: 'qt_post' as const,
-          // QT 원본 필드
-          mySentence: qt.my_sentence,
-          meditationAnswer: qt.meditation_answer,
-          gratitude: qt.gratitude,
-          myPrayer: qt.my_prayer,
-          dayReview: qt.day_review,
-          qtDate: qt.qt_date, // QT 날짜 포함
+          id: row.id,
+          guest_name: row.author_name || '익명',
+          content: row.content || '',
+          day_number: row.day_number,
+          bible_range: row.bible_range,
+          is_anonymous: row.is_anonymous || false,
+          created_at: row.created_at,
+          likes_count: row.likes_count || 0,
+          replies_count: row.replies_count || 0,
+          linked_user_id: row.user_id,
+          device_id: row.guest_token,
+          source: isQT ? 'qt_post' as const : 'guest_comment' as const,
+          // QT 필드
+          mySentence: row.my_sentence,
+          meditationAnswer: row.meditation_answer,
+          gratitude: row.gratitude,
+          myPrayer: row.my_prayer,
+          dayReview: row.day_review,
+          qtDate: row.qt_date,
+          // 레거시 연결용
+          legacy_table: row.legacy_table,
+          legacy_id: row.legacy_id,
         };
       });
-
-      // 3. 두 목록 합치고 시간순 정렬
-      const allComments = [...guestComments, ...qtComments].sort(
-        (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      );
 
       // Race condition 체크: 요청 시점의 날짜와 현재 날짜가 다르면 결과 무시
       if (requestDate !== selectedDate) {
@@ -590,48 +579,73 @@ export default function ChurchPublicPage() {
 
       setComments(allComments);
 
-      // 좋아요 상태 로드 (로그인 유저 또는 device_id 기준)
+      // 좋아요 상태 로드 (legacy_id 사용 - 레거시 테이블과 연결)
       if (allComments.length > 0) {
-        const guestCommentIds = allComments.filter(c => c.source === 'guest_comment').map(c => c.id);
-        const qtPostIds = allComments.filter(c => c.source === 'qt_post').map(c => c.id);
+        // legacy_id를 사용하여 레거시 테이블의 좋아요 조회
+        const guestCommentLegacyIds = allComments
+          .filter(c => c.source === 'guest_comment' && c.legacy_id)
+          .map(c => c.legacy_id!);
+        const qtPostLegacyIds = allComments
+          .filter(c => c.source === 'qt_post' && c.legacy_id)
+          .map(c => c.legacy_id!);
+
+        // legacy_id → unified_id 매핑 생성
+        const legacyToUnifiedMap = new Map<string, string>();
+        allComments.forEach(c => {
+          if (c.legacy_id) {
+            legacyToUnifiedMap.set(c.legacy_id, c.id);
+          }
+        });
 
         const likedSet = new Set<string>();
 
         // guest_comments 좋아요 상태
-        if (guestCommentIds.length > 0) {
+        if (guestCommentLegacyIds.length > 0) {
           if (currentUser) {
             const { data: likes } = await supabase
               .from('guest_comment_likes')
               .select('comment_id')
               .eq('user_id', currentUser.id)
-              .in('comment_id', guestCommentIds);
-            likes?.forEach(l => likedSet.add(l.comment_id));
+              .in('comment_id', guestCommentLegacyIds);
+            likes?.forEach(l => {
+              const unifiedId = legacyToUnifiedMap.get(l.comment_id);
+              if (unifiedId) likedSet.add(unifiedId);
+            });
           } else if (deviceId) {
             const { data: likes } = await supabase
               .from('guest_comment_likes')
               .select('comment_id')
               .eq('device_id', deviceId)
-              .in('comment_id', guestCommentIds);
-            likes?.forEach(l => likedSet.add(l.comment_id));
+              .in('comment_id', guestCommentLegacyIds);
+            likes?.forEach(l => {
+              const unifiedId = legacyToUnifiedMap.get(l.comment_id);
+              if (unifiedId) likedSet.add(unifiedId);
+            });
           }
         }
 
         // QT 게시글 좋아요 상태
-        if (qtPostIds.length > 0) {
+        if (qtPostLegacyIds.length > 0) {
           if (currentUser) {
             const { data: likes } = await supabase
               .from('church_qt_post_likes')
               .select('post_id')
               .eq('user_id', currentUser.id)
-              .in('post_id', qtPostIds);
-            likes?.forEach(l => likedSet.add(l.post_id));
+              .in('post_id', qtPostLegacyIds);
+            likes?.forEach(l => {
+              const unifiedId = legacyToUnifiedMap.get(l.post_id);
+              if (unifiedId) likedSet.add(unifiedId);
+            });
           } else if (deviceId) {
             const { data: likes } = await supabase
               .from('church_qt_post_likes')
               .select('post_id')
               .eq('device_id', deviceId)
-              .in('post_id', qtPostIds);
-            likes?.forEach(l => likedSet.add(l.post_id));
+              .in('post_id', qtPostLegacyIds);
+            likes?.forEach(l => {
+              const unifiedId = legacyToUnifiedMap.get(l.post_id);
+              if (unifiedId) likedSet.add(unifiedId);
+            });
           }
         }
 
@@ -815,6 +829,9 @@ export default function ChurchPublicPage() {
     const likeTable = isQTPost ? 'church_qt_post_likes' : 'guest_comment_likes';
     const idColumn = isQTPost ? 'post_id' : 'comment_id';
 
+    // legacy_id가 있으면 사용, 없으면 현재 id 사용
+    const targetId = comment.legacy_id || commentId;
+
     const isLiked = likedComments.has(commentId);
 
     // 애니메이션 효과
@@ -825,18 +842,18 @@ export default function ChurchPublicPage() {
 
     try {
       if (isLiked) {
-        // 좋아요 취소
+        // 좋아요 취소 (legacy_id 사용)
         if (currentUser) {
           await supabase
             .from(likeTable)
             .delete()
-            .eq(idColumn, commentId)
+            .eq(idColumn, targetId)
             .eq('user_id', currentUser.id);
         } else if (deviceId) {
           await supabase
             .from(likeTable)
             .delete()
-            .eq(idColumn, commentId)
+            .eq(idColumn, targetId)
             .eq('device_id', deviceId);
         }
 
@@ -853,15 +870,15 @@ export default function ChurchPublicPage() {
           )
         );
       } else {
-        // 좋아요 추가
+        // 좋아요 추가 (legacy_id 사용)
         if (currentUser) {
           await supabase
             .from(likeTable)
-            .insert({ [idColumn]: commentId, user_id: currentUser.id });
+            .insert({ [idColumn]: targetId, user_id: currentUser.id });
         } else if (deviceId) {
           await supabase
             .from(likeTable)
-            .insert({ [idColumn]: commentId, device_id: deviceId });
+            .insert({ [idColumn]: targetId, device_id: deviceId });
         }
 
         setLikedComments(prev => new Set(Array.from(prev).concat(commentId)));
@@ -968,8 +985,12 @@ export default function ChurchPublicPage() {
     setEditDialogOpen(true);
   };
 
-  // 수정 저장 핸들러
+  // 수정 저장 핸들러 (legacy_id로 레거시 테이블 업데이트)
   const handleSaveEdit = async (data: EditPostData) => {
+    // comments 배열에서 해당 항목 찾아서 legacy_id 가져오기
+    const comment = comments.find(c => c.id === data.id);
+    const targetId = comment?.legacy_id || data.id;
+
     const supabase = getSupabaseBrowserClient();
     try {
       // 통독일정 변경 시 bible_range도 함께 업데이트
@@ -985,7 +1006,7 @@ export default function ChurchPublicPage() {
             bible_range: newBibleRange,
             is_anonymous: data.isAnonymous,
           })
-          .eq('id', data.id);
+          .eq('id', targetId);
 
         if (error) throw error;
       } else {
@@ -1004,7 +1025,7 @@ export default function ChurchPublicPage() {
             qt_date: newQtDate,
             is_anonymous: data.isAnonymous,
           })
-          .eq('id', data.id);
+          .eq('id', targetId);
 
         if (error) throw error;
       }
@@ -1018,9 +1039,13 @@ export default function ChurchPublicPage() {
     }
   };
 
-  // 댓글 삭제 핸들러 (source에 따라 다른 테이블 사용)
+  // 댓글 삭제 핸들러 (source에 따라 다른 테이블 사용, legacy_id로 삭제)
   const handleDeleteComment = async () => {
     if (!deleteCommentId) return;
+
+    // comments 배열에서 해당 항목 찾아서 legacy_id 가져오기
+    const comment = comments.find(c => c.id === deleteCommentId);
+    const targetId = comment?.legacy_id || deleteCommentId;
 
     const supabase = getSupabaseBrowserClient();
     const tableName = deleteCommentSource === 'qt_post' ? 'church_qt_posts' : 'guest_comments';
@@ -1030,7 +1055,7 @@ export default function ChurchPublicPage() {
       const { error } = await supabase
         .from(tableName)
         .delete()
-        .eq('id', deleteCommentId);
+        .eq('id', targetId);
 
       if (error) throw error;
 
@@ -1102,10 +1127,14 @@ export default function ChurchPublicPage() {
     }
   };
 
-  // 답글 로드 함수
+  // 답글 로드 함수 (legacy_id 사용)
   const loadReplies = useCallback(async (commentId: string, source: 'guest_comment' | 'qt_post') => {
     // 이미 로딩 중이면 스킵
     if (loadingReplies.has(commentId)) return;
+
+    // comments 배열에서 해당 항목 찾아서 legacy_id 가져오기
+    const comment = comments.find(c => c.id === commentId);
+    const targetId = comment?.legacy_id || commentId;
 
     const supabase = getSupabaseBrowserClient();
     setLoadingReplies(prev => new Set(prev).add(commentId));
@@ -1117,7 +1146,7 @@ export default function ChurchPublicPage() {
       const { data, error } = await supabase
         .from(tableName)
         .select('*')
-        .eq(idColumn, commentId)
+        .eq(idColumn, targetId)
         .order('created_at', { ascending: true });
 
       if (error) throw error;
@@ -1138,7 +1167,7 @@ export default function ChurchPublicPage() {
         return next;
       });
     }
-  }, [loadingReplies]);
+  }, [loadingReplies, comments]);
 
   // 답글 토글 (펼치기/접기)
   const toggleReplies = useCallback((commentId: string, source: 'guest_comment' | 'qt_post') => {
@@ -1180,9 +1209,13 @@ export default function ChurchPublicPage() {
     setReplyGuestName('');
   }, []);
 
-  // 답글 제출
+  // 답글 제출 (legacy_id 사용)
   const handleSubmitReply = useCallback(async () => {
     if (!replyingToId || !replyContent.trim()) return;
+
+    // comments 배열에서 해당 항목 찾아서 legacy_id 가져오기
+    const comment = comments.find(c => c.id === replyingToId);
+    const targetId = comment?.legacy_id || replyingToId;
 
     const authorName = isRegisteredMember && userProfile ? userProfile.nickname : replyGuestName.trim();
 
@@ -1212,7 +1245,7 @@ export default function ChurchPublicPage() {
       const idColumn = replyingToSource === 'qt_post' ? 'post_id' : 'comment_id';
 
       const insertData: Record<string, unknown> = {
-        [idColumn]: replyingToId,
+        [idColumn]: targetId,
         guest_name: authorName,
         device_id: deviceId,
         content: replyContent.trim(),
@@ -1261,7 +1294,7 @@ export default function ChurchPublicPage() {
     } finally {
       setReplySubmitting(false);
     }
-  }, [replyingToId, replyingToSource, replyContent, replyGuestName, isRegisteredMember, userProfile, deviceId, currentUser, toast, cancelReply, loadReplies]);
+  }, [replyingToId, replyingToSource, replyContent, replyGuestName, isRegisteredMember, userProfile, deviceId, currentUser, toast, cancelReply, loadReplies, comments]);
 
   // 현재 인덱스 계산
   const currentIndex = schedules.findIndex(s => s.date === selectedDate);

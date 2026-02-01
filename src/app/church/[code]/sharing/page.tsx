@@ -378,131 +378,126 @@ export default function ChurchSharingPage() {
     setLoadingMore(true);
 
     try {
-      // 두 테이블에서 병합 시 정확한 페이지네이션을 위해
-      // 각 테이블에서 충분한 양(ITEMS_PER_PAGE + 1)을 가져와서 병합 후 자름
+      // unified_meditations에서 단일 쿼리로 조회 (Phase 4 마이그레이션)
       const fetchLimit = ITEMS_PER_PAGE + 1;
       const from = currentPage * ITEMS_PER_PAGE;
 
-      // 짧은 묵상과 QT를 별도로 로드 후 병합
+      // content_type 필터 설정
+      let contentTypes: string[] = [];
+      if (filterType === 'all') {
+        contentTypes = ['free', 'memo', 'qt'];
+      } else if (filterType === 'meditation') {
+        contentTypes = ['free', 'memo'];
+      } else if (filterType === 'qt') {
+        contentTypes = ['qt'];
+      }
+
+      // unified_meditations 쿼리 구성
+      let query = supabase
+        .from('unified_meditations')
+        .select('*')
+        .eq('source_type', 'church')
+        .eq('source_id', church.id)
+        .in('content_type', contentTypes)
+        .order('created_at', { ascending: false });
+
+      if (filterDay !== null) {
+        query = query.eq('day_number', filterDay);
+      }
+
+      const { data: unifiedData } = await query.range(from, from + fetchLimit - 1);
+      const hasMoreItems = (unifiedData?.length || 0) > ITEMS_PER_PAGE;
+
+      // FeedItem 형식으로 변환
       const items: FeedItem[] = [];
-      let meditationHasMore = false;
-      let qtHasMore = false;
 
-      // 짧은 묵상 로드
-      if (filterType === 'all' || filterType === 'meditation') {
-        let meditationQuery = supabase
-          .from('guest_comments')
-          .select('*')
-          .eq('church_id', church.id)
-          .order('created_at', { ascending: false });
+      if (unifiedData) {
+        // 좋아요 상태 확인 (legacy_id 기반)
+        const meditationIds = unifiedData
+          .filter(d => d.content_type !== 'qt' && d.legacy_id)
+          .map(d => d.legacy_id as string);
+        const qtIds = unifiedData
+          .filter(d => d.content_type === 'qt' && d.legacy_id)
+          .map(d => d.legacy_id as string);
 
-        if (filterDay !== null) {
-          meditationQuery = meditationQuery.eq('day_number', filterDay);
-        }
+        let meditationLikedIds: string[] = [];
+        let qtLikedIds: string[] = [];
 
-        // filterType이 'all'일 때는 커서 기반으로 더 많이 가져옴
-        const meditationLimit = filterType === 'all' ? fetchLimit : ITEMS_PER_PAGE + 1;
-        const { data: meditations } = await meditationQuery.range(from, from + meditationLimit - 1);
-
-        if (meditations) {
-          meditationHasMore = meditations.length > ITEMS_PER_PAGE;
-
-          // 현재 사용자의 좋아요 상태 확인
-          let likedIds: string[] = [];
-          if (currentUser && meditations.length > 0) {
-            const { data: likes } = await supabase
+        if (currentUser) {
+          if (meditationIds.length > 0) {
+            const { data: meditationLikes } = await supabase
               .from('guest_comment_likes')
               .select('comment_id')
               .eq('user_id', currentUser.id)
-              .in('comment_id', meditations.map(m => m.id));
-            likedIds = likes?.map(l => l.comment_id) || [];
+              .in('comment_id', meditationIds);
+            meditationLikedIds = meditationLikes?.map(l => l.comment_id) || [];
           }
 
-          items.push(...meditations.map(m => ({
-            id: m.id,
-            type: 'meditation' as FeedItemType,
-            authorName: m.guest_name,
-            isAnonymous: m.is_anonymous || false,
-            visibility: m.visibility || 'church',
-            createdAt: m.created_at,
-            dayNumber: m.day_number,
-            bibleRange: m.bible_range,
-            content: m.content,
-            likesCount: m.likes_count || 0,
-            repliesCount: m.replies_count || 0,
-            isLiked: likedIds.includes(m.id),
-            userId: m.linked_user_id,
-          })));
-        }
-      }
-
-      // QT 로드
-      if (filterType === 'all' || filterType === 'qt') {
-        let qtQuery = supabase
-          .from('church_qt_posts')
-          .select('*')
-          .eq('church_id', church.id)
-          .order('created_at', { ascending: false });
-
-        if (filterDay !== null) {
-          qtQuery = qtQuery.eq('day_number', filterDay);
-        }
-
-        const qtLimit = filterType === 'all' ? fetchLimit : ITEMS_PER_PAGE + 1;
-        const { data: qtPosts } = await qtQuery.range(from, from + qtLimit - 1);
-
-        if (qtPosts) {
-          qtHasMore = qtPosts.length > ITEMS_PER_PAGE;
-
-          // 현재 사용자의 좋아요 상태 확인
-          let likedIds: string[] = [];
-          if (currentUser && qtPosts.length > 0) {
-            const { data: likes } = await supabase
+          if (qtIds.length > 0) {
+            const { data: qtLikes } = await supabase
               .from('church_qt_post_likes')
               .select('post_id')
               .eq('user_id', currentUser.id)
-              .in('post_id', qtPosts.map(p => p.id));
-            likedIds = likes?.map(l => l.post_id) || [];
+              .in('post_id', qtIds);
+            qtLikedIds = qtLikes?.map(l => l.post_id) || [];
           }
+        }
 
-          items.push(...qtPosts.map(p => {
-            // 해당 날짜의 QT 콘텐츠에서 묵상 질문 찾기
-            const qtContent = qtContentList.find(qt => qt.date === p.qt_date);
-            // 첫 번째 묵상 질문 사용 (여러 개일 경우)
+        for (const row of unifiedData) {
+          const legacyId = row.legacy_id || row.id;
+
+          if (row.content_type === 'qt') {
+            // QT 타입
+            const qtContent = qtContentList.find(qt => qt.date === row.qt_date);
             const meditationQuestion = qtContent?.meditation?.meditationQuestions?.[0] || null;
 
-            return {
-              id: p.id,
+            items.push({
+              id: row.id,
               type: 'qt' as FeedItemType,
-              authorName: p.author_name,
-              isAnonymous: p.is_anonymous || false,
-              visibility: p.visibility || 'church',
-              createdAt: p.created_at,
-              dayNumber: p.day_number,
-              qtDate: p.qt_date,
-              mySentence: p.my_sentence,
-              meditationAnswer: p.meditation_answer,
+              authorName: row.author_name || '익명',
+              isAnonymous: row.is_anonymous || false,
+              visibility: row.visibility || 'church',
+              createdAt: row.created_at,
+              dayNumber: row.day_number,
+              qtDate: row.qt_date,
+              mySentence: row.my_sentence,
+              meditationAnswer: row.meditation_answer,
               meditationQuestion,
-              gratitude: p.gratitude,
-              myPrayer: p.my_prayer,
-              dayReview: p.day_review,
-              likesCount: p.likes_count || 0,
-              repliesCount: p.replies_count || 0,
-              isLiked: likedIds.includes(p.id),
-              userId: p.user_id,
-            };
-          }));
+              gratitude: row.gratitude,
+              myPrayer: row.my_prayer,
+              dayReview: row.day_review,
+              likesCount: row.likes_count || 0,
+              repliesCount: row.replies_count || 0,
+              isLiked: qtLikedIds.includes(legacyId),
+              userId: row.user_id,
+              legacyId: row.legacy_id,
+              legacyTable: row.legacy_table,
+            });
+          } else {
+            // 묵상 타입 (free, memo)
+            items.push({
+              id: row.id,
+              type: 'meditation' as FeedItemType,
+              authorName: row.author_name || '익명',
+              isAnonymous: row.is_anonymous || false,
+              visibility: row.visibility || 'church',
+              createdAt: row.created_at,
+              dayNumber: row.day_number,
+              bibleRange: row.bible_range,
+              content: row.content,
+              likesCount: row.likes_count || 0,
+              repliesCount: row.replies_count || 0,
+              isLiked: meditationLikedIds.includes(legacyId),
+              userId: row.user_id,
+              legacyId: row.legacy_id,
+              legacyTable: row.legacy_table,
+            });
+          }
         }
       }
 
-      // 시간순 정렬
-      items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
-
       // ITEMS_PER_PAGE만큼만 자르고, 나머지가 있으면 hasMore = true
       const slicedItems = items.slice(0, ITEMS_PER_PAGE);
-      const hasMoreItems = filterType === 'all'
-        ? items.length > ITEMS_PER_PAGE || meditationHasMore || qtHasMore
-        : items.length > ITEMS_PER_PAGE;
 
       if (reset) {
         setFeedItems(slicedItems);

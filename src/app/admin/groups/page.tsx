@@ -84,16 +84,17 @@ export default function AdminGroupsPage() {
       // 각 그룹의 멤버 수, 묵상 수, owner 정보 가져오기
       const groupsWithCounts = await Promise.all(
         (data || []).map(async (group) => {
-          // 멤버 수와 댓글 수는 항상 조회
+          // 멤버 수와 묵상 수는 항상 조회 (unified_meditations에서 조회)
           const [membersResult, commentsResult] = await Promise.all([
             supabase
               .from('group_members')
               .select('id', { count: 'exact', head: true })
               .eq('group_id', group.id),
             supabase
-              .from('comments')
+              .from('unified_meditations')
               .select('id', { count: 'exact', head: true })
-              .eq('group_id', group.id),
+              .eq('source_type', 'group')
+              .eq('source_id', group.id),
           ]);
 
           // owner_id가 있을 때만 owner 정보 조회

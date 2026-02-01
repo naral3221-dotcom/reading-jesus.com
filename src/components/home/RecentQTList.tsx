@@ -37,11 +37,11 @@ export function RecentQTList({ userId }: RecentQTListProps) {
     async function loadRecentQTs() {
       const supabase = getSupabaseBrowserClient();
       try {
-        // guest_comments에서 내 QT 글 조회 (최근 5개)
+        // unified_meditations에서 내 QT 글 조회 (최근 5개)
         const { data, error } = await supabase
-          .from('guest_comments')
+          .from('unified_meditations')
           .select('id, content, day_number, bible_range, created_at')
-          .eq('linked_user_id', userId)
+          .eq('user_id', userId)
           .order('created_at', { ascending: false })
           .limit(5);
 

@@ -89,14 +89,30 @@ export default function QTPage() {
     setLoadingComments(true);
     const supabase = getSupabaseBrowserClient();
     try {
+      // unified_meditations에서 내 묵상 조회 (Phase 4 마이그레이션)
       const { data } = await supabase
-        .from('guest_comments')
+        .from('unified_meditations')
         .select('*')
-        .eq('church_id', activeGroupId)
-        .eq('device_id', deviceId)
+        .eq('source_id', activeGroupId)
+        .eq('guest_token', deviceId)
         .order('created_at', { ascending: false });
 
-      setMyComments(data || []);
+      // 기존 인터페이스에 맞게 매핑
+      const mappedData = (data || []).map(row => ({
+        id: row.legacy_id || row.id,
+        church_id: row.source_id,
+        guest_name: row.author_name || '익명',
+        device_id: row.guest_token,
+        content: row.content,
+        bible_range: row.bible_range,
+        is_anonymous: row.is_anonymous,
+        likes_count: row.likes_count || 0,
+        replies_count: row.replies_count || 0,
+        created_at: row.created_at,
+        updated_at: row.updated_at,
+      }));
+
+      setMyComments(mappedData);
     } catch (err) {
       console.error('내 묵상 로드 에러:', err);
     } finally {

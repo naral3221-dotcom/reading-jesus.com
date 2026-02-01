@@ -73,10 +73,12 @@ export default function AdminDashboardPage() {
           supabase.from('profiles').select('id', { count: 'exact', head: true }),
           supabase.from('groups').select('id', { count: 'exact', head: true }),
           supabase.from('churches').select('id', { count: 'exact', head: true }),
-          supabase.from('comments').select('id', { count: 'exact', head: true }),
-          supabase.from('guest_comments').select('id', { count: 'exact', head: true }),
-          supabase.from('church_qt_posts').select('id', { count: 'exact', head: true }),
-          supabase.from('public_meditations').select('id', { count: 'exact', head: true }),
+          // unified_meditations에서 통합 조회 (Phase 4 마이그레이션)
+          supabase.from('unified_meditations').select('id', { count: 'exact', head: true }),
+          // 아래 3개는 dummy로 0 반환 (totalPosts 계산 호환성 유지)
+          Promise.resolve({ count: 0 }),
+          Promise.resolve({ count: 0 }),
+          Promise.resolve({ count: 0 }),
           supabase.from('notifications').select('id', { count: 'exact', head: true }),
           supabase.from('qt_posts').select('id', { count: 'exact', head: true }),
           supabase.from('reports').select('id', { count: 'exact', head: true }),
@@ -89,30 +91,30 @@ export default function AdminDashboardPage() {
         today.setHours(0, 0, 0, 0);
         const todayISO = today.toISOString();
 
-        // 오늘 작성된 글 수
+        // 오늘 작성된 글 수 (unified_meditations에서 조회)
         const { count: todayCommentsCount } = await supabase
-          .from('comments')
+          .from('unified_meditations')
           .select('id', { count: 'exact', head: true })
           .gte('created_at', todayISO);
 
-        // 최근 활동 가져오기 (최근 댓글) - 조인 없이 조회
+        // 최근 활동 가져오기 (unified_meditations에서 조회)
         const { data: recentComments } = await supabase
-          .from('comments')
-          .select('id, content, created_at, user_id')
+          .from('unified_meditations')
+          .select('id, content, created_at, user_id, author_name')
           .order('created_at', { ascending: false })
           .limit(5);
 
         // 각 댓글의 author 정보를 별도 조회
         const activities = await Promise.all(
           (recentComments || []).map(async (comment) => {
-            let nickname = '익명';
+            let nickname = comment.author_name || '익명';
             if (comment.user_id) {
               const { data: author } = await supabase
                 .from('profiles')
                 .select('nickname')
                 .eq('id', comment.user_id)
                 .maybeSingle();
-              nickname = author?.nickname || '익명';
+              nickname = author?.nickname || nickname;
             }
             return {
               type: 'comment',
@@ -126,7 +128,7 @@ export default function AdminDashboardPage() {
           totalUsers: usersResult.count || 0,
           totalGroups: groupsResult.count || 0,
           totalChurches: churchesResult.count || 0,
-          totalPosts: (commentsResult.count || 0) + (guestCommentsResult.count || 0) + (churchQtPostsResult.count || 0) + (publicMeditationsResult.count || 0),
+          totalPosts: commentsResult.count || 0, // unified_meditations 단일 테이블에서 조회
           todayActiveUsers: 0, // 추후 구현
           todayPosts: todayCommentsCount || 0,
           weeklyGrowth: 0, // 추후 구현

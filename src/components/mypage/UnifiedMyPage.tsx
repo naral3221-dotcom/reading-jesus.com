@@ -311,12 +311,13 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
     );
     statsData.currentStreak = calculateStreak(checkedDays, currentDay);
 
-    // 댓글 수 로드 (guest_comments는 linked_user_id 사용)
+    // 댓글 수 로드 (unified_meditations에서 조회 - Phase 4 마이그레이션)
     const { count } = await supabase
-      .from('guest_comments')
+      .from('unified_meditations')
       .select('*', { count: 'exact', head: true })
-      .eq('church_id', church.id)
-      .eq('linked_user_id', user.id);
+      .eq('source_type', 'church')
+      .eq('source_id', church.id)
+      .eq('user_id', user.id);
 
     statsData.commentCount = count || 0;
 

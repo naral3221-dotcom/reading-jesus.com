@@ -77,19 +77,24 @@ export function useTodayStats(churchId: string | undefined) {
       const todayStart = `${today}T00:00:00`
       const todayEnd = `${today}T23:59:59`
 
-      // 오늘 작성된 묵상 수
+      // unified_meditations에서 통합 조회
+      // 오늘 작성된 묵상 수 (free, memo 타입)
       const { count: meditationCount } = await supabase
-        .from('guest_comments')
+        .from('unified_meditations')
         .select('*', { count: 'exact', head: true })
-        .eq('church_id', churchId)
+        .eq('source_type', 'church')
+        .eq('source_id', churchId)
+        .in('content_type', ['free', 'memo'])
         .gte('created_at', todayStart)
         .lte('created_at', todayEnd)
 
       // 오늘 작성된 QT 수
       const { count: qtCount } = await supabase
-        .from('church_qt_posts')
+        .from('unified_meditations')
         .select('*', { count: 'exact', head: true })
-        .eq('church_id', churchId)
+        .eq('source_type', 'church')
+        .eq('source_id', churchId)
+        .eq('content_type', 'qt')
         .eq('qt_date', today)
 
       // 활성 멤버 수 (이번 주 글 작성한 유저)
@@ -98,18 +103,19 @@ export function useTodayStats(churchId: string | undefined) {
       const weekStartStr = weekStart.toISOString()
 
       const { data: activeUsers } = await supabase
-        .from('guest_comments')
-        .select('linked_user_id, device_id')
-        .eq('church_id', churchId)
+        .from('unified_meditations')
+        .select('user_id, guest_token')
+        .eq('source_type', 'church')
+        .eq('source_id', churchId)
         .gte('created_at', weekStartStr)
 
       // 고유 사용자 수 계산
       const uniqueUsers = new Set<string>()
       activeUsers?.forEach((u) => {
-        if (u.linked_user_id) {
-          uniqueUsers.add(`user_${u.linked_user_id}`)
-        } else if (u.device_id) {
-          uniqueUsers.add(`device_${u.device_id}`)
+        if (u.user_id) {
+          uniqueUsers.add(`user_${u.user_id}`)
+        } else if (u.guest_token) {
+          uniqueUsers.add(`device_${u.guest_token}`)
         }
       })
 
@@ -271,10 +277,12 @@ export function useRecentChurchPosts(churchId: string | undefined, limit: number
 
       const supabase = getSupabaseBrowserClient()
 
+      // unified_meditations에서 교회 최근 게시글 조회
       const { data, error } = await supabase
-        .from('guest_comments')
-        .select('id, guest_name, content, is_anonymous, created_at, likes_count')
-        .eq('church_id', churchId)
+        .from('unified_meditations')
+        .select('id, author_name, content, is_anonymous, created_at, likes_count')
+        .eq('source_type', 'church')
+        .eq('source_id', churchId)
         .order('created_at', { ascending: false })
         .limit(limit)
 
@@ -283,7 +291,15 @@ export function useRecentChurchPosts(churchId: string | undefined, limit: number
         return []
       }
 
-      return data || []
+      // ChurchPost 형식으로 변환
+      return (data || []).map(row => ({
+        id: row.id,
+        guest_name: row.author_name || '익명',
+        content: row.content || '',
+        is_anonymous: row.is_anonymous,
+        created_at: row.created_at,
+        likes_count: row.likes_count || 0,
+      }))
     },
     enabled: !!churchId,
     staleTime: 1000 * 60 * 2, // 2분
@@ -301,18 +317,22 @@ export function useUserActivityStats(churchId: string | undefined, userId: strin
 
       const supabase = getSupabaseBrowserClient()
 
-      // 병렬로 두 개의 쿼리 실행
+      // unified_meditations에서 통합 조회
       const [postsResult, qtsResult] = await Promise.all([
         supabase
-          .from('guest_comments')
+          .from('unified_meditations')
           .select('*', { count: 'exact', head: true })
-          .eq('church_id', churchId)
-          .eq('linked_user_id', userId),
+          .eq('source_type', 'church')
+          .eq('source_id', churchId)
+          .eq('user_id', userId)
+          .in('content_type', ['free', 'memo']),
         supabase
-          .from('church_qt_posts')
+          .from('unified_meditations')
           .select('*', { count: 'exact', head: true })
-          .eq('church_id', churchId)
-          .eq('user_id', userId),
+          .eq('source_type', 'church')
+          .eq('source_id', churchId)
+          .eq('user_id', userId)
+          .eq('content_type', 'qt'),
       ])
 
       return {
@@ -344,10 +364,10 @@ export function useLandingStats(enabled: boolean = true) {
     queryFn: async (): Promise<LandingStats> => {
       const supabase = getSupabaseBrowserClient()
 
-      // 병렬로 두 개의 쿼리 실행
+      // 병렬로 두 개의 쿼리 실행 (unified_meditations 사용)
       const [churchResult, postResult] = await Promise.all([
         supabase.from('churches').select('*', { count: 'exact', head: true }),
-        supabase.from('guest_comments').select('*', { count: 'exact', head: true }),
+        supabase.from('unified_meditations').select('*', { count: 'exact', head: true }),
       ])
 
       const churchCount = churchResult.count || 0

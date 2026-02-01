@@ -53,6 +53,38 @@
 - [x] 코드 복잡도 감소: 843줄 → 513줄
 - **수정된 파일**: `GetUnifiedFeed.ts`
 
+### Phase 4 확장: 전체 READ 작업 마이그레이션 ✅ (2026-02-01)
+모든 페이지의 읽기 작업을 `unified_meditations`로 마이그레이션 완료:
+
+| 파일 | 변경 내용 |
+|------|----------|
+| `church/[code]/page.tsx` | loadComments → unified_meditations |
+| `group/[id]/page.tsx` | loadMeditations → unified_meditations |
+| `church/[code]/sharing/page.tsx` | loadFeed → 단일 쿼리 |
+| `useChurchStats.ts` | 모든 통계 쿼리 통합 |
+| `usePlatformStats.ts` | 8개 쿼리 → 2개 쿼리 |
+| `useDashboardStats.ts` | QT 카운트 통합 |
+| `useGroupMeditation.ts` | 그룹 피드 쿼리 통합 |
+| `search/page.tsx` | 묵상 검색 통합 |
+| `RecentQTList.tsx` | 최근 QT 목록 통합 |
+| `UnifiedMyPage.tsx` | 내 글 카운트 통합 |
+| `admin/page.tsx` | 전체 통계 통합 |
+| `admin/groups/page.tsx` | 그룹 통계 통합 |
+| `admin/moderation/page.tsx` | 관리자 조회 통합 |
+| `church/[code]/qt/[date]/page.tsx` | 내 묵상 목록 통합 |
+| `(main)/qt/[date]/page.tsx` | 내 묵상 목록 통합 |
+
+**유지된 레거시 사용 (Dual-Write 패턴):**
+- 모든 INSERT/UPDATE/DELETE 작업은 레거시 테이블 유지
+- 트리거가 자동으로 `unified_meditations` 동기화
+
+### 버그 수정 (2026-02-01)
+
+**SupabaseUnifiedMeditationRepository 수정:**
+- `update()`, `delete()` 메서드가 `unified_meditations`를 직접 수정하는 문제 해결
+- 이제 `legacy_table`, `legacy_id`를 조회하여 레거시 테이블 수정 → 트리거가 자동 동기화
+- 데이터 불일치 문제 방지
+
 ### 검증 결과
 
 | 검증 단계 | 결과 | 상세 |
@@ -1575,7 +1607,7 @@ After:  /qt/2026-01-24
 - [scripts/migrate-reading-checks.ts](scripts/migrate-reading-checks.ts) 스크립트로 51개 마이그레이션
 - 최종 결과: church_reading_checks 173개 = unified_reading_checks 173개 (100% 동기화)
 
-### 백엔드 전체 점검 결과 (2026-01-31)
+### 백엔드 전체 점검 결과 (2026-02-01 최종)
 [scripts/backend-health-check.ts](scripts/backend-health-check.ts) 실행 결과:
 
 | 항목 | 상태 | 내용 |
@@ -1587,8 +1619,14 @@ After:  /qt/2026-01-24
 | 고아 데이터 | ✅ 없음 | 참조 무결성 유지 |
 | Visibility 일관성 | ✅ 정상 | NULL 없음 |
 | 동기화 트리거 | ✅ 활성화 | church_qt_posts, guest_comments, comments |
+| Dual-Write 패턴 | ✅ 수정 완료 | update/delete가 레거시 테이블 경유 |
 
-**🎉 모든 48개 검사 통과!**
+**🎉 모든 49개 검사 통과!**
+
+#### Dual-Write 버그 수정 (2026-02-01)
+`SupabaseUnifiedMeditationRepository`의 `update()`, `delete()` 메서드가 `unified_meditations`를 직접 수정하는 버그 발견 및 수정:
+- **수정 전**: 직접 unified 테이블 수정 → 레거시 테이블과 불일치
+- **수정 후**: `legacy_table`/`legacy_id` 조회 → 레거시 테이블 수정 → 트리거가 자동 동기화
 
 ### 최종 통계 (2026-01-31 16:12 기준)
 

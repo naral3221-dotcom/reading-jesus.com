@@ -78,10 +78,12 @@ export default function SearchPage() {
         }
 
         const supabase = getSupabaseBrowserClient();
+        // unified_meditations에서 그룹 묵상 검색 (Phase 4 마이그레이션)
         const { data, error } = await supabase
-          .from('comments')
+          .from('unified_meditations')
           .select('*')
-          .in('group_id', groupIds)
+          .eq('source_type', 'group')
+          .in('source_id', groupIds)
           .ilike('content', `%${query}%`)
           .order('created_at', { ascending: false })
           .limit(200);
@@ -94,17 +96,29 @@ export default function SearchPage() {
 
         // profile 정보를 별도로 조회
         const commentsWithProfile = await Promise.all(
-          (data || []).map(async (comment) => {
+          (data || []).map(async (item) => {
             let profile = null;
-            if (comment.user_id) {
+            if (item.user_id) {
               const { data: profileData } = await supabase
                 .from('profiles')
                 .select('nickname, avatar_url')
-                .eq('id', comment.user_id)
+                .eq('id', item.user_id)
                 .maybeSingle();
               profile = profileData;
             }
-            return { ...comment, profile };
+            // unified_meditations 필드를 기존 CommentWithProfile 형식으로 매핑
+            return {
+              id: item.id,
+              content: item.content,
+              day_number: item.day_number,
+              is_anonymous: item.is_anonymous,
+              likes_count: item.likes_count || 0,
+              replies_count: item.replies_count || 0,
+              created_at: item.created_at,
+              user_id: item.user_id,
+              group_id: item.source_id,
+              profile,
+            };
           })
         );
 

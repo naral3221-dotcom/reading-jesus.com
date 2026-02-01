@@ -40,6 +40,9 @@ export interface FeedItem {
   // 출처 정보 (통합 테이블용)
   sourceType?: 'group' | 'church';
   sourceName?: string;
+  // 레거시 테이블 매핑 (좋아요/답글용)
+  legacyId?: string | null;
+  legacyTable?: string | null;
 }
 
 interface FeedCardProps {

@@ -100,10 +100,11 @@ export default function AdminModerationPage() {
       const from = (postsPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
-      // 조인 없이 기본 데이터만 조회
+      // unified_meditations에서 그룹 게시글 조회 (Phase 4 마이그레이션)
       const { data, error, count } = await supabase
-        .from('comments')
-        .select('id, content, created_at, user_id, group_id', { count: 'exact' })
+        .from('unified_meditations')
+        .select('id, content, created_at, user_id, source_id, legacy_id', { count: 'exact' })
+        .eq('source_type', 'group')
         .order('created_at', { ascending: false })
         .range(from, to);
 
@@ -124,17 +125,17 @@ export default function AdminModerationPage() {
             authorData = author;
           }
 
-          if (post.group_id) {
+          if (post.source_id) {
             const { data: group } = await supabase
               .from('groups')
               .select('id, name')
-              .eq('id', post.group_id)
+              .eq('id', post.source_id)
               .maybeSingle();
             groupData = group;
           }
 
           return {
-            id: post.id,
+            id: post.legacy_id || post.id,
             content: post.content,
             created_at: post.created_at,
             author: authorData,
@@ -160,10 +161,11 @@ export default function AdminModerationPage() {
       const from = (guestCommentsPage - 1) * ITEMS_PER_PAGE;
       const to = from + ITEMS_PER_PAGE - 1;
 
-      // 조인 없이 기본 데이터만 조회
+      // unified_meditations에서 교회 게스트 게시글 조회 (Phase 4 마이그레이션)
       const { data, error, count } = await supabase
-        .from('guest_comments')
-        .select('id, content, guest_name, created_at, church_id', { count: 'exact' })
+        .from('unified_meditations')
+        .select('id, content, author_name, created_at, source_id, legacy_id', { count: 'exact' })
+        .eq('source_type', 'church')
         .order('created_at', { ascending: false })
         .range(from, to);
 
@@ -174,19 +176,19 @@ export default function AdminModerationPage() {
         (data || []).map(async (comment) => {
           let churchData = null;
 
-          if (comment.church_id) {
+          if (comment.source_id) {
             const { data: church } = await supabase
               .from('churches')
               .select('id, name')
-              .eq('id', comment.church_id)
+              .eq('id', comment.source_id)
               .maybeSingle();
             churchData = church;
           }
 
           return {
-            id: comment.id,
+            id: comment.legacy_id || comment.id,
             content: comment.content,
-            guest_name: comment.guest_name,
+            guest_name: comment.author_name || '익명',
             created_at: comment.created_at,
             church: churchData,
           };
