@@ -25,7 +25,7 @@ interface CommentRow {
   likes_count: number
   created_at: string
   updated_at: string
-  users: { nickname: string; avatar_url: string | null } | null
+  profiles: { nickname: string; avatar_url: string | null } | null
   replies?: unknown[]
 }
 
@@ -49,7 +49,7 @@ export class SupabasePublicMeditationCommentRepository implements IPublicMeditat
       })
       .select(`
         *,
-        users:user_id (
+        profiles:user_id (
           nickname,
           avatar_url
         )
@@ -71,7 +71,7 @@ export class SupabasePublicMeditationCommentRepository implements IPublicMeditat
       .from('public_meditation_comments')
       .select(`
         *,
-        users:user_id (
+        profiles:user_id (
           nickname,
           avatar_url
         ),
@@ -128,7 +128,7 @@ export class SupabasePublicMeditationCommentRepository implements IPublicMeditat
       .from('public_meditation_comments')
       .select(`
         *,
-        users:user_id (
+        profiles:user_id (
           nickname,
           avatar_url
         ),
@@ -165,7 +165,7 @@ export class SupabasePublicMeditationCommentRepository implements IPublicMeditat
       .eq('id', id)
       .select(`
         *,
-        users:user_id (
+        profiles:user_id (
           nickname,
           avatar_url
         )
@@ -255,8 +255,8 @@ export class SupabasePublicMeditationCommentRepository implements IPublicMeditat
       likesCount: row.likes_count,
       createdAt: new Date(row.created_at),
       updatedAt: new Date(row.updated_at),
-      authorNickname: row.users?.nickname,
-      authorAvatarUrl: row.users?.avatar_url,
+      authorNickname: row.profiles?.nickname,
+      authorAvatarUrl: row.profiles?.avatar_url,
       isLiked: likedIds?.has(row.id) ?? false,
       repliesCount,
     })

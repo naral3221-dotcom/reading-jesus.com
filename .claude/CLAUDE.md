@@ -36,12 +36,14 @@
 2. 기존 패턴 파악 후 작업
 3. `IMPLEMENTATION.md` 확인하여 현재 진행 상황 파악
 4. **백엔드 작업 시**: `docs/BACKEND_ARCHITECTURE.md` 먼저 읽기 (필수!)
+5. **QT/묵상 작업 시**: `docs/QT_ARCHITECTURE.md` 먼저 읽기 (필수!)
 
 ### 작업 완료 시
 1. 테스트 실행 (가능한 경우)
 2. 빌드 확인 (가능한 경우)
 3. **`IMPLEMENTATION.md` 업데이트 (필수)**
 4. **백엔드 변경 시**: `docs/BACKEND_ARCHITECTURE.md` 업데이트 (필수!)
+5. **QT/묵상 변경 시**: `docs/QT_ARCHITECTURE.md` 업데이트 (필수!)
 
 ---
 
@@ -297,3 +299,48 @@ const { data, isLoading } = useChurchByCode(churchCode);
 - 스키마 변경 시 테이블 정의 업데이트
 
 **전체 구조와 상세 내용은 [BACKEND_ARCHITECTURE.md](../docs/BACKEND_ARCHITECTURE.md) 참조**
+
+---
+
+## 📖 QT 아키텍처 (필수) - QT/묵상 작업 전 읽기!
+
+> **⚠️ QT 관련 작업 전 반드시 읽어야 함:**
+> **[docs/QT_ARCHITECTURE.md](../docs/QT_ARCHITECTURE.md)** - QT 시스템 완전 가이드
+
+### QT 작업 범위
+
+다음 작업 시 **반드시** QT_ARCHITECTURE.md 참조:
+
+- QT 피드 카드 UI 수정
+- QT 작성 폼 수정/추가
+- 묵상 관련 훅/UseCase 수정
+- 피드 상세 모달 수정
+
+### 핵심 파일 (이것만 기억!)
+
+| 역할 | 파일 |
+|------|------|
+| QT 피드 카드 | `src/components/feed/QTFeedCard.tsx` |
+| 피드 상세 모달 | `src/components/feed/FeedDetailModal.tsx` |
+| QT 작성 폼 | `src/components/personal/QTMeditationForm.tsx` |
+| 통합 피드 훅 | `src/presentation/hooks/queries/useUnifiedFeed.ts` |
+
+### QT vs 묵상 구분
+
+```typescript
+// QT 타입 체크
+if (item.source_type === 'qt' || item.format === 'qt') {
+  // QTFeedCard 사용
+} else {
+  // 일반 카드 사용
+}
+```
+
+### 작업 완료 시
+
+QT 관련 변경 후 **반드시** QT_ARCHITECTURE.md 업데이트:
+- 새 컴포넌트 추가 시 파일 맵핑 업데이트
+- 새 필드 추가 시 폼 필드 목록 업데이트
+- 변경 이력 테이블에 날짜/내용 추가
+
+**전체 구조와 상세 내용은 [QT_ARCHITECTURE.md](../docs/QT_ARCHITECTURE.md) 참조**

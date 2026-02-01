@@ -70,7 +70,7 @@ function parseAnswers(answer: string | null | undefined): string[] {
 }
 
 // 캐러셀 카드 타입 (감사/기도는 하단 고정이므로 제외)
-type CarouselCardType = 'verses' | 'guide' | 'questions' | 'sentence-qa' | 'review';
+type CarouselCardType = 'verses' | 'guide' | 'questions' | 'answers' | 'sentence' | 'review';
 
 interface CarouselCard {
   type: CarouselCardType;
@@ -220,7 +220,7 @@ export function QTFeedCard({
       });
     }
 
-    // 묵상 질문 (별도 카드로 분리 - 답변 여부와 무관하게 표시)
+    // 묵상 질문 + 답변 (함께 표시)
     if (meditationQuestions.length > 0) {
       cards.push({
         type: 'questions',
@@ -231,11 +231,11 @@ export function QTFeedCard({
       });
     }
 
-    // 한 문장 + 답변 (합쳐서 하나의 카드)
-    if (item.mySentence || answers.length > 0) {
+    // 내 말로 한 문장 (있을 때만 표시)
+    if (item.mySentence) {
       cards.push({
-        type: 'sentence-qa',
-        title: '나의 묵상',
+        type: 'sentence',
+        title: '내 말로 한 문장',
         icon: '✨',
         gradient: 'from-slate-50 to-zinc-50 dark:from-slate-950/40 dark:to-zinc-950/40',
         textColor: 'text-slate-700 dark:text-slate-300',
@@ -319,44 +319,39 @@ export function QTFeedCard({
           <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
             {meditationQuestions.map((question, index) => (
               <div key={index} className="p-3 bg-background/50 rounded-lg border border-border/40">
+                {/* 질문 */}
                 <div className="flex items-start gap-2">
                   <span className="text-[13px] font-bold text-primary shrink-0">Q{meditationQuestions.length > 1 ? index + 1 : ''}.</span>
                   <p className="text-[13px] text-foreground leading-relaxed">
                     {question}
                   </p>
                 </div>
+                {/* 해당 질문에 대한 답변 */}
+                {answers[index] && (
+                  <div className="mt-2 pt-2 border-t border-border/30">
+                    <div className="flex items-start gap-2">
+                      <span className="text-[12px] font-bold text-indigo-600 dark:text-indigo-400 shrink-0">A.</span>
+                      <p className="text-[13px] text-foreground/80 leading-relaxed">
+                        {answers[index]}
+                      </p>
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>
         );
 
-      case 'sentence-qa':
+      case 'answers':
+        // 질문 카드에서 답변을 함께 표시하므로 별도 렌더링 불필요
+        return null;
+
+      case 'sentence':
         return (
-          <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2">
-            {item.mySentence && (
-              <div>
-                <p className="text-[10px] font-medium text-muted-foreground mb-1.5 tracking-wide">
-                  ✦ 내 말로 한 문장
-                </p>
-                <blockquote className="text-[15px] text-foreground leading-relaxed font-medium pl-3 border-l-2 border-primary/40">
-                  "{item.mySentence}"
-                </blockquote>
-              </div>
-            )}
-            {answers.length > 0 && (
-              <div className="space-y-3">
-                <p className="text-[10px] font-medium text-muted-foreground tracking-wide">
-                  ✦ 나의 답변
-                </p>
-                {answers.map((answer, index) => (
-                  <div key={index} className="pl-3 border-l-2 border-primary/20">
-                    <p className="text-[13px] text-foreground/90 leading-relaxed">
-                      {answer}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            )}
+          <div className="max-h-[200px] overflow-y-auto pr-2">
+            <blockquote className="text-[15px] text-foreground leading-relaxed font-medium pl-3 border-l-2 border-primary/40">
+              "{item.mySentence}"
+            </blockquote>
           </div>
         );
 
