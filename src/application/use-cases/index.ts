@@ -53,7 +53,7 @@ export { GetGroupMembers } from './group/GetGroupMembers'
 export type { GetGroupMembersInput, GetGroupMembersOutput } from './group/GetGroupMembers'
 
 // Comment Use Cases (그룹 묵상 댓글)
-export * from './comment'
+export * from './group-meditation'
 
 // PersonalProject Use Cases (개인 성경 읽기 프로젝트)
 export * from './personal-project'

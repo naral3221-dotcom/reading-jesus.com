@@ -70,7 +70,7 @@ function parseAnswers(answer: string | null | undefined): string[] {
 }
 
 // 캐러셀 카드 타입 (감사/기도는 하단 고정이므로 제외)
-type CarouselCardType = 'verses' | 'guide' | 'sentence-qa' | 'review';
+type CarouselCardType = 'verses' | 'guide' | 'questions' | 'sentence-qa' | 'review';
 
 interface CarouselCard {
   type: CarouselCardType;
@@ -220,7 +220,18 @@ export function QTFeedCard({
       });
     }
 
-    // 한 문장 + Q&A (합쳐서 하나의 카드)
+    // 묵상 질문 (별도 카드로 분리 - 답변 여부와 무관하게 표시)
+    if (meditationQuestions.length > 0) {
+      cards.push({
+        type: 'questions',
+        title: '묵상 질문',
+        icon: '❓',
+        gradient: 'from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40',
+        textColor: 'text-blue-700 dark:text-blue-300',
+      });
+    }
+
+    // 한 문장 + 답변 (합쳐서 하나의 카드)
     if (item.mySentence || answers.length > 0) {
       cards.push({
         type: 'sentence-qa',
@@ -243,7 +254,7 @@ export function QTFeedCard({
     }
 
     return cards;
-  }, [qtContent, item.mySentence, answers.length, item.dayReview]);
+  }, [qtContent, item.mySentence, answers.length, item.dayReview, meditationQuestions.length]);
 
   // 캐러셀 스크롤 핸들러
   const scrollToSlide = useCallback((index: number) => {
@@ -303,6 +314,22 @@ export function QTFeedCard({
           </div>
         );
 
+      case 'questions':
+        return (
+          <div className="space-y-3 max-h-[200px] overflow-y-auto pr-2">
+            {meditationQuestions.map((question, index) => (
+              <div key={index} className="p-3 bg-background/50 rounded-lg border border-border/40">
+                <div className="flex items-start gap-2">
+                  <span className="text-[13px] font-bold text-primary shrink-0">Q{meditationQuestions.length > 1 ? index + 1 : ''}.</span>
+                  <p className="text-[13px] text-foreground leading-relaxed">
+                    {question}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+        );
+
       case 'sentence-qa':
         return (
           <div className="space-y-4 max-h-[200px] overflow-y-auto pr-2">
@@ -317,22 +344,17 @@ export function QTFeedCard({
               </div>
             )}
             {answers.length > 0 && (
-              <div className="space-y-2">
-                {answers.map((answer, index) => {
-                  const question = meditationQuestions[index] || (index === 0 ? item.meditationQuestion : null);
-                  return (
-                    <div key={index}>
-                      {question && (
-                        <p className="text-[12px] text-muted-foreground mb-1">
-                          <span className="font-medium text-foreground/70">Q.</span> {question}
-                        </p>
-                      )}
-                      <p className="text-[13px] text-foreground/90 leading-relaxed pl-3">
-                        → {answer}
-                      </p>
-                    </div>
-                  );
-                })}
+              <div className="space-y-3">
+                <p className="text-[10px] font-medium text-muted-foreground tracking-wide">
+                  ✦ 나의 답변
+                </p>
+                {answers.map((answer, index) => (
+                  <div key={index} className="pl-3 border-l-2 border-primary/20">
+                    <p className="text-[13px] text-foreground/90 leading-relaxed">
+                      {answer}
+                    </p>
+                  </div>
+                ))}
               </div>
             )}
           </div>

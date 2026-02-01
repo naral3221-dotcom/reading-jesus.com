@@ -84,7 +84,7 @@ export {
   useCreateGuestCommentReply,
   useDeleteGuestCommentReply,
   guestCommentKeys,
-} from './useGuestComment'
+} from './useChurchGuestMeditation'
 
 // Church QT Post Hooks
 export {
@@ -142,7 +142,7 @@ export {
   useInfiniteComments,
   useGroupFeed,
   commentKeys,
-} from './useComment'
+} from './useGroupMeditation'
 
 // PersonalProject Hooks (개인 성경 읽기 프로젝트)
 export {
@@ -244,3 +244,32 @@ export {
   readingScheduleKeys,
   type ReadingSchedule,
 } from './useReadingSchedule'
+
+// ===== 새 명명 체계 추가 export =====
+
+// ChurchGuestMeditation
+export {
+  churchGuestMeditationKeys,
+  useChurchGuestMeditations,
+  useCreateChurchGuestMeditation,
+  useUpdateChurchGuestMeditation,
+  useDeleteChurchGuestMeditation,
+  useToggleChurchGuestMeditationLike,
+  useChurchGuestMeditationReplies,
+  useCreateChurchGuestMeditationReply,
+  useDeleteChurchGuestMeditationReply,
+} from './useChurchGuestMeditation'
+
+// GroupMeditation
+export {
+  groupMeditationKeys,
+  useGroupMeditations,
+  useCreateGroupMeditation,
+  useUpdateGroupMeditation,
+  useDeleteGroupMeditation,
+  useToggleGroupMeditationLike,
+  useToggleGroupMeditationPin,
+  useGroupMeditationReplies,
+  useCreateGroupMeditationReply,
+  useDeleteGroupMeditationReply,
+} from './useGroupMeditation'

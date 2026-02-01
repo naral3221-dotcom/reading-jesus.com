@@ -32,6 +32,7 @@ const FEED_TABS: FeedTab[] = [
 interface FeedTabsProps {
   activeTab: FeedTabType;
   onTabChange: (tab: FeedTabType) => void;
+  isLoggedIn?: boolean;
   counts?: {
     all?: number;
     following?: number;
@@ -41,7 +42,10 @@ interface FeedTabsProps {
   className?: string;
 }
 
-export function FeedTabs({ activeTab, onTabChange, counts, className }: FeedTabsProps) {
+export function FeedTabs({ activeTab, onTabChange, isLoggedIn = true, counts, className }: FeedTabsProps) {
+  // 비로그인 시 전체 탭만 표시
+  const visibleTabs = isLoggedIn ? FEED_TABS : FEED_TABS.filter(tab => tab.id === 'all');
+
   return (
     <div className={cn(
       'bg-background/95 backdrop-blur-md supports-[backdrop-filter]:bg-background/80',
@@ -49,7 +53,7 @@ export function FeedTabs({ activeTab, onTabChange, counts, className }: FeedTabs
       className
     )}>
       <div className="flex gap-2 overflow-x-auto scrollbar-hide justify-center">
-        {FEED_TABS.map((tab) => {
+        {visibleTabs.map((tab) => {
           const isActive = activeTab === tab.id;
           const count = counts?.[tab.id];
           const Icon = tab.icon;

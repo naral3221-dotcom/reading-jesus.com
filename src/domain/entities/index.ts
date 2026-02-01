@@ -30,7 +30,7 @@ export type { GroupNoticeProps, CreateGroupNoticeInput, UpdateGroupNoticeInput }
 export { Notification } from './Notification'
 export type { NotificationProps, CreateNotificationInput, NotificationType } from './Notification'
 
-export { GuestComment, GuestCommentReply } from './GuestComment'
+export { GuestComment, GuestCommentReply } from './ChurchGuestMeditation'
 export type {
   GuestCommentProps,
   CreateGuestCommentInput,
@@ -38,7 +38,7 @@ export type {
   GuestCommentReplyProps,
   CreateGuestCommentReplyInput,
   GuestCommentLikeProps,
-} from './GuestComment'
+} from './ChurchGuestMeditation'
 
 export { ChurchQTPost, ChurchQTPostReply } from './ChurchQTPost'
 export type {
@@ -72,7 +72,7 @@ export type {
   ReadingProgressProps,
 } from './ReadingCheck'
 
-export { Comment, CommentReply as GroupCommentReply } from './Comment'
+export { Comment, CommentReply as GroupCommentReply } from './GroupMeditation'
 export type {
   CommentProps,
   CreateCommentInput,
@@ -81,7 +81,7 @@ export type {
   CreateCommentReplyInput as CreateGroupCommentReplyInput,
   CommentAttachmentProps,
   MemberRankProps,
-} from './Comment'
+} from './GroupMeditation'
 
 export { PublicMeditation, PublicMeditationReply } from './PublicMeditation'
 export type {
@@ -107,3 +107,33 @@ export type {
   ReadingPlanType as UserDailyReadingPlanType,
   AppliedGroup,
 } from './UserDailyReading'
+
+// ===== 새 명명 체계 추가 export =====
+
+// ChurchGuestMeditation
+export {
+  ChurchGuestMeditation,
+  ChurchGuestMeditationReply,
+} from './ChurchGuestMeditation'
+export type {
+  ChurchGuestMeditationProps,
+  CreateChurchGuestMeditationInput,
+  UpdateChurchGuestMeditationInput,
+  ChurchGuestMeditationReplyProps,
+  CreateChurchGuestMeditationReplyInput,
+  ChurchGuestMeditationLikeProps,
+} from './ChurchGuestMeditation'
+
+// GroupMeditation
+export {
+  GroupMeditation,
+  GroupMeditationReply,
+} from './GroupMeditation'
+export type {
+  GroupMeditationProps,
+  CreateGroupMeditationInput,
+  UpdateGroupMeditationInput,
+  GroupMeditationReplyProps,
+  CreateGroupMeditationReplyInput,
+  GroupMeditationAttachmentProps,
+} from './GroupMeditation'

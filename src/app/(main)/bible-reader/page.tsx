@@ -17,7 +17,7 @@ import { getChapter, type BibleVersion } from '@/lib/bibleLoader';
 import { MeditationPanel, SelectedVerse, MeditationSubmitData } from '@/components/meditation';
 import { useToast } from '@/components/ui/toast';
 import { useCurrentUser } from '@/presentation/hooks/queries/useUser';
-import { useCreateComment } from '@/presentation/hooks/queries/useComment';
+import { useCreateComment } from '@/presentation/hooks/queries/useGroupMeditation';
 import { useGroupCompat } from '@/presentation/hooks/stores/useGroupStore';
 import { cn } from '@/lib/utils';
 import { BibleAccessGuard } from '@/components/bible/BibleAccessGuard';

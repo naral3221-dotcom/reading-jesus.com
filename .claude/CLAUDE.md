@@ -35,11 +35,13 @@
 1. 관련 파일 먼저 읽기
 2. 기존 패턴 파악 후 작업
 3. `IMPLEMENTATION.md` 확인하여 현재 진행 상황 파악
+4. **백엔드 작업 시**: `docs/BACKEND_ARCHITECTURE.md` 먼저 읽기 (필수!)
 
 ### 작업 완료 시
 1. 테스트 실행 (가능한 경우)
 2. 빌드 확인 (가능한 경우)
 3. **`IMPLEMENTATION.md` 업데이트 (필수)**
+4. **백엔드 변경 시**: `docs/BACKEND_ARCHITECTURE.md` 업데이트 (필수!)
 
 ---
 
@@ -248,3 +250,50 @@ const { data, isLoading } = useChurchByCode(churchCode);
 - **Beige/Sepia**: 고서 느낌 배경 + 동일한 Primary
 
 **전체 팔레트와 사용법은 [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) 참조**
+
+---
+
+## 🗄️ 백엔드 아키텍처 (필수) - DB/API 작업 전 읽기!
+
+> **⚠️ 백엔드 작업 전 반드시 읽어야 함:**
+> **[docs/BACKEND_ARCHITECTURE.md](../docs/BACKEND_ARCHITECTURE.md)** - 데이터베이스 & 동기화 시스템 완전 가이드
+
+### 백엔드 작업 범위
+
+다음 작업 시 **반드시** BACKEND_ARCHITECTURE.md 참조:
+
+- 묵상/QT 데이터 조회 또는 저장
+- Supabase 테이블 쿼리 작성
+- 마이그레이션 파일 생성
+- Repository/UseCase 수정
+- RLS 정책 변경
+
+### 핵심 개념 (이것만 기억!)
+
+1. **통합 테이블 우선**: 묵상 데이터 조회 시 `unified_meditations` 사용
+2. **Dual-Write 패턴**: 레거시 테이블 쓰기 → 트리거로 자동 동기화
+3. **용어 주의**: `guest_comments` = 게스트 묵상글 (댓글 아님!)
+
+### 테이블 구조 빠른 참조
+
+```
+묵상 데이터 흐름:
+┌─────────────────────┐     트리거     ┌──────────────────────┐
+│ 레거시 테이블       │ ────────────→ │ unified_meditations  │
+│ - church_qt_posts   │               │ (통합 조회용)         │
+│ - guest_comments    │               └──────────────────────┘
+│ - comments          │
+└─────────────────────┘
+
+조회: unified_meditations에서
+저장: 레거시 테이블에 (트리거가 자동 동기화)
+```
+
+### 작업 완료 시
+
+백엔드 변경 후 **반드시** BACKEND_ARCHITECTURE.md 업데이트:
+- 변경 이력 테이블에 날짜/내용 추가
+- 새 트리거/테이블 추가 시 관련 섹션 업데이트
+- 스키마 변경 시 테이블 정의 업데이트
+
+**전체 구조와 상세 내용은 [BACKEND_ARCHITECTURE.md](../docs/BACKEND_ARCHITECTURE.md) 참조**

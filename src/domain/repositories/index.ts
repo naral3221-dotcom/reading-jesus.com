@@ -9,12 +9,12 @@ export type { IGroupRepository, GroupSearchParams } from './IGroupRepository'
 export type { IChurchNoticeRepository, ChurchNoticeSearchParams } from './IChurchNoticeRepository'
 export type { IGroupNoticeRepository, GroupNoticeSearchParams } from './IGroupNoticeRepository'
 export type { INotificationRepository, NotificationSearchParams } from './INotificationRepository'
-export type { IGuestCommentRepository, GuestCommentSearchParams, GuestCommentWithLikeStatus } from './IGuestCommentRepository'
+export type { IGuestCommentRepository, GuestCommentSearchParams, GuestCommentWithLikeStatus } from './IChurchGuestMeditationRepository'
 export type { IChurchQTPostRepository, ChurchQTPostSearchParams } from './IChurchQTPostRepository'
 export type { ICommentReplyRepository } from './ICommentReplyRepository'
 export type { IPrayerRepository, PrayerSearchParams } from './IPrayerRepository'
 export type { IReadingCheckRepository, ReadingCheckContext, ReadingCheckSearchParams } from './IReadingCheckRepository'
-export type { ICommentRepository, CommentSearchParams, CommentWithLikeStatus } from './ICommentRepository'
+export type { ICommentRepository, CommentSearchParams, CommentWithLikeStatus } from './IGroupMeditationRepository'
 export type {
   IPublicMeditationRepository,
   GetPublicMeditationsOptions,
@@ -48,3 +48,7 @@ export type {
   IUnifiedReadingCheckRepository,
   UnifiedReadingCheckSearchParams,
 } from './IUnifiedReadingCheckRepository'
+
+// ===== 새 명명 체계 추가 export =====
+export type { IChurchGuestMeditationRepository, ChurchGuestMeditationSearchParams, ChurchGuestMeditationWithLikeStatus } from './IChurchGuestMeditationRepository'
+export type { IGroupMeditationRepository, GroupMeditationSearchParams, GroupMeditationWithLikeStatus } from './IGroupMeditationRepository'

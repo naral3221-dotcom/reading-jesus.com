@@ -56,6 +56,7 @@ import dynamic from 'next/dynamic';
 import readingPlan from '@/data/reading_plan.json';
 import { LayoutGrid, Play } from 'lucide-react';
 import { ReadingDayPicker, findReadingByDay } from '@/components/church/ReadingDayPicker';
+import { ReadingDayFilter } from '@/components/church/ReadingDayFilter';
 import { QTContentRenderer } from '@/components/church/QTContentRenderer';
 import { UnifiedQTWriteForm, createInitialQTFormData, type UnifiedQTFormData, MeditationAudioPlayer } from '@/components/qt';
 
@@ -1298,7 +1299,7 @@ export default function ChurchSharingPage() {
 
       {/* 필터 다이얼로그 */}
       <Dialog open={showFilterSheet} onOpenChange={setShowFilterSheet}>
-        <DialogContent className="max-w-sm" aria-describedby={undefined}>
+        <DialogContent className="max-w-md" aria-describedby={undefined}>
           <DialogHeader>
             <DialogTitle>필터</DialogTitle>
           </DialogHeader>
@@ -1319,25 +1320,13 @@ export default function ChurchSharingPage() {
               </Select>
             </div>
 
-            {/* 통독일정 필터 */}
+            {/* 통독일정 필터 - Cascading Select */}
             <div className="space-y-2">
               <label className="text-sm font-medium">통독일정</label>
-              <Select
-                value={filterDay?.toString() || 'all'}
-                onValueChange={(v) => setFilterDay(v === 'all' ? null : parseInt(v))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="전체 일정" />
-                </SelectTrigger>
-                <SelectContent className="max-h-[300px]">
-                  <SelectItem value="all">전체 일정</SelectItem>
-                  {(readingPlan as ReadingDay[]).map((day) => (
-                    <SelectItem key={day.day} value={day.day.toString()}>
-                      {day.day}일차 - {day.reading}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <ReadingDayFilter
+                value={filterDay}
+                onChange={setFilterDay}
+              />
             </div>
           </div>
 

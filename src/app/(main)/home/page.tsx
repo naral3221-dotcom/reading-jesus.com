@@ -1,13 +1,12 @@
 'use client';
 
 import { HomeSkeleton } from '@/components/ui/skeleton';
-import { ErrorState } from '@/components/ui/error-state';
-import { Loader2, Search, Bell } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Search, Bell, LogIn } from 'lucide-react';
 import { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { OnboardingTutorial } from '@/components/OnboardingTutorial';
-import { PublicFeed } from '@/components/feed/PublicFeed';
 import type { UnifiedFeedItem, FeedSource } from '@/components/feed/UnifiedFeedCard';
 import { UnifiedFeedCard } from '@/components/feed/UnifiedFeedCard';
 import { FeedTabs, FeedTypeTabs, FeedEmptyState, type FeedTabType, type FeedContentType } from '@/components/feed/FeedTabs';
@@ -139,26 +138,13 @@ export default function HomePage() {
   }
 
   if (contextError && !user) {
-    return (
-      <div className="max-w-2xl mx-auto w-full p-4">
-        <ErrorState
-          message="사용자 정보를 불러올 수 없습니다."
-          onRetry={() => window.location.reload()}
-        />
-      </div>
-    );
+    // 비로그인 상태에서 에러는 무시하고 계속 진행
+    // (비로그인도 피드 조회는 가능)
   }
 
-  // 비로그인: PublicFeed (인스타그램 스타일)
-  if (!userId) {
-    return (
-      <div className="min-h-screen bg-background">
-        <PublicFeed isLoggedIn={false} previewLimit={5} />
-      </div>
-    );
-  }
+  const isLoggedIn = !!userId;
 
-  // 로그인됨: 새로운 홈 레이아웃
+  // 로그인/비로그인 모두 동일한 홈 레이아웃
   return (
     <div className="min-h-screen bg-background flex flex-col">
       {/* 모바일 커스텀 헤더 */}
@@ -184,42 +170,73 @@ export default function HomePage() {
             </span>
           </Link>
 
-          {/* 우측: 검색 + 알림 */}
+          {/* 우측: 로그인 버튼 또는 검색 + 알림 */}
           <div className="flex items-center gap-1">
-            <Link
-              href="/search"
-              className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted/60 transition-colors"
-              aria-label="검색"
-            >
-              <Search className="w-5 h-5" />
-            </Link>
-            <Link
-              href="/notifications"
-              className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted/60 transition-colors"
-              aria-label="알림"
-            >
-              <Bell className="w-5 h-5" />
-            </Link>
+            {isLoggedIn ? (
+              <>
+                <Link
+                  href="/search"
+                  className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted/60 transition-colors"
+                  aria-label="검색"
+                >
+                  <Search className="w-5 h-5" />
+                </Link>
+                <Link
+                  href="/notifications"
+                  className="flex items-center justify-center w-10 h-10 rounded-xl hover:bg-muted/60 transition-colors"
+                  aria-label="알림"
+                >
+                  <Bell className="w-5 h-5" />
+                </Link>
+              </>
+            ) : (
+              <Link href="/login">
+                <Button size="sm" className="gap-1.5">
+                  <LogIn className="w-4 h-4" />
+                  로그인
+                </Button>
+              </Link>
+            )}
           </div>
         </div>
       </header>
 
       {/* 메인 콘텐츠 영역 */}
       <main className="pt-14 lg:pt-0">
-        {/* 상단 섹션: 빠른 액션 + 묵상 작성 + 통계 */}
-        <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
-          {/* 1. 소속 교회 바로가기 (조건부) */}
-          <ChurchQuickLink church={church} />
+        {/* 상단 섹션 */}
+        {isLoggedIn ? (
+          <div className="max-w-2xl mx-auto px-4 py-4 space-y-4">
+            {/* 1. 소속 교회 바로가기 (조건부) */}
+            <ChurchQuickLink church={church} />
 
-          {/* 2. 빠른 액션 버튼 (오늘의 말씀읽기 + QT 작성하기) */}
-          <QuickActionButtons />
+            {/* 2. 빠른 액션 버튼 (오늘의 말씀읽기 + QT 작성하기) */}
+            <QuickActionButtons />
 
-          {/* 3. 짧은 묵상 작성하기 (인라인 폼) */}
-          <InlineMeditationForm userId={userId} />
+            {/* 3. 짧은 묵상 작성하기 (인라인 폼) */}
+            <InlineMeditationForm userId={userId} />
 
-          {/* 4. 플랫폼 통계 */}
-          <PlatformStats />
-        </div>
+            {/* 4. 플랫폼 통계 */}
+            <PlatformStats />
+          </div>
+        ) : (
+          /* 비로그인 사용자 환영 배너 */
+          <div className="max-w-2xl mx-auto px-4 py-4">
+            <div className="bg-gradient-to-r from-primary/10 to-accent-warm/10 rounded-xl p-4 border border-primary/20">
+              <p className="text-sm text-muted-foreground mb-2">
+                365일 성경 통독과 묵상 나눔
+              </p>
+              <p className="font-medium mb-3">
+                전국의 성도들과 함께 말씀을 읽고 묵상을 나눠보세요
+              </p>
+              <Link href="/login">
+                <Button size="sm" className="gap-1.5">
+                  <LogIn className="w-4 h-4" />
+                  로그인하고 시작하기
+                </Button>
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* 피드 탭 */}
         <div className="sticky top-14 lg:top-0 z-20 bg-background border-b">
@@ -227,6 +244,7 @@ export default function HomePage() {
             <FeedTabs
               activeTab={activeTab}
               onTabChange={setActiveTab}
+              isLoggedIn={isLoggedIn}
             />
             {/* 콘텐츠 타입 필터 */}
             <FeedTypeTabs
