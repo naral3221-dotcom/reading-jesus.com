@@ -190,8 +190,8 @@ export function UnifiedFeedCard({
 
   // 묵상 타입: QT 카드와 일관된 스타일
   return (
-    <article className="mx-3 my-4 lg:mx-0">
-      <div className="bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <article className="mx-3 my-4 lg:mx-0 overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden w-full">
         {/* ========== 프로필 헤더 (상단 - QT와 동일) ========== */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
           <div className="flex items-center gap-3">

@@ -368,8 +368,8 @@ export function QTFeedCard({
   };
 
   return (
-    <article className="mx-3 my-4 lg:mx-0">
-      <div className="bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
+    <article className="mx-3 my-4 lg:mx-0 overflow-hidden">
+      <div className="bg-card rounded-2xl border border-border/60 shadow-sm hover:shadow-md transition-shadow overflow-hidden w-full">
         {/* ========== 프로필 헤더 (고정) ========== */}
         <div className="flex items-center justify-between px-4 py-3 border-b border-border/40">
           <div className="flex items-center gap-3">
@@ -468,38 +468,38 @@ export function QTFeedCard({
         </div>
 
         {/* ========== QT 헤더 (통독일정 - 고정) ========== */}
-        <div className="px-4 py-3 bg-muted/20 border-b border-border/40">
+        <div className="px-4 py-3 bg-muted/20 border-b border-border/40 overflow-hidden">
           <div className="flex items-start justify-between gap-3">
-            <div className="flex-1 min-w-0">
+            <div className="flex-1 min-w-0 overflow-hidden">
               {/* 날짜 */}
               {formattedQtDate && (
-                <p className="text-xs text-muted-foreground font-medium mb-1">
+                <p className="text-xs text-muted-foreground font-medium mb-1 truncate">
                   {formattedQtDate}
                 </p>
               )}
               {/* QT 제목 */}
               {qtContent?.title && (
-                <h2 className="text-base font-bold text-foreground mb-1.5 line-clamp-2">
+                <h2 className="text-base font-bold text-foreground mb-1.5 line-clamp-2 break-words">
                   {qtContent.title}
                 </h2>
               )}
               {/* 통독 범위 */}
               {bibleTitle && (
-                <p className="text-xs text-muted-foreground flex items-center gap-1">
-                  <BookOpen className="w-3.5 h-3.5 text-primary" />
-                  통독: {bibleTitle}
+                <p className="text-xs text-muted-foreground flex items-center gap-1 truncate">
+                  <BookOpen className="w-3.5 h-3.5 text-primary shrink-0" />
+                  <span className="truncate">통독: {bibleTitle}</span>
                 </p>
               )}
             </div>
 
             {/* ONE WORD 배지 */}
             {qtContent?.meditation?.oneWord && (
-              <div className="shrink-0 bg-card rounded-lg px-2.5 py-1.5 shadow-sm border border-border text-right">
+              <div className="shrink-0 max-w-[140px] bg-card rounded-lg px-2.5 py-1.5 shadow-sm border border-border text-right overflow-hidden">
                 <div className="flex items-center gap-1 justify-end mb-0.5">
-                  <Sparkles className="w-2.5 h-2.5 text-accent-warm" />
-                  <p className="text-[9px] text-accent-warm font-bold uppercase tracking-wide">ONE WORD</p>
+                  <Sparkles className="w-2.5 h-2.5 text-accent-warm shrink-0" />
+                  <p className="text-[9px] text-accent-warm font-bold uppercase tracking-wide whitespace-nowrap">ONE WORD</p>
                 </div>
-                <p className="text-sm font-bold text-foreground">{qtContent.meditation.oneWord}</p>
+                <p className="text-sm font-bold text-foreground truncate">{qtContent.meditation.oneWord}</p>
               </div>
             )}
           </div>
@@ -511,7 +511,7 @@ export function QTFeedCard({
             <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
           </div>
         ) : carouselCards.length > 0 ? (
-          <div className="relative">
+          <div className="relative overflow-hidden">
             {/* 캐러셀 컨테이너 */}
             <div
               ref={carouselRef}
@@ -593,15 +593,15 @@ export function QTFeedCard({
 
         {/* ========== 하단 고정: 감사와 적용 + 나의 기도 ========== */}
         {(item.gratitude || item.myPrayer) && (
-          <div className="px-4 pb-4 space-y-3">
+          <div className="px-4 pb-4 space-y-3 overflow-hidden">
             {/* 감사와 적용 */}
             {item.gratitude && (
-              <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 p-4 shadow-sm border border-emerald-100/50 dark:border-emerald-900/30">
+              <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 p-4 shadow-sm border border-emerald-100/50 dark:border-emerald-900/30 overflow-hidden">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">💚</span>
+                  <span className="text-lg shrink-0">💚</span>
                   <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">감사와 적용</h4>
                 </div>
-                <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">
+                <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed break-words">
                   {item.gratitude}
                 </p>
               </div>
@@ -609,12 +609,12 @@ export function QTFeedCard({
 
             {/* 나의 기도 */}
             {item.myPrayer && (
-              <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-950/40 dark:to-indigo-950/40 p-4 shadow-sm border border-sky-100/50 dark:border-sky-900/30">
+              <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-950/40 dark:to-indigo-950/40 p-4 shadow-sm border border-sky-100/50 dark:border-sky-900/30 overflow-hidden">
                 <div className="flex items-center gap-2 mb-2">
-                  <span className="text-lg">🙏</span>
+                  <span className="text-lg shrink-0">🙏</span>
                   <h4 className="text-sm font-bold text-sky-700 dark:text-sky-300">나의 기도</h4>
                 </div>
-                <p className="text-base text-foreground whitespace-pre-wrap italic leading-relaxed">
+                <p className="text-base text-foreground whitespace-pre-wrap italic leading-relaxed break-words">
                   {item.myPrayer}
                 </p>
               </div>

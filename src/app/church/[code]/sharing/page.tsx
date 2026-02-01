@@ -1235,7 +1235,7 @@ export default function ChurchSharingPage() {
           </button>
         </div>
       ) : (
-        <main className="max-w-2xl mx-auto px-4 py-4">
+        <main className="max-w-2xl mx-auto px-4 py-4 overflow-hidden">
           {/* 작성 버튼 */}
           <div className="flex gap-2 mb-4">
             <Button
@@ -1256,7 +1256,7 @@ export default function ChurchSharingPage() {
           </div>
 
           {/* 피드 */}
-          <div className="space-y-3">
+          <div className="space-y-3 w-full overflow-hidden">
             {feedItems.length === 0 && !loadingMore ? (
               <Card className="border-dashed">
                 <CardContent className="py-12 text-center">
