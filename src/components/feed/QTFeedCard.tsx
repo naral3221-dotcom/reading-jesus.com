@@ -38,6 +38,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { cn } from '@/lib/utils';
 import { formatRelativeTime, getInitials, getAvatarColor } from '@/lib/date-utils';
+import { shareOrCopy, getFeedItemShareUrl, getFeedShareData } from '@/lib/share-utils';
+import { useToast } from '@/components/ui/toast';
 import { getQTByDate } from '@/lib/qt-content';
 import { useIsBookmarked, useToggleBookmark } from '@/presentation/hooks/queries/useUserBookmarks';
 import readingPlan from '@/data/reading_plan.json';
@@ -181,6 +183,41 @@ export function QTFeedCard({
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!item.isAnonymous) onAuthorClick?.(item.authorId);
+  };
+
+  const { toast } = useToast();
+
+  const handleCopyLink = async () => {
+    const shareUrl = getFeedItemShareUrl({
+      type: item.type,
+      id: item.id,
+      churchCode: item.churchCode,
+      qtDate: item.qtDate,
+    });
+
+    const shareData = getFeedShareData(
+      {
+        type: item.type,
+        authorName: item.authorName,
+        content: item.content,
+        mySentence: item.mySentence,
+        isAnonymous: item.isAnonymous,
+      },
+      shareUrl
+    );
+
+    await shareOrCopy(
+      shareData,
+      (method) => {
+        toast({
+          variant: 'success',
+          title: method === 'clipboard' ? '링크가 복사되었습니다' : '공유되었습니다',
+        });
+      },
+      () => {
+        toast({ variant: 'error', title: '공유에 실패했습니다' });
+      }
+    );
   };
 
   // 소스 라벨 생성
@@ -458,7 +495,7 @@ export function QTFeedCard({
                   )}
                 </>
               ) : (
-                <DropdownMenuItem className="gap-2">
+                <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
                   <LinkIcon className="w-4 h-4" />
                   링크 복사
                 </DropdownMenuItem>

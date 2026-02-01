@@ -49,7 +49,9 @@ import {
   Pin,
   Heart,
   ChevronRight,
+  Link as LinkIcon,
 } from 'lucide-react';
+import { shareOrCopy } from '@/lib/share-utils';
 import { useGroupCompat } from '@/presentation/hooks/stores/useGroupStore';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -496,6 +498,31 @@ export default function GroupDetailPage() {
     return meditation.userId === userId;
   };
 
+  // 묵상 공유 핸들러
+  const handleShareMeditation = async (meditation: UnifiedMeditationProps) => {
+    const shareUrl = `${window.location.origin}/group/${groupId}`;
+    const contentPreview = meditation.contentType === 'qt'
+      ? (meditation.mySentence || meditation.meditationAnswer || '').replace(/<[^>]*>/g, '').slice(0, 100)
+      : (meditation.content || '').replace(/<[^>]*>/g, '').slice(0, 100);
+
+    await shareOrCopy(
+      {
+        title: `${group?.name} 그룹 묵상`,
+        text: contentPreview,
+        url: shareUrl,
+      },
+      (method) => {
+        toast({
+          variant: 'success',
+          title: method === 'clipboard' ? '링크가 복사되었습니다' : '공유되었습니다',
+        });
+      },
+      () => {
+        toast({ variant: 'error', title: '공유에 실패했습니다' });
+      }
+    );
+  };
+
   // 댓글 삭제
   const handleDeleteComment = async () => {
     const commentId = deleteCommentDialog.commentId;
@@ -787,16 +814,26 @@ export default function GroupDetailPage() {
                               {format(new Date(meditation.createdAt), 'M/d HH:mm', { locale: ko })}
                             </span>
                           </div>
-                          {canDeleteComment(meditation) && (
+                          <div className="flex items-center gap-1">
                             <button
                               type="button"
-                              onClick={() => setDeleteCommentDialog({ open: true, commentId: meditation.id })}
-                              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              onClick={() => handleShareMeditation(meditation)}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             >
-                              <Trash2 className="w-3 h-3" />
-                              삭제
+                              <LinkIcon className="w-3 h-3" />
+                              공유
                             </button>
-                          )}
+                            {canDeleteComment(meditation) && (
+                              <button
+                                type="button"
+                                onClick={() => setDeleteCommentDialog({ open: true, commentId: meditation.id })}
+                                className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                삭제
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -875,16 +912,26 @@ export default function GroupDetailPage() {
                               {format(new Date(meditation.createdAt), 'M/d HH:mm', { locale: ko })}
                             </span>
                           </div>
-                          {canDeleteComment(meditation) && (
+                          <div className="flex items-center gap-1">
                             <button
                               type="button"
-                              onClick={() => setDeleteCommentDialog({ open: true, commentId: meditation.id })}
-                              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              onClick={() => handleShareMeditation(meditation)}
+                              className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                             >
-                              <Trash2 className="w-3 h-3" />
-                              삭제
+                              <LinkIcon className="w-3 h-3" />
+                              공유
                             </button>
-                          )}
+                            {canDeleteComment(meditation) && (
+                              <button
+                                type="button"
+                                onClick={() => setDeleteCommentDialog({ open: true, commentId: meditation.id })}
+                                className="flex items-center gap-1 px-2 py-1 rounded text-xs text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                                삭제
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     </div>

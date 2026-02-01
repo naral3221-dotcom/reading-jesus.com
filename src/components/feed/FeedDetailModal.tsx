@@ -30,9 +30,12 @@ import {
   ChevronRight,
   Sparkles,
   Loader2,
+  Share2,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import { formatRelativeTime, getInitials, getAvatarColor } from '@/lib/date-utils'
+import { shareOrCopy, getFeedItemShareUrl, getFeedShareData } from '@/lib/share-utils'
+import { useToast } from '@/components/ui/toast'
 import { CommentSection } from '@/components/comment'
 import { RichViewerWithEmbed } from '@/components/ui/rich-editor'
 import { getQTByDate } from '@/lib/qt-content'
@@ -332,6 +335,43 @@ export function FeedDetailModal({
     }
   }
 
+  const { toast } = useToast()
+
+  const handleShare = async () => {
+    if (!item) return
+
+    const shareUrl = getFeedItemShareUrl({
+      type: item.type,
+      id: item.id,
+      churchCode: item.churchCode,
+      qtDate: item.qtDate ?? undefined,
+    })
+
+    const shareData = getFeedShareData(
+      {
+        type: item.type,
+        authorName: item.authorName,
+        content: item.content,
+        mySentence: item.mySentence,
+        isAnonymous: item.isAnonymous,
+      },
+      shareUrl
+    )
+
+    await shareOrCopy(
+      shareData,
+      (method) => {
+        toast({
+          variant: 'success',
+          title: method === 'clipboard' ? '링크가 복사되었습니다' : '공유되었습니다',
+        })
+      },
+      () => {
+        toast({ variant: 'error', title: '공유에 실패했습니다' })
+      }
+    )
+  }
+
   // 소스 표시 텍스트
   const getSourceLabel = () => {
     switch (item.source) {
@@ -375,14 +415,24 @@ export function FeedDetailModal({
               {getSourceIcon()}
               <span>{getSourceLabel()}</span>
             </DialogTitle>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => onOpenChange(false)}
-              className="hidden lg:flex"
-            >
-              <X className="w-5 h-5" />
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={handleShare}
+                title="공유하기"
+              >
+                <Share2 className="w-5 h-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => onOpenChange(false)}
+                className="hidden lg:flex"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+            </div>
           </div>
         </DialogHeader>
 

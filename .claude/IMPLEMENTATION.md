@@ -1837,4 +1837,132 @@ After:  /qt/2026-01-24
 
 ---
 
-*마지막 업데이트: 2026-02-01 (코드 명명 변경 완료)*
+## 📂 교회 나눔 페이지 캐스케이딩 필터 UI ✅ 완료 (2026-02-01)
+
+### 배경
+- **문제**: 기존 통독일정 필터가 단순 드롭다운으로 365일 전체를 나열
+- **목표**: 월별/성경별 2단계 선택으로 빠른 필터링
+
+### 구현 내용
+
+#### 새 파일 생성
+| 파일 | 설명 |
+|------|------|
+| `src/lib/reading-plan-utils.ts` | 통독일정 그룹화 유틸리티 |
+| `src/components/church/ReadingDayFilter.tsx` | 캐스케이딩 필터 컴포넌트 |
+
+#### 필터 구조
+
+```
+[탭 1: 월별]
+├── 1월 ~ 12월 선택
+└── 해당 월의 통독일정 목록
+
+[탭 2: 성경별]
+├── 구약 / 신약 서브탭
+├── 성경 선택 (예: 창세기)
+└── 해당 성경의 통독일정 목록
+```
+
+#### 주요 함수
+```typescript
+// reading-plan-utils.ts
+export function groupByMonth(plan: ReadingDay[]): Record<string, ReadingDay[]>
+export function groupByBook(plan: ReadingDay[]): Record<string, ReadingDay[]>
+export function getUniqueMonths(plan: ReadingDay[]): string[]
+export function getBooksByTestament(plan: ReadingDay[]): { old: string[]; new: string[] }
+```
+
+### 수정된 파일
+| 파일 | 변경 내용 |
+|------|----------|
+| `src/app/church/[code]/sharing/page.tsx` | 기존 Select → ReadingDayFilter 교체 |
+
+### 사용자 경험 개선
+| Before | After |
+|--------|-------|
+| 365개 항목 스크롤 | 2단계 선택으로 빠른 탐색 |
+| 단일 드롭다운 | 탭 UI (월별/성경별) |
+| 모바일에서 사용 불편 | 반응형 2컬럼 레이아웃 |
+
+---
+
+## 🔗 피드 상세보기 모달 + 공유 기능 ✅ 완료 (2026-02-01)
+
+### 배경
+- **문제 1**: 교회 나눔 페이지에서 피드 카드 클릭 시 상세보기 모달 미연결
+- **문제 2**: QT/묵상글 링크 공유 기능 미구현
+
+### 구현 내용
+
+#### 1. 공유 유틸리티 생성
+**새 파일**: `src/lib/share-utils.ts`
+
+```typescript
+// Web Share API + 클립보드 폴백
+export async function shareOrCopy(data, onSuccess, onError): Promise<boolean>
+
+// 공유 URL 생성
+export function getFeedItemShareUrl(params): string
+// QT: /church/{code}/qt/{date}
+// 묵상: /church/{code}/sharing?post={id}
+
+// 공유 데이터 생성
+export function getFeedShareData(item, url): ShareData
+```
+
+#### 2. 공유 버튼 추가
+
+| 위치 | 구현 |
+|------|------|
+| `UnifiedFeedCard` 더보기 메뉴 | "링크 복사" onClick 핸들러 구현 |
+| `QTFeedCard` 더보기 메뉴 | "링크 복사" onClick 핸들러 구현 |
+| `FeedDetailModal` 헤더 | Share2 아이콘 버튼 추가 |
+
+#### 3. FeedDetailModal 연결
+**수정된 파일**: `src/app/church/[code]/sharing/page.tsx`
+
+- FeedDetailModal import 및 연결
+- URL 쿼리 파라미터 `?post={id}` 처리 (공유 링크 접근 시 모달 자동 열기)
+- 모달 닫을 때 URL 파라미터 제거
+
+#### 4. FeedCard → UnifiedFeedItem 변환
+**수정된 파일**: `src/components/church/FeedCard.tsx`
+
+- `toUnifiedItem()` 함수 export
+- `churchCode` 파라미터 추가
+
+### 공유 버튼 현황
+
+#### ✅ 구현됨
+| 위치 | 방식 |
+|------|------|
+| UnifiedFeedCard 더보기 메뉴 | shareOrCopy (Web Share + 클립보드) |
+| QTFeedCard 더보기 메뉴 | shareOrCopy (Web Share + 클립보드) |
+| FeedDetailModal 헤더 | shareOrCopy (Web Share + 클립보드) |
+| InstagramStyleFeed 스토리 카드 | Web Share API |
+| QTCard (교회 QT 목록) | 클립보드 복사 |
+| 프로필 헤더 | Web Share API |
+
+#### ✅ 추가 구현 (2026-02-01)
+| 위치 | 비고 |
+|------|------|
+| 마이페이지 QT 목록 | FeedDetailModal 통해 공유 (이미 지원) |
+| 프로필 페이지 QT 목록 | FeedDetailModal 통해 공유 (이미 지원) |
+| 그룹 피드 | 각 묵상 카드에 "공유" 버튼 추가 |
+
+**수정된 파일**: `src/app/(main)/group/[id]/page.tsx`
+- share-utils import 추가
+- handleShareMeditation 함수 추가
+- 고정된 묵상 / 일반 묵상 카드에 공유 버튼 추가
+
+### 검증 결과
+- [x] 빌드 성공 (`npm run build`)
+- [x] 피드 카드 클릭 → FeedDetailModal 열림
+- [x] 더보기 메뉴 → "링크 복사" 동작
+- [x] FeedDetailModal → 공유 버튼 동작
+- [x] 공유 URL 접근 → 해당 게시물 모달 자동 열림
+
+---
+
+*마지막 업데이트: 2026-02-01 (모든 위치에 공유 버튼 구현 완료)*

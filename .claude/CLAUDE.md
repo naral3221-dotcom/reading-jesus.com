@@ -34,22 +34,37 @@
 ### 작업 시작 시
 1. 관련 파일 먼저 읽기
 2. 기존 패턴 파악 후 작업
-3. `IMPLEMENTATION.md` 확인하여 현재 진행 상황 파악
-4. **백엔드 작업 시**: `docs/BACKEND_ARCHITECTURE.md` 먼저 읽기 (필수!)
-5. **QT/묵상 작업 시**: `docs/QT_ARCHITECTURE.md` 먼저 읽기 (필수!)
+3. **기능별 가이드 확인** → [guides/_INDEX.md](./guides/_INDEX.md)
+4. `.claude/IMPLEMENTATION.md` 확인하여 현재 진행 상황 파악
+
+### 기능별 필수 참조 가이드
+
+| 작업 영역 | 참조 문서 |
+|-----------|----------|
+| 인증/온보딩 | [AUTH_ONBOARDING.md](./guides/features/AUTH_ONBOARDING.md) |
+| 홈/피드 | [HOME_FEED.md](./guides/features/HOME_FEED.md) |
+| 성경 읽기 | [BIBLE_READING.md](./guides/features/BIBLE_READING.md) |
+| QT/묵상 | [QT_MEDITATION.md](./guides/features/QT_MEDITATION.md) |
+| 그룹 | [GROUP.md](./guides/features/GROUP.md) |
+| 교회 | [CHURCH.md](./guides/features/CHURCH.md) |
+| 마이페이지 | [MYPAGE_PROFILE.md](./guides/features/MYPAGE_PROFILE.md) |
+| 검색/알림 | [SEARCH_NOTIFICATION.md](./guides/features/SEARCH_NOTIFICATION.md) |
+| 관리자 | [ADMIN.md](./guides/features/ADMIN.md) |
+| 코드 아키텍처 | [CODE_ARCHITECTURE.md](./guides/core/CODE_ARCHITECTURE.md) |
+| 백엔드/DB | [BACKEND_ARCHITECTURE.md](./guides/core/BACKEND_ARCHITECTURE.md) |
+| 디자인 | [DESIGN_SYSTEM.md](./guides/design/DESIGN_SYSTEM.md) |
 
 ### 작업 완료 시
 1. 테스트 실행 (가능한 경우)
 2. 빌드 확인 (가능한 경우)
-3. **`IMPLEMENTATION.md` 업데이트 (필수)**
-4. **백엔드 변경 시**: `docs/BACKEND_ARCHITECTURE.md` 업데이트 (필수!)
-5. **QT/묵상 변경 시**: `docs/QT_ARCHITECTURE.md` 업데이트 (필수!)
+3. **`.claude/IMPLEMENTATION.md` 업데이트 (필수)**
+4. **관련 가이드 업데이트** (변경 사항 있을 시)
 
 ---
 
 ## IMPLEMENTATION.md 업데이트 규칙 (필수)
 
-**모든 작업 완료 시 반드시 `IMPLEMENTATION.md`에 기록:**
+**모든 작업 완료 시 반드시 `.claude/IMPLEMENTATION.md`에 기록:**
 
 ### 기록 항목
 
@@ -186,7 +201,7 @@
 ## 🏗️ 클린 아키텍처 (필수) - 반드시 읽기!
 
 > **⚠️ 코드 작성 전 반드시 읽어야 함:**
-> **[.claude/ARCHITECTURE_GUIDE.md](./ARCHITECTURE_GUIDE.md)** - 바이브 코딩 아키텍처 완전 가이드
+> **[guides/core/CODE_ARCHITECTURE.md](./guides/core/CODE_ARCHITECTURE.md)** - 바이브 코딩 아키텍처 완전 가이드
 
 ### 핵심 3원칙 (이것만 기억!)
 
@@ -215,14 +230,14 @@ const { data, isLoading } = useChurchByCode(churchCode);
 | 그룹 | `useGroup`, `useGroupMembers`, `useChurchGroups` | useGroup.ts |
 | 격려 | `useSendEncouragement`, `useReceivedEncouragements` | useEncouragement.ts |
 
-**전체 목록과 사용법은 [ARCHITECTURE_GUIDE.md](./ARCHITECTURE_GUIDE.md) 참조**
+**전체 목록과 사용법은 [CODE_ARCHITECTURE.md](./guides/core/CODE_ARCHITECTURE.md) 참조**
 
 ---
 
 ## 🎨 디자인 시스템 (필수) - 색상 작업 전 읽기!
 
 > **⚠️ 색상/UI 작업 전 반드시 읽어야 함:**
-> **[.claude/DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md)** - 브랜드 컬러 & 디자인 가이드
+> **[guides/design/DESIGN_SYSTEM.md](./guides/design/DESIGN_SYSTEM.md)** - 브랜드 컬러 & 디자인 가이드
 
 ### 브랜드 컬러 요약
 
@@ -251,14 +266,14 @@ const { data, isLoading } = useChurchByCode(churchCode);
 - **Dark Mode**: 따뜻한 다크 배경 + 밝은 Sage Primary
 - **Beige/Sepia**: 고서 느낌 배경 + 동일한 Primary
 
-**전체 팔레트와 사용법은 [DESIGN_SYSTEM.md](./DESIGN_SYSTEM.md) 참조**
+**전체 팔레트와 사용법은 [DESIGN_SYSTEM.md](./guides/design/DESIGN_SYSTEM.md) 참조**
 
 ---
 
 ## 🗄️ 백엔드 아키텍처 (필수) - DB/API 작업 전 읽기!
 
 > **⚠️ 백엔드 작업 전 반드시 읽어야 함:**
-> **[docs/BACKEND_ARCHITECTURE.md](../docs/BACKEND_ARCHITECTURE.md)** - 데이터베이스 & 동기화 시스템 완전 가이드
+> **[guides/core/BACKEND_ARCHITECTURE.md](./guides/core/BACKEND_ARCHITECTURE.md)** - 데이터베이스 & 동기화 시스템 완전 가이드
 
 ### 백엔드 작업 범위
 
@@ -276,40 +291,18 @@ const { data, isLoading } = useChurchByCode(churchCode);
 2. **Dual-Write 패턴**: 레거시 테이블 쓰기 → 트리거로 자동 동기화
 3. **용어 주의**: `guest_comments` = 게스트 묵상글 (댓글 아님!)
 
-### 테이블 구조 빠른 참조
-
-```
-묵상 데이터 흐름:
-┌─────────────────────┐     트리거     ┌──────────────────────┐
-│ 레거시 테이블       │ ────────────→ │ unified_meditations  │
-│ - church_qt_posts   │               │ (통합 조회용)         │
-│ - guest_comments    │               └──────────────────────┘
-│ - comments          │
-└─────────────────────┘
-
-조회: unified_meditations에서
-저장: 레거시 테이블에 (트리거가 자동 동기화)
-```
-
-### 작업 완료 시
-
-백엔드 변경 후 **반드시** BACKEND_ARCHITECTURE.md 업데이트:
-- 변경 이력 테이블에 날짜/내용 추가
-- 새 트리거/테이블 추가 시 관련 섹션 업데이트
-- 스키마 변경 시 테이블 정의 업데이트
-
-**전체 구조와 상세 내용은 [BACKEND_ARCHITECTURE.md](../docs/BACKEND_ARCHITECTURE.md) 참조**
+**전체 구조와 상세 내용은 [BACKEND_ARCHITECTURE.md](./guides/core/BACKEND_ARCHITECTURE.md) 참조**
 
 ---
 
 ## 📖 QT 아키텍처 (필수) - QT/묵상 작업 전 읽기!
 
 > **⚠️ QT 관련 작업 전 반드시 읽어야 함:**
-> **[docs/QT_ARCHITECTURE.md](../docs/QT_ARCHITECTURE.md)** - QT 시스템 완전 가이드
+> **[guides/features/QT_MEDITATION.md](./guides/features/QT_MEDITATION.md)** - QT 시스템 완전 가이드
 
 ### QT 작업 범위
 
-다음 작업 시 **반드시** QT_ARCHITECTURE.md 참조:
+다음 작업 시 **반드시** QT_MEDITATION.md 참조:
 
 - QT 피드 카드 UI 수정
 - QT 작성 폼 수정/추가
@@ -325,22 +318,4 @@ const { data, isLoading } = useChurchByCode(churchCode);
 | QT 작성 폼 | `src/components/personal/QTMeditationForm.tsx` |
 | 통합 피드 훅 | `src/presentation/hooks/queries/useUnifiedFeed.ts` |
 
-### QT vs 묵상 구분
-
-```typescript
-// QT 타입 체크
-if (item.source_type === 'qt' || item.format === 'qt') {
-  // QTFeedCard 사용
-} else {
-  // 일반 카드 사용
-}
-```
-
-### 작업 완료 시
-
-QT 관련 변경 후 **반드시** QT_ARCHITECTURE.md 업데이트:
-- 새 컴포넌트 추가 시 파일 맵핑 업데이트
-- 새 필드 추가 시 폼 필드 목록 업데이트
-- 변경 이력 테이블에 날짜/내용 추가
-
-**전체 구조와 상세 내용은 [QT_ARCHITECTURE.md](../docs/QT_ARCHITECTURE.md) 참조**
+**전체 구조와 상세 내용은 [QT_MEDITATION.md](./guides/features/QT_MEDITATION.md) 참조**

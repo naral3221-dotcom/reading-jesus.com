@@ -46,6 +46,8 @@ import { MediaCarousel } from './components/MediaCarousel';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { QTFeedCard } from './QTFeedCard';
+import { shareOrCopy, getFeedItemShareUrl, getFeedShareData } from '@/lib/share-utils';
+import { useToast } from '@/components/ui/toast';
 
 // 피드 소스 타입
 export type FeedSource = 'group' | 'church' | 'personal';
@@ -157,6 +159,41 @@ export function UnifiedFeedCard({
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!item.isAnonymous) onAuthorClick?.(item.authorId);
+  };
+
+  const { toast } = useToast();
+
+  const handleCopyLink = async () => {
+    const shareUrl = getFeedItemShareUrl({
+      type: item.type,
+      id: item.id,
+      churchCode: item.churchCode,
+      qtDate: item.qtDate,
+    });
+
+    const shareData = getFeedShareData(
+      {
+        type: item.type,
+        authorName: item.authorName,
+        content: item.content,
+        mySentence: item.mySentence,
+        isAnonymous: item.isAnonymous,
+      },
+      shareUrl
+    );
+
+    await shareOrCopy(
+      shareData,
+      (method) => {
+        toast({
+          variant: 'success',
+          title: method === 'clipboard' ? '링크가 복사되었습니다' : '공유되었습니다',
+        });
+      },
+      () => {
+        toast({ variant: 'error', title: '공유에 실패했습니다' });
+      }
+    );
   };
 
   // 묵상글은 항상 전체 표시 (더보기 없음)
@@ -276,7 +313,7 @@ export function UnifiedFeedCard({
                   )}
                 </>
               ) : (
-                <DropdownMenuItem className="gap-2">
+                <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
                   <LinkIcon className="w-4 h-4" />
                   링크 복사
                 </DropdownMenuItem>

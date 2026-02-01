@@ -61,7 +61,7 @@ interface FeedCardProps {
 /**
  * FeedItem → UnifiedFeedItem 변환
  */
-function toUnifiedItem(item: FeedItem, authorAvatarUrl?: string | null): UnifiedFeedItem {
+export function toUnifiedItem(item: FeedItem, authorAvatarUrl?: string | null, churchCode?: string): UnifiedFeedItem {
   return {
     id: item.id,
     type: item.type,
@@ -85,6 +85,7 @@ function toUnifiedItem(item: FeedItem, authorAvatarUrl?: string | null): Unified
     likesCount: item.likesCount,
     repliesCount: item.repliesCount,
     isLiked: item.isLiked,
+    churchCode: churchCode,
   };
 }
 

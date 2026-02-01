@@ -49,7 +49,8 @@ import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 import { useAutoDraft, formatDraftTime } from '@/hooks/useAutoDraft';
 import { QTDailyContent } from '@/types';
 import { loadQTData, getQTByDate, getDefaultQTMonth, getAvailableQTMonths, type QTMonthInfo } from '@/lib/qt-content';
-import { FeedCard, FeedItem, FeedItemType } from '@/components/church/FeedCard';
+import { FeedCard, FeedItem, FeedItemType, toUnifiedItem } from '@/components/church/FeedCard';
+import { FeedDetailModal } from '@/components/feed/FeedDetailModal';
 import { InstagramStyleFeed } from '@/components/church/InstagramStyleFeed';
 import { EditPostDialog, EditPostData } from '@/components/church/EditPostDialog';
 import dynamic from 'next/dynamic';
@@ -987,6 +988,25 @@ export default function ChurchSharingPage() {
     }
   };
 
+  // URL 쿼리 파라미터로 공유된 게시물 열기
+  const postId = searchParams.get('post');
+  useEffect(() => {
+    if (postId && feedItems.length > 0 && !detailDialogOpen) {
+      const targetItem = feedItems.find(item => item.id === postId);
+      if (targetItem) {
+        handleViewDetail(targetItem);
+      }
+    }
+  }, [postId, feedItems.length]);
+
+  // 모달 닫을 때 URL 파라미터 제거
+  const handleCloseDetail = (open: boolean) => {
+    setDetailDialogOpen(open);
+    if (!open && searchParams.get('post')) {
+      router.replace(`/church/${churchCode}/sharing`, { scroll: false });
+    }
+  };
+
   // 수정 다이얼로그 열기
   const handleOpenEdit = (item: FeedItem) => {
     setEditingItem(item);
@@ -1790,274 +1810,15 @@ export default function ChurchSharingPage() {
         </DialogContent>
       </Dialog>
 
-      {/* 상세 보기 다이얼로그 */}
-      <Dialog open={detailDialogOpen} onOpenChange={setDetailDialogOpen}>
-        <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto" aria-describedby={undefined}>
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              {selectedItem?.type === 'qt' ? (
-                <>
-                  <div className="w-8 h-8 bg-gradient-to-br from-muted0 to-muted0 rounded-lg flex items-center justify-center">
-                    <BookOpen className="w-4 h-4 text-white" />
-                  </div>
-                  오늘의 QT 원문
-                </>
-              ) : (
-                <><PenLine className="w-5 h-5 text-accent" /> 묵상 나눔</>
-              )}
-            </DialogTitle>
-          </DialogHeader>
-
-          {selectedItem && (() => {
-            const displayName = selectedItem.isAnonymous ? '익명' : selectedItem.authorName;
-            const avatarColor = selectedItem.isAnonymous ? 'bg-slate-400' : getAvatarColor(selectedItem.authorName);
-            const initials = selectedItem.isAnonymous ? '?' : getInitials(selectedItem.authorName);
-
-            // 묵상 타입은 기존 방식 유지
-            if (selectedItem.type === 'meditation') {
-              return (
-                <div className="space-y-4 py-4">
-                  {/* 작성자 정보 */}
-                  <div className="flex items-center gap-3 pb-3 border-b">
-                    <div className={`w-10 h-10 rounded-full ${avatarColor} flex items-center justify-center`}>
-                      <span className="text-white font-medium text-sm">{initials}</span>
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <p className="font-medium">{displayName}</p>
-                        {selectedItem.isAnonymous && (
-                          <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 text-xs rounded">
-                            <Lock className="w-3 h-3" />
-                            익명
-                          </span>
-                        )}
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {selectedItem.dayNumber && `${selectedItem.dayNumber}일차 · `}
-                        {formatRelativeTime(selectedItem.createdAt)}
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* 묵상 컨텐츠 */}
-                  <div>
-                    {selectedItem.bibleRange && (
-                      <p className="text-xs text-primary bg-primary/10 px-2 py-1 rounded inline-block mb-2">
-                        {selectedItem.bibleRange}
-                      </p>
-                    )}
-                    {selectedItem.content?.startsWith('<') ? (
-                      <RichViewerWithEmbed content={selectedItem.content} className="text-sm" />
-                    ) : (
-                      <p className="text-sm whitespace-pre-wrap">{selectedItem.content}</p>
-                    )}
-                  </div>
-                </div>
-              );
-            }
-
-            // QT 타입: QT 원문 전체 + 나의 묵상
-            return (
-              <div className="space-y-4 py-2">
-                {/* QT 원문 로딩/에러 처리 */}
-                {!selectedItemQtContent ? (
-                  <div className="flex items-center justify-center py-12">
-                    <Loader2 className="w-8 h-8 animate-spin text-accent" />
-                  </div>
-                ) : (
-                  <>
-                    {/* QT 헤더 */}
-                    <div className="bg-gradient-to-r from-muted to-muted rounded-xl p-4 border border-border">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <p className="text-sm text-foreground font-medium">
-                            {selectedItemQtContent.date} ({selectedItemQtContent.dayOfWeek})
-                          </p>
-                          <h2 className="text-lg font-bold text-gray-900 mt-1">
-                            {selectedItemQtContent.title || '오늘의 QT'}
-                          </h2>
-                          {selectedItemQtContent.bibleRange && (
-                            <p className="text-sm text-gray-600 mt-2 flex items-center gap-1.5">
-                              <BookOpen className="w-4 h-4" />
-                              통독: {selectedItemQtContent.bibleRange}
-                            </p>
-                          )}
-                        </div>
-                        {selectedItemQtContent.meditation?.oneWord && (
-                          <div className="bg-white rounded-lg px-3 py-2 shadow-sm border border-border">
-                            <p className="text-xs text-accent font-medium">ONE WORD</p>
-                            <p className="text-base font-bold text-foreground">{selectedItemQtContent.meditation.oneWord}</p>
-                            {selectedItemQtContent.meditation.oneWordSubtitle && (
-                              <p className="text-xs text-gray-500">{selectedItemQtContent.meditation.oneWordSubtitle}</p>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* 오늘의 말씀 */}
-                    {selectedItemQtContent.verses.length > 0 && (
-                      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <div className="flex items-center gap-2 p-3 border-b border-gray-100">
-                          <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
-                            <BookOpen className="w-3.5 h-3.5 text-accent" />
-                          </div>
-                          <div className="text-left">
-                            <h3 className="font-semibold text-gray-900 text-sm">오늘의 말씀</h3>
-                            <p className="text-xs text-gray-500">{selectedItemQtContent.verseReference}</p>
-                          </div>
-                        </div>
-                        <div className="p-3">
-                          <div className="bg-gray-50 rounded-lg p-3 space-y-2">
-                            {selectedItemQtContent.verses.map((verse) => (
-                              <div key={verse.verse} className="flex gap-2">
-                                <span className="text-xs font-bold text-accent shrink-0 w-5">
-                                  {verse.verse}
-                                </span>
-                                <p className="text-sm text-gray-700 leading-relaxed">{verse.content}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 묵상 길잡이 */}
-                    {selectedItemQtContent.meditation?.meditationGuide && (
-                      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <div className="flex items-center gap-2 p-3 border-b border-gray-100">
-                          <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
-                            <MessageCircle className="w-3.5 h-3.5 text-accent" />
-                          </div>
-                          <h3 className="font-semibold text-gray-900 text-sm">묵상 길잡이</h3>
-                        </div>
-                        <div className="p-3">
-                          <p className="text-sm text-gray-700 leading-relaxed whitespace-pre-wrap">
-                            {selectedItemQtContent.meditation.meditationGuide}
-                          </p>
-
-                          {/* 예수님 연결 */}
-                          {selectedItemQtContent.meditation.jesusConnection && (
-                            <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Heart className="w-3.5 h-3.5 text-red-500" />
-                                <span className="text-xs font-semibold text-red-700">예수님 연결</span>
-                              </div>
-                              <p className="text-sm text-gray-700">{selectedItemQtContent.meditation.jesusConnection}</p>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 묵상 질문 */}
-                    {selectedItemQtContent.meditation?.meditationQuestions && selectedItemQtContent.meditation.meditationQuestions.length > 0 && (
-                      <div className="bg-white rounded-xl border border-gray-200 overflow-hidden">
-                        <div className="flex items-center gap-2 p-3 border-b border-gray-100">
-                          <div className="w-7 h-7 bg-accent/10 rounded-lg flex items-center justify-center">
-                            <span className="text-accent font-bold text-xs">?</span>
-                          </div>
-                          <h3 className="font-semibold text-gray-900 text-sm">
-                            묵상 질문
-                            {selectedItemQtContent.meditation.meditationQuestions.length > 1 && (
-                              <span className="ml-1 text-xs font-normal text-accent">
-                                ({selectedItemQtContent.meditation.meditationQuestions.length}개)
-                              </span>
-                            )}
-                          </h3>
-                        </div>
-                        <div className="p-3 space-y-2">
-                          {selectedItemQtContent.meditation.meditationQuestions.map((question, index) => (
-                            <div key={index} className="bg-accent/10 rounded-lg p-3 border-l-4 border-accent">
-                              {selectedItemQtContent.meditation!.meditationQuestions.length > 1 && (
-                                <span className="text-xs font-semibold text-accent mb-1 block">
-                                  질문 {index + 1}
-                                </span>
-                              )}
-                              <p className="text-sm text-gray-700 italic">{question}</p>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* 오늘의 기도 */}
-                    {selectedItemQtContent.meditation?.prayer && (
-                      <div className="bg-gradient-to-r from-indigo-50 to-muted rounded-xl p-4 border border-accent/30">
-                        <h3 className="font-semibold text-foreground mb-2 flex items-center gap-2 text-sm">
-                          🙏 오늘의 기도
-                        </h3>
-                        <p className="text-gray-700 text-sm italic leading-relaxed">
-                          {selectedItemQtContent.meditation.prayer}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* 구분선 - 나의 묵상 */}
-                    <div className="relative py-4">
-                      <div className="absolute inset-0 flex items-center">
-                        <div className="w-full border-t-2 border-dashed border-border"></div>
-                      </div>
-                      <div className="relative flex justify-center">
-                        <span className="bg-background px-4 py-1 text-sm font-semibold text-foreground flex items-center gap-2 rounded-full border border-border">
-                          <PenLine className="w-4 h-4" />
-                          나의 묵상
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* 작성자 정보 */}
-                    <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl border border-border/60 mb-3">
-                      <div className={`w-10 h-10 rounded-xl ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
-                        <span className="text-white font-semibold text-sm">{initials}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-semibold text-foreground">{displayName}</p>
-                        <p className="text-xs text-muted-foreground">{formatRelativeTime(selectedItem.createdAt)}</p>
-                      </div>
-                    </div>
-
-                    {/* 사용자 QT 답변 */}
-                    <QTContentRenderer
-                      data={{
-                        mySentence: selectedItem.mySentence,
-                        meditationAnswer: selectedItem.meditationAnswer,
-                        meditationQuestion: selectedItem.meditationQuestion,
-                        gratitude: selectedItem.gratitude,
-                        myPrayer: selectedItem.myPrayer,
-                        dayReview: selectedItem.dayReview,
-                      }}
-                      qtContent={selectedItemQtContent}
-                    />
-                  </>
-                )}
-              </div>
-            );
-          })()}
-
-          <DialogFooter className="flex-row justify-between gap-2">
-            {selectedItem && currentUser && selectedItem.userId === currentUser.id && (
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={handleDelete}
-                disabled={deletingId === selectedItem.id}
-              >
-                {deletingId === selectedItem.id ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                ) : (
-                  <Trash2 className="w-4 h-4 mr-1" />
-                )}
-                삭제
-              </Button>
-            )}
-            <div className="flex-1" />
-            <Button variant="outline" onClick={() => setDetailDialogOpen(false)}>
-              닫기
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {/* 상세 보기 다이얼로그 - FeedDetailModal 사용 */}
+      <FeedDetailModal
+        open={detailDialogOpen}
+        onOpenChange={handleCloseDetail}
+        item={selectedItem ? toUnifiedItem(selectedItem, null, churchCode) : null}
+        currentUserId={currentUser?.id ?? null}
+        onLike={(id) => handleLike(id, selectedItem?.type ?? 'meditation')}
+        onAuthorClick={(authorId) => router.push(`/profile/${authorId}`)}
+      />
 
       {/* 댓글 다이얼로그 */}
       <Dialog open={commentDialogOpen} onOpenChange={setCommentDialogOpen}>
