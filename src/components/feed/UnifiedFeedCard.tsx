@@ -308,30 +308,27 @@ export function UnifiedFeedCard({
               </button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-40">
-              {isOwner ? (
-                <>
-                  {onEdit && (
-                    <DropdownMenuItem onClick={() => onEdit(item)} className="gap-2">
-                      <Pencil className="w-4 h-4" />
-                      수정
-                    </DropdownMenuItem>
-                  )}
-                  {onDelete && (
-                    <DropdownMenuItem
-                      onClick={() => onDelete(item)}
-                      className="text-destructive focus:text-destructive gap-2"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      삭제
-                    </DropdownMenuItem>
-                  )}
-                </>
-              ) : (
-                <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
-                  <LinkIcon className="w-4 h-4" />
-                  링크 복사
+              {/* 소유자일 때 수정/삭제 버튼 */}
+              {isOwner && onEdit && (
+                <DropdownMenuItem onClick={() => onEdit(item)} className="gap-2">
+                  <Pencil className="w-4 h-4" />
+                  수정
                 </DropdownMenuItem>
               )}
+              {isOwner && onDelete && (
+                <DropdownMenuItem
+                  onClick={() => onDelete(item)}
+                  className="text-destructive focus:text-destructive gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  삭제
+                </DropdownMenuItem>
+              )}
+              {/* 링크 복사는 항상 표시 */}
+              <DropdownMenuItem onClick={handleCopyLink} className="gap-2">
+                <LinkIcon className="w-4 h-4" />
+                링크 복사
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
