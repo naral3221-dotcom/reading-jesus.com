@@ -18,10 +18,24 @@
 import { useState, useEffect, useCallback } from 'react';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { ChevronDown, ChevronUp, BookOpen, MessageCircle, Heart, Headphones, Lock } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ChevronDown, ChevronUp, BookOpen, MessageCircle, Heart, Headphones, Lock, Youtube, Plus, X } from 'lucide-react';
 import { QTDailyContent } from '@/types';
 import { MeditationAudioPlayer } from './MeditationAudioPlayer';
 import { cn } from '@/lib/utils';
+
+// 유튜브 URL 유효성 검사
+function isValidYoutubeUrl(url: string): boolean {
+  const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com\/(watch\?v=|embed\/|v\/)|youtu\.be\/)[a-zA-Z0-9_-]{11}/;
+  return youtubeRegex.test(url);
+}
+
+// 유튜브 비디오 ID 추출
+export function extractYoutubeVideoId(url: string): string | null {
+  const match = url.match(/(?:youtube\.com\/(?:watch\?v=|embed\/|v\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  return match ? match[1] : null;
+}
 
 // 스타일 변형
 export type QTFormVariant = 'default' | 'compact' | 'colorful';
@@ -33,6 +47,7 @@ export interface UnifiedQTFormData {
   gratitude: string;
   myPrayer: string;
   dayReview: string;
+  youtubeLinks: string[];
 }
 
 // 초기값 생성 헬퍼
@@ -43,6 +58,7 @@ export function createInitialQTFormData(questionsCount: number = 1): UnifiedQTFo
     gratitude: '',
     myPrayer: '',
     dayReview: '',
+    youtubeLinks: [],
   };
 }
 
@@ -137,6 +153,24 @@ export function UnifiedQTWriteForm({
 
   const handleDayReviewChange = useCallback((value: string) => {
     onFormDataChange({ ...formData, dayReview: value });
+  }, [formData, onFormDataChange]);
+
+  // 유튜브 링크 추가
+  const handleAddYoutubeLink = useCallback(() => {
+    onFormDataChange({ ...formData, youtubeLinks: [...formData.youtubeLinks, ''] });
+  }, [formData, onFormDataChange]);
+
+  // 유튜브 링크 변경
+  const handleYoutubeLinkChange = useCallback((index: number, value: string) => {
+    const newLinks = [...formData.youtubeLinks];
+    newLinks[index] = value;
+    onFormDataChange({ ...formData, youtubeLinks: newLinks });
+  }, [formData, onFormDataChange]);
+
+  // 유튜브 링크 삭제
+  const handleRemoveYoutubeLink = useCallback((index: number) => {
+    const newLinks = formData.youtubeLinks.filter((_, i) => i !== index);
+    onFormDataChange({ ...formData, youtubeLinks: newLinks });
   }, [formData, onFormDataChange]);
 
   // 묵상 질문 목록
@@ -373,6 +407,70 @@ export function UnifiedQTWriteForm({
               rows={4}
               className="resize-none border-accent/30 focus:border-accent focus:ring-accent"
             />
+
+            {/* 유튜브 링크 입력 섹션 */}
+            <div className="mt-4 pt-4 border-t border-accent/20">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Youtube className="w-4 h-4 text-red-500" />
+                  <span className="text-sm font-medium text-foreground">첨부 영상 링크</span>
+                  <span className="text-xs text-muted-foreground">(선택)</span>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleAddYoutubeLink}
+                  className="h-7 px-2 text-xs gap-1 text-accent hover:text-accent"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  추가
+                </Button>
+              </div>
+
+              {formData.youtubeLinks.length > 0 && (
+                <div className="space-y-2">
+                  {formData.youtubeLinks.map((link, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                      <div className="relative flex-1">
+                        <Input
+                          value={link}
+                          onChange={(e) => handleYoutubeLinkChange(index, e.target.value)}
+                          placeholder="https://www.youtube.com/watch?v=..."
+                          className={cn(
+                            "pr-8 text-sm",
+                            link && !isValidYoutubeUrl(link) && "border-red-300 focus:border-red-500"
+                          )}
+                        />
+                        {link && isValidYoutubeUrl(link) && (
+                          <span className="absolute right-2 top-1/2 -translate-y-1/2 text-green-500 text-xs">
+                            ✓
+                          </span>
+                        )}
+                      </div>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleRemoveYoutubeLink(index)}
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {formData.youtubeLinks.some(link => link && !isValidYoutubeUrl(link)) && (
+                    <p className="text-xs text-red-500">올바른 유튜브 URL을 입력해주세요</p>
+                  )}
+                </div>
+              )}
+
+              {formData.youtubeLinks.length === 0 && (
+                <p className="text-xs text-muted-foreground">
+                  묵상과 관련된 유튜브 영상이 있다면 링크를 추가해보세요
+                </p>
+              )}
+            </div>
           </div>
         </div>
       )}

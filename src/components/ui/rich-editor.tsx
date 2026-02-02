@@ -364,9 +364,11 @@ export function RichViewerWithEmbed({ content, className }: { content: string; c
       }
     }
 
-    // 일반 텍스트에서 유튜브 URL 추출 (앵커 태그 밖의 URL)
+    // 앵커 태그를 모두 제거한 후 일반 텍스트에서 유튜브 URL 추출
+    // 이렇게 해야 앵커 태그 내부의 텍스트가 중복 추출되지 않음
+    const htmlWithoutAnchors = html.replace(/<a\s+[^>]*>([^<]*)<\/a>/gi, '');
     const textPattern = /(?:^|[^"'])((https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s<"']+|youtu\.be\/[a-zA-Z0-9_-]+[^\s<"']*)))/gi;
-    while ((match = textPattern.exec(html)) !== null) {
+    while ((match = textPattern.exec(htmlWithoutAnchors)) !== null) {
       const videoId = extractYoutubeId(match[1]);
       if (videoId && !urls.some(u => u.videoId === videoId)) {
         urls.push({ url: match[1], videoId });
