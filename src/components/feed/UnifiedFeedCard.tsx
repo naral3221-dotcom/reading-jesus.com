@@ -156,9 +156,19 @@ export function UnifiedFeedCard({
     onComment(item.id, item.source);
   };
 
+  // 프로필 클릭 가능 여부 (익명이 아니고 authorId가 있어야 함)
+  const canClickAuthor = !item.isAnonymous && !!item.authorId;
+
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!item.isAnonymous) onAuthorClick?.(item.authorId);
+    // 디버깅: authorId 확인
+    console.log('[UnifiedFeedCard] 프로필 클릭:', {
+      authorId: item.authorId,
+      authorName: item.authorName,
+      isAnonymous: item.isAnonymous,
+      canClickAuthor,
+    });
+    if (canClickAuthor) onAuthorClick?.(item.authorId);
   };
 
   const { toast } = useToast();
@@ -234,7 +244,7 @@ export function UnifiedFeedCard({
           <div className="flex items-center gap-3">
             {/* 아바타 */}
             <div
-              className="cursor-pointer"
+              className={canClickAuthor ? "cursor-pointer" : "cursor-default"}
               onClick={handleUserClick}
             >
               <FeedCardAvatar
@@ -252,8 +262,12 @@ export function UnifiedFeedCard({
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <button
-                  className="text-[14px] font-bold hover:text-primary transition-colors"
+                  className={cn(
+                    "text-[14px] font-bold transition-colors",
+                    canClickAuthor ? "hover:text-primary cursor-pointer" : "cursor-default"
+                  )}
                   onClick={handleUserClick}
+                  disabled={!canClickAuthor}
                 >
                   {displayName}
                 </button>

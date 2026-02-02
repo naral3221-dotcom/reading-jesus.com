@@ -2,6 +2,10 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client';
+import readingPlan from '@/data/reading_plan.json';
+
+// 실제 통독 일정의 총 일수 (동적으로 계산)
+export const TOTAL_READING_DAYS = readingPlan.length; // 271일
 
 interface DashboardStats {
   readChapters: number;
@@ -79,8 +83,8 @@ async function fetchDashboardStats(userId: string): Promise<DashboardStats> {
     }
   }
 
-  // 4. 진행률 (365일 기준)
-  const progressPercent = Math.round((readDays / 365) * 100);
+  // 4. 진행률 (실제 통독 일정 기준)
+  const progressPercent = Math.round((readDays / TOTAL_READING_DAYS) * 100);
 
   return {
     readChapters,

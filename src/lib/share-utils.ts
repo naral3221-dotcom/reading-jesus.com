@@ -70,8 +70,8 @@ export function getFeedItemShareUrl(params: {
     return `${baseUrl}/church/${params.churchCode}/sharing?post=${params.id}`;
   }
 
-  // 전역 피드 게시물
-  return `${baseUrl}/feed?post=${params.id}`;
+  // 전역 피드 게시물 (홈에서 모달로 표시)
+  return `${baseUrl}/home?post=${params.id}`;
 }
 
 /**

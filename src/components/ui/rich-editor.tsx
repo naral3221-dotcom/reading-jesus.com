@@ -333,24 +333,38 @@ export function RichViewer({ content, className }: { content: string; className?
   );
 }
 
+// HTML에서 빈 앵커 태그 정리 (링크 텍스트가 없거나 빈 공백만 있는 경우)
+function cleanEmptyAnchors(html: string): string {
+  if (!html) return html;
+  // 빈 앵커 태그 제거: <a href="..."></a> 또는 <a href="...">   </a> (공백만)
+  return html.replace(/<a\s+[^>]*href=["'][^"']*["'][^>]*>\s*<\/a>/gi, '');
+}
+
 // 유튜브 링크를 임베드로 변환하는 뷰어 컴포넌트
 export function RichViewerWithEmbed({ content, className }: { content: string; className?: string }) {
+  // 빈 앵커 태그 정리
+  const cleanedContent = cleanEmptyAnchors(content);
 
-  // HTML에서 유튜브 URL 추출
+  // HTML에서 유튜브 URL 추출 (실제 표시되는 링크만)
   const extractYoutubeUrls = (html: string): { url: string; videoId: string }[] => {
     const urls: { url: string; videoId: string }[] = [];
 
-    // href 속성에서 유튜브 URL 추출
-    const hrefPattern = /href=["']?(https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"'\s>]+)["']?/gi;
+    // href 속성에서 유튜브 URL 추출 - 단, 앵커 태그에 내용이 있는 경우만
+    // <a href="youtube.com/...">텍스트</a> 형태만 매칭
+    const anchorPattern = /<a\s+[^>]*href=["'](https?:\/\/(?:www\.)?(?:youtube\.com|youtu\.be)[^"']+)["'][^>]*>([^<]+)<\/a>/gi;
     let match;
-    while ((match = hrefPattern.exec(html)) !== null) {
-      const videoId = extractYoutubeId(match[1]);
-      if (videoId) {
-        urls.push({ url: match[1], videoId });
+    while ((match = anchorPattern.exec(html)) !== null) {
+      const linkText = match[2]?.trim();
+      // 링크 텍스트가 있는 경우만 유효한 유튜브 링크로 처리
+      if (linkText && linkText.length > 0) {
+        const videoId = extractYoutubeId(match[1]);
+        if (videoId) {
+          urls.push({ url: match[1], videoId });
+        }
       }
     }
 
-    // 일반 텍스트에서 유튜브 URL 추출
+    // 일반 텍스트에서 유튜브 URL 추출 (앵커 태그 밖의 URL)
     const textPattern = /(?:^|[^"'])((https?:\/\/(?:www\.)?(?:youtube\.com\/watch\?[^\s<"']+|youtu\.be\/[a-zA-Z0-9_-]+[^\s<"']*)))/gi;
     while ((match = textPattern.exec(html)) !== null) {
       const videoId = extractYoutubeId(match[1]);
@@ -362,7 +376,7 @@ export function RichViewerWithEmbed({ content, className }: { content: string; c
     return urls;
   };
 
-  const youtubeVideos = extractYoutubeUrls(content);
+  const youtubeVideos = extractYoutubeUrls(cleanedContent);
 
   const editor = useEditor({
     immediatelyRender: false,
@@ -388,7 +402,7 @@ export function RichViewerWithEmbed({ content, className }: { content: string; c
         },
       }),
     ],
-    content,
+    content: cleanedContent,  // 빈 앵커 태그 정리된 콘텐츠 사용
     editable: false,
   });
 

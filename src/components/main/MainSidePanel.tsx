@@ -16,7 +16,7 @@ import { Progress } from '@/components/ui/progress';
 import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpen, TrendingUp, Users, ChevronRight, Sparkles, User, Loader2 } from 'lucide-react';
 import { useMainData } from '@/contexts/MainDataContext';
-import { useDashboardStats } from '@/presentation/hooks/queries/useDashboardStats';
+import { useDashboardStats, TOTAL_READING_DAYS } from '@/presentation/hooks/queries/useDashboardStats';
 import { useSuggestedUsers } from '@/presentation/hooks/queries/useSuggestedUsers';
 import { useFollow } from '@/presentation/hooks/queries/useUserFollow';
 import readingPlan from '@/data/reading_plan.json';
@@ -61,13 +61,13 @@ export function MainSidePanel() {
   // 진행률 데이터
   const readingProgress = useMemo(() => {
     if (!stats) {
-      return { currentDay: 0, totalDays: 365, percentage: 0 };
+      return { currentDay: 0, totalDays: TOTAL_READING_DAYS, percentage: 0 };
     }
     // progressPercent를 기반으로 완료 일수 계산
-    const completedDays = Math.round((stats.progressPercent / 100) * 365);
+    const completedDays = Math.round((stats.progressPercent / 100) * TOTAL_READING_DAYS);
     return {
       currentDay: completedDays,
-      totalDays: 365,
+      totalDays: TOTAL_READING_DAYS,
       percentage: stats.progressPercent,
     };
   }, [stats]);

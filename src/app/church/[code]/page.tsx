@@ -1840,14 +1840,31 @@ export default function ChurchPublicPage() {
                     <CardContent className="pt-4">
                       {/* 작성자 정보 */}
                       <div className="flex items-center gap-3 mb-3">
-                        <div className={`w-11 h-11 rounded-xl ${avatarColor} flex items-center justify-center shrink-0 shadow-sm`}>
+                        {/* 아바타 - 프로필 클릭 가능 */}
+                        <div
+                          className={`w-11 h-11 rounded-xl ${avatarColor} flex items-center justify-center shrink-0 shadow-sm ${comment.linked_user_id && !comment.is_anonymous ? 'cursor-pointer hover:ring-2 hover:ring-primary/30' : ''}`}
+                          onClick={() => {
+                            if (comment.linked_user_id && !comment.is_anonymous) {
+                              router.push(`/profile/${comment.linked_user_id}`);
+                            }
+                          }}
+                        >
                           <span className="text-white font-semibold text-sm">{initials}</span>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">
-                            <p className="text-sm font-semibold text-foreground truncate">
+                            {/* 이름 - 프로필 클릭 가능 */}
+                            <button
+                              className={`text-sm font-semibold text-foreground truncate ${comment.linked_user_id && !comment.is_anonymous ? 'hover:text-primary cursor-pointer' : 'cursor-default'}`}
+                              onClick={() => {
+                                if (comment.linked_user_id && !comment.is_anonymous) {
+                                  router.push(`/profile/${comment.linked_user_id}`);
+                                }
+                              }}
+                              disabled={!comment.linked_user_id || comment.is_anonymous}
+                            >
                               {displayName}
-                            </p>
+                            </button>
                             {comment.is_anonymous && (
                               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 bg-muted dark:bg-muted text-muted-foreground dark:text-muted-foreground text-xs rounded-full">
                                 <Lock className="w-3 h-3" />

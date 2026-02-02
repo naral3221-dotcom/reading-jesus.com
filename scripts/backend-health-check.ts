@@ -364,9 +364,107 @@ async function checkTriggers() {
   log({ category: '트리거', check: 'sync_comment_to_unified', status: 'OK', details: 'comments (그룹 묵상글) INSERT/UPDATE/DELETE 시 unified 동기화' })
 }
 
+async function checkFieldSyncConsistency() {
+  console.log('\n' + '='.repeat(70))
+  console.log('🔗 9. 레거시 ↔ unified 필드 값 일치 확인')
+  console.log('='.repeat(70))
+
+  // guest_comments ↔ unified_meditations visibility 일치 확인
+  const { data: guestData } = await supabase
+    .from('guest_comments')
+    .select('id, visibility')
+
+  const { data: unifiedGuestData } = await supabase
+    .from('unified_meditations')
+    .select('legacy_id, visibility')
+    .eq('legacy_table', 'guest_comments')
+
+  const unifiedGuestMap = new Map(
+    unifiedGuestData?.map(u => [u.legacy_id, u.visibility]) || []
+  )
+
+  let guestVisMismatch = 0
+  const guestMismatchDetails: string[] = []
+  for (const g of guestData || []) {
+    const unifiedVis = unifiedGuestMap.get(g.id)
+    if (unifiedVis && g.visibility !== unifiedVis) {
+      guestVisMismatch++
+      if (guestMismatchDetails.length < 3) {
+        guestMismatchDetails.push(`${g.id.slice(0, 8)}: ${g.visibility} → ${unifiedVis}`)
+      }
+    }
+  }
+
+  if (guestVisMismatch === 0) {
+    log({ category: '필드일치', check: 'guest_comments.visibility', status: 'OK', details: '레거시와 unified 일치' })
+  } else {
+    log({ category: '필드일치', check: 'guest_comments.visibility', status: 'ERROR', details: `${guestVisMismatch}개 불일치! ${guestMismatchDetails.join(', ')}` })
+  }
+
+  // church_qt_posts ↔ unified_meditations visibility 일치 확인
+  const { data: qtData } = await supabase
+    .from('church_qt_posts')
+    .select('id, visibility')
+
+  const { data: unifiedQtData } = await supabase
+    .from('unified_meditations')
+    .select('legacy_id, visibility')
+    .eq('legacy_table', 'church_qt_posts')
+
+  const unifiedQtMap = new Map(
+    unifiedQtData?.map(u => [u.legacy_id, u.visibility]) || []
+  )
+
+  let qtVisMismatch = 0
+  const qtMismatchDetails: string[] = []
+  for (const q of qtData || []) {
+    const unifiedVis = unifiedQtMap.get(q.id)
+    if (unifiedVis && q.visibility !== unifiedVis) {
+      qtVisMismatch++
+      if (qtMismatchDetails.length < 3) {
+        qtMismatchDetails.push(`${q.id.slice(0, 8)}: ${q.visibility} → ${unifiedVis}`)
+      }
+    }
+  }
+
+  if (qtVisMismatch === 0) {
+    log({ category: '필드일치', check: 'church_qt_posts.visibility', status: 'OK', details: '레거시와 unified 일치' })
+  } else {
+    log({ category: '필드일치', check: 'church_qt_posts.visibility', status: 'ERROR', details: `${qtVisMismatch}개 불일치! ${qtMismatchDetails.join(', ')}` })
+  }
+
+  // comments ↔ unified_meditations visibility 일치 확인
+  const { data: commentsData } = await supabase
+    .from('comments')
+    .select('id, visibility')
+
+  const { data: unifiedCommentsData } = await supabase
+    .from('unified_meditations')
+    .select('legacy_id, visibility')
+    .eq('legacy_table', 'comments')
+
+  const unifiedCommentsMap = new Map(
+    unifiedCommentsData?.map(u => [u.legacy_id, u.visibility]) || []
+  )
+
+  let commentsVisMismatch = 0
+  for (const c of commentsData || []) {
+    const unifiedVis = unifiedCommentsMap.get(c.id)
+    if (unifiedVis && c.visibility !== unifiedVis) {
+      commentsVisMismatch++
+    }
+  }
+
+  if (commentsVisMismatch === 0) {
+    log({ category: '필드일치', check: 'comments.visibility', status: 'OK', details: '레거시와 unified 일치' })
+  } else {
+    log({ category: '필드일치', check: 'comments.visibility', status: 'ERROR', details: `${commentsVisMismatch}개 불일치!` })
+  }
+}
+
 async function checkCountsMismatch() {
   console.log('\n' + '='.repeat(70))
-  console.log('🔢 9. likes_count/replies_count 정합성 확인')
+  console.log('🔢 10. likes_count/replies_count 정합성 확인')
   console.log('='.repeat(70))
 
   // church_qt_posts의 likes_count vs 실제 좋아요 수
@@ -461,6 +559,7 @@ async function runHealthCheck() {
     await checkOrphanedData()
     await checkVisibilityConsistency()
     await checkTriggers()
+    await checkFieldSyncConsistency()
     await checkCountsMismatch()
     await generateSummary()
   } catch (error) {

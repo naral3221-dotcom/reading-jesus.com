@@ -69,8 +69,8 @@ function parseAnswers(answer: string | null | undefined): string[] {
   }
 }
 
-// 캐러셀 카드 타입
-type CarouselCardType = 'verses' | 'guide' | 'questions' | 'answers' | 'sentence' | 'review';
+// 캐러셀 카드 타입 (하루 점검은 하단 고정 영역에 표시)
+type CarouselCardType = 'verses' | 'guide' | 'questions' | 'answers' | 'sentence';
 
 interface CarouselCard {
   type: CarouselCardType;
@@ -189,16 +189,7 @@ export function FeedDetailModal({
       });
     }
 
-    // 하루 점검
-    if (item?.dayReview) {
-      cards.push({
-        type: 'review',
-        title: '하루 점검',
-        icon: '✦',
-        gradient: 'from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40',
-        textColor: 'text-violet-700 dark:text-violet-300',
-      });
-    }
+    // 하루 점검은 캐러셀 밖 하단에 고정 표시 (QTFeedCard와 동일)
 
     return cards;
   }, [qtContent, item?.type, item?.mySentence, answers.length, item?.dayReview, meditationQuestions.length]);
@@ -300,13 +291,6 @@ export function FeedDetailModal({
               "{item?.mySentence}"
             </blockquote>
           </div>
-        );
-
-      case 'review':
-        return (
-          <p className="text-[14px] text-foreground leading-[1.8] whitespace-pre-wrap max-h-[240px] overflow-y-auto pr-2">
-            {item?.dayReview}
-          </p>
         );
 
       default:
@@ -636,17 +620,17 @@ export function FeedDetailModal({
                   </div>
                 )}
 
-                {/* 하단 고정: 감사와 적용 + 나의 기도 */}
-                {(item.gratitude || item.myPrayer) && (
+                {/* 하단 고정: 감사와 적용 + 나의 기도 + 하루 점검 */}
+                {(item.gratitude || item.myPrayer || item.dayReview) && (
                   <div className="space-y-3">
                     {/* 감사와 적용 */}
                     {item.gratitude && (
                       <div className="rounded-2xl bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 p-4 shadow-sm border border-emerald-100/50 dark:border-emerald-900/30">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">💚</span>
+                          <span className="text-lg shrink-0">💚</span>
                           <h4 className="text-sm font-bold text-emerald-700 dark:text-emerald-300">감사와 적용</h4>
                         </div>
-                        <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed">
+                        <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed break-words">
                           {item.gratitude}
                         </p>
                       </div>
@@ -656,11 +640,24 @@ export function FeedDetailModal({
                     {item.myPrayer && (
                       <div className="rounded-2xl bg-gradient-to-br from-sky-50 to-indigo-50 dark:from-sky-950/40 dark:to-indigo-950/40 p-4 shadow-sm border border-sky-100/50 dark:border-sky-900/30">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="text-lg">🙏</span>
+                          <span className="text-lg shrink-0">🙏</span>
                           <h4 className="text-sm font-bold text-sky-700 dark:text-sky-300">나의 기도</h4>
                         </div>
-                        <p className="text-base text-foreground whitespace-pre-wrap italic leading-relaxed">
+                        <p className="text-base text-foreground whitespace-pre-wrap italic leading-relaxed break-words">
                           {item.myPrayer}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 하루 점검 */}
+                    {item.dayReview && (
+                      <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40 p-4 shadow-sm border border-violet-100/50 dark:border-violet-900/30">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="text-lg shrink-0">✦</span>
+                          <h4 className="text-sm font-bold text-violet-700 dark:text-violet-300">하루 점검</h4>
+                        </div>
+                        <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed break-words">
+                          {item.dayReview}
                         </p>
                       </div>
                     )}

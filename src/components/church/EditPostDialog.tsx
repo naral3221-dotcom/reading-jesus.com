@@ -40,6 +40,7 @@ interface EditPostDialogProps {
 
 export interface EditPostData {
   id: string;
+  legacyId?: string | null;  // 원본 테이블(guest_comments, church_qt_posts)의 ID
   type: FeedItemType;
   isAnonymous: boolean;
   visibility?: ContentVisibility;
@@ -97,6 +98,7 @@ export function EditPostDialog({ open, onOpenChange, item, onSave }: EditPostDia
     try {
       const data: EditPostData = {
         id: item.id,
+        legacyId: item.legacyId,  // 원본 테이블의 ID
         type: item.type,
         isAnonymous,
         visibility: 'public',  // 항상 public으로 고정

@@ -48,6 +48,7 @@ import {
   migrateLocalStorageToCloud,
   needsMigration,
 } from '@/lib/migrate-local-data';
+import { TOTAL_READING_DAYS } from '@/presentation/hooks/queries/useDashboardStats';
 
 import { ProfileSection } from './ProfileSection';
 import { StatsSection } from './StatsSection';
@@ -97,7 +98,7 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
 
   // 통계
   const [stats, setStats] = useState<MyPageStats>({
-    totalDays: 365,
+    totalDays: TOTAL_READING_DAYS,
     completedDays: 0,
     progressPercentage: 0,
     currentStreak: 0,
@@ -273,7 +274,7 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
       .select('*', { count: 'exact', head: true })
       .eq('year', scheduleYear);
 
-    const totalDays = scheduleCount || 365;
+    const totalDays = scheduleCount || TOTAL_READING_DAYS;
 
     const statsData: MyPageStats = {
       completedDays: 0,
@@ -354,7 +355,7 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
           .eq('church_id', church.id);
 
         if (churchChecks && churchChecks.length > 0) {
-          const totalDays = 365; // 리딩지저스 기본
+          const totalDays = TOTAL_READING_DAYS; // 실제 통독 일정 기준 (271일)
           const completedDays = churchChecks.length;
           const checkedDayNumbers = churchChecks.map(c => c.day_number);
 
@@ -531,7 +532,7 @@ export function UnifiedMyPage({ churchContext }: UnifiedMyPageProps) {
       || activities.find(a => a.sourceType === 'personal');
 
     setStats({
-      totalDays: primaryActivity?.totalDays || 365,
+      totalDays: primaryActivity?.totalDays || TOTAL_READING_DAYS,
       completedDays: totalCompletedDays,
       progressPercentage: primaryActivity?.progressPercentage || 0,
       currentStreak: maxStreak,

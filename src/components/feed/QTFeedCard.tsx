@@ -71,8 +71,8 @@ function parseAnswers(answer: string | null | undefined): string[] {
   }
 }
 
-// 캐러셀 카드 타입 (감사/기도는 하단 고정이므로 제외)
-type CarouselCardType = 'verses' | 'guide' | 'questions' | 'answers' | 'sentence' | 'review';
+// 캐러셀 카드 타입 (감사/기도/하루점검은 하단 고정이므로 제외)
+type CarouselCardType = 'verses' | 'guide' | 'questions' | 'answers' | 'sentence';
 
 interface CarouselCard {
   type: CarouselCardType;
@@ -180,9 +180,19 @@ export function QTFeedCard({
     onComment(item.id, item.source);
   };
 
+  // 프로필 클릭 가능 여부 (익명이 아니고 authorId가 있어야 함)
+  const canClickAuthor = !item.isAnonymous && !!item.authorId;
+
   const handleUserClick = (e: React.MouseEvent) => {
     e.stopPropagation();
-    if (!item.isAnonymous) onAuthorClick?.(item.authorId);
+    // 디버깅: authorId 확인
+    console.log('[QTFeedCard] 프로필 클릭:', {
+      authorId: item.authorId,
+      authorName: item.authorName,
+      isAnonymous: item.isAnonymous,
+      canClickAuthor,
+    });
+    if (canClickAuthor) onAuthorClick?.(item.authorId);
   };
 
   const { toast } = useToast();
@@ -231,11 +241,11 @@ export function QTFeedCard({
   const meditationQuestions = qtContent?.meditation?.meditationQuestions || [];
   const answers = parseAnswers(item.meditationAnswer);
 
-  // 캐러셀 카드 목록 생성 (감사/기도는 하단 고정이므로 제외)
+  // 캐러셀 카드 목록 생성 (감사/기도/하루점검은 하단 고정)
   const carouselCards = useMemo(() => {
     const cards: CarouselCard[] = [];
 
-    // 오늘의 말씀
+    // 1. 오늘의 말씀
     if (qtContent?.verses && qtContent.verses.length > 0) {
       cards.push({
         type: 'verses',
@@ -246,7 +256,7 @@ export function QTFeedCard({
       });
     }
 
-    // 묵상 길잡이
+    // 2. 묵상 길잡이
     if (qtContent?.meditation?.meditationGuide) {
       cards.push({
         type: 'guide',
@@ -257,18 +267,7 @@ export function QTFeedCard({
       });
     }
 
-    // 묵상 질문 + 답변 (함께 표시)
-    if (meditationQuestions.length > 0) {
-      cards.push({
-        type: 'questions',
-        title: '묵상 질문',
-        icon: '❓',
-        gradient: 'from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40',
-        textColor: 'text-blue-700 dark:text-blue-300',
-      });
-    }
-
-    // 내 말로 한 문장 (있을 때만 표시)
+    // 3. 내 말로 한 문장 (있을 때만 표시)
     if (item.mySentence) {
       cards.push({
         type: 'sentence',
@@ -279,19 +278,19 @@ export function QTFeedCard({
       });
     }
 
-    // 하루 점검 (캐러셀에 포함)
-    if (item.dayReview) {
+    // 4. 묵상 질문 + 답변 (함께 표시)
+    if (meditationQuestions.length > 0) {
       cards.push({
-        type: 'review',
-        title: '하루 점검',
-        icon: '✦',
-        gradient: 'from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40',
-        textColor: 'text-violet-700 dark:text-violet-300',
+        type: 'questions',
+        title: '묵상 질문',
+        icon: '❓',
+        gradient: 'from-blue-50 to-cyan-50 dark:from-blue-950/40 dark:to-cyan-950/40',
+        textColor: 'text-blue-700 dark:text-blue-300',
       });
     }
 
     return cards;
-  }, [qtContent, item.mySentence, answers.length, item.dayReview, meditationQuestions.length]);
+  }, [qtContent, item.mySentence, meditationQuestions.length]);
 
   // 캐러셀 스크롤 핸들러
   const scrollToSlide = useCallback((index: number) => {
@@ -392,13 +391,6 @@ export function QTFeedCard({
           </div>
         );
 
-      case 'review':
-        return (
-          <p className="text-[14px] text-foreground leading-[1.8] whitespace-pre-wrap max-h-[200px] overflow-y-auto pr-2">
-            {item.dayReview}
-          </p>
-        );
-
       default:
         return null;
     }
@@ -412,7 +404,7 @@ export function QTFeedCard({
           <div className="flex items-center gap-3">
             {/* 아바타 */}
             <div
-              className="cursor-pointer"
+              className={canClickAuthor ? "cursor-pointer" : "cursor-default"}
               onClick={handleUserClick}
             >
               {item.authorAvatarUrl && !item.isAnonymous ? (
@@ -435,8 +427,12 @@ export function QTFeedCard({
             <div className="flex flex-col">
               <div className="flex items-center gap-2">
                 <button
-                  className="text-[14px] font-bold hover:text-primary transition-colors"
+                  className={cn(
+                    "text-[14px] font-bold transition-colors",
+                    canClickAuthor ? "hover:text-primary cursor-pointer" : "cursor-default"
+                  )}
                   onClick={handleUserClick}
+                  disabled={!canClickAuthor}
                 >
                   {displayName}
                 </button>
@@ -628,8 +624,8 @@ export function QTFeedCard({
           </div>
         )}
 
-        {/* ========== 하단 고정: 감사와 적용 + 나의 기도 ========== */}
-        {(item.gratitude || item.myPrayer) && (
+        {/* ========== 하단 고정: 감사와 적용 + 나의 기도 + 하루 점검 ========== */}
+        {(item.gratitude || item.myPrayer || item.dayReview) && (
           <div className="px-4 pb-4 space-y-3 overflow-hidden">
             {/* 감사와 적용 */}
             {item.gratitude && (
@@ -653,6 +649,19 @@ export function QTFeedCard({
                 </div>
                 <p className="text-base text-foreground whitespace-pre-wrap italic leading-relaxed break-words">
                   {item.myPrayer}
+                </p>
+              </div>
+            )}
+
+            {/* 하루 점검 */}
+            {item.dayReview && (
+              <div className="rounded-2xl bg-gradient-to-br from-violet-50 to-purple-50 dark:from-violet-950/40 dark:to-purple-950/40 p-4 shadow-sm border border-violet-100/50 dark:border-violet-900/30 overflow-hidden">
+                <div className="flex items-center gap-2 mb-2">
+                  <span className="text-lg shrink-0">✦</span>
+                  <h4 className="text-sm font-bold text-violet-700 dark:text-violet-300">하루 점검</h4>
+                </div>
+                <p className="text-base text-foreground whitespace-pre-wrap leading-relaxed break-words">
+                  {item.dayReview}
                 </p>
               </div>
             )}

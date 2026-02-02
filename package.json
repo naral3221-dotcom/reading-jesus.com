@@ -11,7 +11,9 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
-    "test:ui": "vitest --ui"
+    "test:ui": "vitest --ui",
+    "check:backend": "tsx scripts/backend-health-check.ts",
+    "prepare": "husky"
   },
   "dependencies": {
     "@radix-ui/react-alert-dialog": "^1.1.15",
@@ -69,6 +71,7 @@
     "@vitejs/plugin-react": "^5.1.2",
     "eslint": "^8",
     "eslint-config-next": "14.2.35",
+    "husky": "^9.1.7",
     "jsdom": "^27.4.0",
     "postcss": "^8",
     "pptxgenjs": "^4.0.1",

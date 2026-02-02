@@ -14,7 +14,7 @@ import { FeedDetailModal } from '@/components/feed/FeedDetailModal';
 import { useUnifiedFeedInfinite } from '@/presentation/hooks/queries/useUnifiedFeed';
 import { useUpdateProfile } from '@/presentation/hooks/queries/useUser';
 import { useMainData } from '@/contexts/MainDataContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // 새로 추가된 컴포넌트들
 import { ChurchQuickLink } from '@/components/home/ChurchQuickLink';
@@ -24,6 +24,7 @@ import { InlineMeditationForm } from '@/components/home/InlineMeditationForm';
 
 export default function HomePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   // Context에서 데이터 가져오기
   const {
@@ -132,6 +133,26 @@ export default function HomePage() {
   };
 
   const feedItems = feedData?.pages.flatMap((page) => page.items) ?? [];
+
+  // URL 쿼리 파라미터로 공유된 게시물 열기
+  const postId = searchParams.get('post');
+  useEffect(() => {
+    if (postId && feedItems.length > 0 && !isModalOpen) {
+      const targetItem = feedItems.find(item => item.id === postId);
+      if (targetItem) {
+        setSelectedItem(targetItem);
+        setIsModalOpen(true);
+      }
+    }
+  }, [postId, feedItems, isModalOpen]);
+
+  // 모달 닫을 때 URL 파라미터 제거
+  const handleModalClose = (open: boolean) => {
+    setIsModalOpen(open);
+    if (!open && searchParams.get('post')) {
+      router.replace('/home', { scroll: false });
+    }
+  };
 
   if (contextLoading) {
     return <HomeSkeleton />;
@@ -297,7 +318,7 @@ export default function HomePage() {
       {/* 피드 상세 모달 */}
       <FeedDetailModal
         open={isModalOpen}
-        onOpenChange={setIsModalOpen}
+        onOpenChange={handleModalClose}
         item={selectedItem}
         currentUserId={userId}
         onLike={handleLike}

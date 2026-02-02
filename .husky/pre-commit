@@ -1,0 +1,23 @@
+#!/bin/sh
+
+# 백엔드 관련 파일 변경 감지
+BACKEND_CHANGED=$(git diff --cached --name-only | grep -E "^supabase/|Repository\.ts$|\.sql$" || true)
+
+if [ -n "$BACKEND_CHANGED" ]; then
+  echo "🔍 백엔드 관련 파일 변경 감지됨. 정합성 검사 실행..."
+  echo "$BACKEND_CHANGED"
+  echo ""
+
+  # 백엔드 정합성 검사 실행
+  npx tsx scripts/backend-health-check.ts
+
+  # 검사 결과 확인 (에러가 있으면 커밋 중단)
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ 백엔드 정합성 검사 실패. 커밋이 중단됩니다."
+    exit 1
+  fi
+
+  echo ""
+  echo "✅ 백엔드 정합성 검사 통과!"
+fi

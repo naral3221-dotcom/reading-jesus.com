@@ -1024,6 +1024,8 @@ export default function ChurchSharingPage() {
       const newBibleRange = readingInfo?.reading || null;
 
       if (data.type === 'meditation') {
+        // legacyId 사용 (unified_meditations.id가 아닌 guest_comments.id)
+        const targetId = data.legacyId || data.id;
         const { error } = await supabase
           .from('guest_comments')
           .update({
@@ -1033,12 +1035,14 @@ export default function ChurchSharingPage() {
             is_anonymous: data.isAnonymous,
             visibility: data.visibility,
           })
-          .eq('id', data.id);
+          .eq('id', targetId);
 
         if (error) throw error;
       } else {
         // QT의 경우 qt_date도 함께 업데이트
         const newQtDate = readingInfo?.date || null;
+        // legacyId 사용 (unified_meditations.id가 아닌 church_qt_posts.id)
+        const targetId = data.legacyId || data.id;
 
         const { error } = await supabase
           .from('church_qt_posts')
@@ -1053,7 +1057,7 @@ export default function ChurchSharingPage() {
             is_anonymous: data.isAnonymous,
             visibility: data.visibility,
           })
-          .eq('id', data.id);
+          .eq('id', targetId);
 
         if (error) throw error;
       }
