@@ -44,7 +44,7 @@ import { formatRelativeTime, getInitials, getAvatarColor, getTodayDateString } f
 import { getSupabaseBrowserClient } from '@/infrastructure/supabase/client';
 import { ChurchLayout } from '@/components/church/ChurchLayout';
 import { useToast } from '@/components/ui/toast';
-import { VisibilitySelector } from '@/components/ui/visibility-selector';
+// VisibilitySelector 제거됨 - 모든 글은 public으로 고정
 import type { ContentVisibility } from '@/domain/entities/PublicMeditation';
 import { useAutoDraft, formatDraftTime } from '@/hooks/useAutoDraft';
 import { QTDailyContent } from '@/types';
@@ -155,14 +155,16 @@ export default function ChurchSharingPage() {
   const [submitting, setSubmitting] = useState(false);
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [isAnonymous, setIsAnonymous] = useState(false);
-  const [visibility, setVisibility] = useState<ContentVisibility>('church');
+  // visibility는 항상 'public'으로 고정 (선택 UI 제거됨)
+  const visibility: ContentVisibility = 'public';
 
   // QT 작성 상태
   const [qtAuthorName, setQtAuthorName] = useState('');
   const [qtFormData, setQtFormData] = useState<UnifiedQTFormData>(createInitialQTFormData());
   const [qtSubmitting, setQtSubmitting] = useState(false);
   const [qtIsAnonymous, setQtIsAnonymous] = useState(false);
-  const [qtVisibility, setQtVisibility] = useState<ContentVisibility>('church');
+  // visibility는 항상 'public'으로 고정 (선택 UI 제거됨)
+  const qtVisibility: ContentVisibility = 'public';
   const [expandedSections, setExpandedSections] = useState({
     verses: true,
     guide: true,
@@ -1447,14 +1449,8 @@ export default function ChurchSharingPage() {
                   />
                 </div>
 
-                {/* 공개 범위 및 익명 설정 */}
-                <div className="pt-4 space-y-3 border-t">
-                  <VisibilitySelector
-                    value={visibility}
-                    onChange={setVisibility}
-                    allowedOptions={['private', 'church', 'public']}
-                    variant="inline"
-                  />
+                {/* 익명 설정 */}
+                <div className="pt-4 border-t">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"
@@ -1764,14 +1760,8 @@ export default function ChurchSharingPage() {
                   </div>
                 </div>
 
-                {/* 공개 범위 및 익명 설정 */}
-                <div className="pt-4 mt-4 border-t space-y-3">
-                  <VisibilitySelector
-                    value={qtVisibility}
-                    onChange={setQtVisibility}
-                    allowedOptions={['private', 'church', 'public']}
-                    variant="inline"
-                  />
+                {/* 익명 설정 */}
+                <div className="pt-4 mt-4 border-t">
                   <div className="flex items-center gap-2">
                     <input
                       type="checkbox"

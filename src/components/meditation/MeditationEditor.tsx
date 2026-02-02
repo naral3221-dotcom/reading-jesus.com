@@ -129,7 +129,8 @@ export function MeditationEditor({
   const [authorName, setAuthorName] = useState(initialAuthorName);
   const [dayNumber, setDayNumber] = useState<number | null>(initialDayNumber);
   const [isAnonymous, setIsAnonymous] = useState(defaultAnonymous);
-  const [visibility, setVisibility] = useState<ContentVisibility>(defaultVisibility);
+  // visibility는 항상 'public'으로 고정 (선택 UI 제거됨)
+  const visibility: ContentVisibility = 'public';
   const [showVerses, setShowVerses] = useState(false); // 기본 접힌 상태
   const [showDraftRestore, setShowDraftRestore] = useState(false);
   const [attachedLinks, setAttachedLinks] = useState<string[]>([]);
@@ -327,7 +328,7 @@ export function MeditationEditor({
         attachedLinks: attachedLinks.length > 0 ? attachedLinks : undefined,
         isAnonymous,
         dayNumber,
-        visibility: showVisibility ? visibility : undefined,
+        visibility: 'public',  // 항상 public으로 고정
       });
 
       // 성공 시 초기화

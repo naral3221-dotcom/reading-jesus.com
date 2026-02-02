@@ -35,8 +35,9 @@ export function usePlatformStats() {
     queryFn: async (): Promise<PlatformStats> => {
       const supabase = getSupabaseBrowserClient();
       const today = getTodayDateString();
-      const todayStart = `${today}T00:00:00`;
-      const todayEnd = `${today}T23:59:59`;
+      // KST 타임존 명시 (+09:00)
+      const todayStart = `${today}T00:00:00+09:00`;
+      const todayEnd = `${today}T23:59:59+09:00`;
 
       // unified_meditations에서 통합 조회 (병렬로 실행)
       const [totalResult, todayResult] = await Promise.all([
@@ -97,8 +98,9 @@ export function useTodayWritersCount() {
     queryFn: async (): Promise<number> => {
       const supabase = getSupabaseBrowserClient();
       const today = getTodayDateString();
-      const todayStart = `${today}T00:00:00`;
-      const todayEnd = `${today}T23:59:59`;
+      // KST 타임존 명시 (+09:00)
+      const todayStart = `${today}T00:00:00+09:00`;
+      const todayEnd = `${today}T23:59:59+09:00`;
 
       // unified_meditations에서 오늘 작성된 글의 user_id, guest_token 조회
       const { data } = await supabase
