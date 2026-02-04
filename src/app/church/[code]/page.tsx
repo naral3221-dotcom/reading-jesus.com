@@ -111,6 +111,7 @@ interface GuestComment {
   replies_count: number;
   linked_user_id: string | null;
   device_id: string | null;
+  avatar_url?: string | null; // 프로필 사진
   source?: 'guest_comment' | 'qt_post'; // 출처 구분
   // QT 원본 필드 (source === 'qt_post'인 경우)
   mySentence?: string | null;
@@ -119,6 +120,7 @@ interface GuestComment {
   gratitude?: string | null;
   myPrayer?: string | null;
   dayReview?: string | null;
+  youtubeLinks?: string[] | null; // 유튜브 영상 링크
   qtDate?: string | null; // QT 날짜
   // 레거시 연결용 (unified_meditations에서 조회 시)
   legacy_table?: string | null;
@@ -134,6 +136,7 @@ interface ChurchQTPost {
   gratitude: string | null;
   my_prayer: string | null;
   day_review: string | null;
+  youtube_links: string[] | null;
   is_anonymous: boolean;
   likes_count: number;
   replies_count?: number; // 선택적 - 마이그레이션 안 된 경우 대비
@@ -194,6 +197,7 @@ function guestCommentToFeedItem(comment: GuestComment): FeedItem {
     gratitude: comment.gratitude,
     myPrayer: comment.myPrayer,
     dayReview: comment.dayReview,
+    youtubeLinks: comment.youtubeLinks,
     likesCount: comment.likes_count,
     repliesCount: comment.replies_count,
     isLiked: false,
@@ -477,6 +481,28 @@ export default function ChurchPublicPage() {
 
       if (qtError) throw qtError;
 
+      // user_id 목록 추출하여 프로필 사진 조회
+      const userIds = (qtData || [])
+        .map(row => row.user_id)
+        .filter((id): id is string => !!id);
+
+      let avatarMap = new Map<string, string>();
+      if (userIds.length > 0) {
+        const uniqueUserIds = Array.from(new Set(userIds));
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, avatar_url')
+          .in('id', uniqueUserIds);
+
+        if (profiles) {
+          profiles.forEach(p => {
+            if (p.avatar_url) {
+              avatarMap.set(p.id, p.avatar_url);
+            }
+          });
+        }
+      }
+
       // unified_meditations 데이터를 GuestComment 형식으로 변환
       const qtComments: GuestComment[] = (qtData || []).map(row => ({
         id: row.id,
@@ -490,12 +516,14 @@ export default function ChurchPublicPage() {
         replies_count: row.replies_count || 0,
         linked_user_id: row.user_id,
         device_id: row.guest_token,
+        avatar_url: row.user_id ? avatarMap.get(row.user_id) : null,
         source: 'qt_post' as const,
         mySentence: row.my_sentence,
         meditationAnswer: row.meditation_answer,
         gratitude: row.gratitude,
         myPrayer: row.my_prayer,
         dayReview: row.day_review,
+        youtubeLinks: row.youtube_links,
         qtDate: row.qt_date,
         legacy_table: row.legacy_table,
         legacy_id: row.legacy_id,
@@ -543,6 +571,29 @@ export default function ChurchPublicPage() {
 
       if (unifiedError) throw unifiedError;
 
+      // user_id 목록 추출하여 프로필 사진 조회
+      const userIds = (unifiedData || [])
+        .map(row => row.user_id)
+        .filter((id): id is string => !!id);
+
+      // 프로필 사진 조회
+      let avatarMap = new Map<string, string>();
+      if (userIds.length > 0) {
+        const uniqueUserIds = Array.from(new Set(userIds));
+        const { data: profiles } = await supabase
+          .from('profiles')
+          .select('id, avatar_url')
+          .in('id', uniqueUserIds);
+
+        if (profiles) {
+          profiles.forEach(p => {
+            if (p.avatar_url) {
+              avatarMap.set(p.id, p.avatar_url);
+            }
+          });
+        }
+      }
+
       // unified_meditations 데이터를 GuestComment 형식으로 변환
       const allComments: GuestComment[] = (unifiedData || []).map(row => {
         const isQT = row.content_type === 'qt';
@@ -558,6 +609,7 @@ export default function ChurchPublicPage() {
           replies_count: row.replies_count || 0,
           linked_user_id: row.user_id,
           device_id: row.guest_token,
+          avatar_url: row.user_id ? avatarMap.get(row.user_id) : null,
           source: isQT ? 'qt_post' as const : 'guest_comment' as const,
           // QT 필드
           mySentence: row.my_sentence,
@@ -565,6 +617,7 @@ export default function ChurchPublicPage() {
           gratitude: row.gratitude,
           myPrayer: row.my_prayer,
           dayReview: row.day_review,
+          youtubeLinks: row.youtube_links,
           qtDate: row.qt_date,
           // 레거시 연결용
           legacy_table: row.legacy_table,
@@ -977,6 +1030,7 @@ export default function ChurchPublicPage() {
       gratitude: comment.gratitude,
       myPrayer: comment.myPrayer,
       dayReview: comment.dayReview,
+      youtubeLinks: comment.youtubeLinks,
       likesCount: comment.likes_count,
       repliesCount: comment.replies_count,
       userId: comment.linked_user_id,
@@ -1021,6 +1075,7 @@ export default function ChurchPublicPage() {
             gratitude: data.gratitude,
             my_prayer: data.myPrayer,
             day_review: data.dayReview,
+            youtube_links: data.youtubeLinks || [],
             day_number: data.dayNumber,
             qt_date: newQtDate,
             is_anonymous: data.isAnonymous,
@@ -1825,6 +1880,7 @@ export default function ChurchPublicPage() {
                           setDeleteConfirmOpen(true);
                         } : undefined}
                         onAuthorClick={(authorId) => router.push(`/profile/${authorId}`)}
+                        authorAvatarUrl={comment.avatar_url}
                       />
                     </div>
                   );
@@ -1840,16 +1896,26 @@ export default function ChurchPublicPage() {
                     <CardContent className="pt-4">
                       {/* 작성자 정보 */}
                       <div className="flex items-center gap-3 mb-3">
-                        {/* 아바타 - 프로필 클릭 가능 */}
+                        {/* 아바타 - 프로필 클릭 가능 (동그라미로 통일) */}
                         <div
-                          className={`w-11 h-11 rounded-xl ${avatarColor} flex items-center justify-center shrink-0 shadow-sm ${comment.linked_user_id && !comment.is_anonymous ? 'cursor-pointer hover:ring-2 hover:ring-primary/30' : ''}`}
+                          className={`w-11 h-11 rounded-full shrink-0 shadow-sm overflow-hidden ${comment.linked_user_id && !comment.is_anonymous ? 'cursor-pointer hover:ring-2 hover:ring-primary/30' : ''} ${!comment.avatar_url || comment.is_anonymous ? (avatarColor || 'bg-slate-600') : ''}`}
                           onClick={() => {
                             if (comment.linked_user_id && !comment.is_anonymous) {
                               router.push(`/profile/${comment.linked_user_id}`);
                             }
                           }}
                         >
-                          <span className="text-white font-semibold text-sm">{initials}</span>
+                          {comment.avatar_url && !comment.is_anonymous ? (
+                            <img
+                              src={comment.avatar_url}
+                              alt={displayName}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className={`w-full h-full flex items-center justify-center ${avatarColor || 'bg-slate-600'}`}>
+                              <span className="text-white font-semibold text-sm">{initials}</span>
+                            </div>
+                          )}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-2">

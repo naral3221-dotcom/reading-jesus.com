@@ -17,6 +17,7 @@ export interface ChurchQTPostProps {
   gratitude: string | null
   myPrayer: string | null
   dayReview: string | null
+  youtubeLinks: string[] | null // 유튜브 영상 링크 배열
   userId: string | null
   isAnonymous: boolean
   visibility: ContentVisibility
@@ -37,6 +38,7 @@ export interface CreateChurchQTPostInput {
   gratitude?: string | null
   myPrayer?: string | null
   dayReview?: string | null
+  youtubeLinks?: string[] | null
   userId?: string | null
   isAnonymous?: boolean
   visibility?: ContentVisibility
@@ -49,6 +51,7 @@ export interface UpdateChurchQTPostInput {
   gratitude?: string | null
   myPrayer?: string | null
   dayReview?: string | null
+  youtubeLinks?: string[] | null
   isAnonymous?: boolean
   visibility?: ContentVisibility
   qtDate?: string
@@ -147,6 +150,10 @@ export class ChurchQTPost {
 
   get dayReview(): string | null {
     return this.props.dayReview
+  }
+
+  get youtubeLinks(): string[] | null {
+    return this.props.youtubeLinks
   }
 
   get userId(): string | null {

@@ -31,6 +31,7 @@ interface ChurchQTPostRow {
   gratitude: string | null
   my_prayer: string | null
   day_review: string | null
+  youtube_links: string[] | null
   user_id: string | null
   is_anonymous: boolean
   visibility: ContentVisibility | null
@@ -64,6 +65,7 @@ function mapRowToPostProps(row: ChurchQTPostRow): ChurchQTPostProps {
     gratitude: row.gratitude,
     myPrayer: row.my_prayer,
     dayReview: row.day_review,
+    youtubeLinks: row.youtube_links,
     userId: row.user_id,
     isAnonymous: row.is_anonymous ?? false,
     visibility: row.visibility ?? 'public',  // 기본값 public으로 변경
@@ -181,6 +183,7 @@ export class SupabaseChurchQTPostRepository implements IChurchQTPostRepository {
           gratitude: input.gratitude ?? null,
           my_prayer: input.myPrayer ?? null,
           day_review: input.dayReview ?? null,
+          youtube_links: input.youtubeLinks ?? null,
           user_id: input.userId ?? null,
           is_anonymous: input.isAnonymous ?? false,
           visibility: 'public',  // 모든 글 전체 공개
@@ -210,6 +213,7 @@ export class SupabaseChurchQTPostRepository implements IChurchQTPostRepository {
     if (input.gratitude !== undefined) updateData.gratitude = input.gratitude
     if (input.myPrayer !== undefined) updateData.my_prayer = input.myPrayer
     if (input.dayReview !== undefined) updateData.day_review = input.dayReview
+    if (input.youtubeLinks !== undefined) updateData.youtube_links = input.youtubeLinks
     if (input.isAnonymous !== undefined) updateData.is_anonymous = input.isAnonymous
     if (input.visibility !== undefined) updateData.visibility = input.visibility
     if (input.qtDate !== undefined) updateData.qt_date = input.qtDate
