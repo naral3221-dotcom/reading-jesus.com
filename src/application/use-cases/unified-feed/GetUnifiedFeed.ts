@@ -45,6 +45,7 @@ interface UnifiedMeditationRow {
   gratitude: string | null
   my_prayer: string | null
   day_review: string | null
+  youtube_links: string[] | null
   is_anonymous: boolean
   visibility: 'private' | 'group' | 'church' | 'public' | null
   is_pinned: boolean
@@ -143,6 +144,7 @@ function mapRowToFeedItem(
     gratitude: row.gratitude ?? undefined,
     myPrayer: row.my_prayer ?? undefined,
     dayReview: row.day_review ?? undefined,
+    youtubeLinks: row.youtube_links ?? undefined,
     likesCount: row.likes_count || 0,
     repliesCount: row.replies_count || 0,
     isPublic: row.visibility !== 'private',
